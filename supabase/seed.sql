@@ -1,0 +1,2 @@
+-- Extra seed after migrations (templates are inserted in migrations).
+-- Keep file so `supabase db reset` succeeds when config references ./seed.sql.

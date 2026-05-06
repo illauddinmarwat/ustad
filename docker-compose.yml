@@ -1,0 +1,27 @@
+services:
+  postgres:
+    image: postgres:17
+    container_name: workerzpk_postgres
+    environment:
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_USER: postgres
+      POSTGRES_DB: workerzpk
+    ports:
+      - "5432:5432"
+    volumes:
+      - workerzpk_pgdata:/var/lib/postgresql/data
+
+  pgadmin:
+    image: dpage/pgadmin4:8
+    container_name: workerzpk_pgadmin
+    environment:
+      PGADMIN_DEFAULT_EMAIL: admin@local
+      PGADMIN_DEFAULT_PASSWORD: admin
+    ports:
+      - "5050:80"
+    depends_on:
+      - postgres
+
+volumes:
+  workerzpk_pgdata:
+
