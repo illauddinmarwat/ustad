@@ -17,3 +17,8 @@ export const fixtureListings = [
     status: 'active' as const,
   },
 ];
+
+export const fixtureProfileByRole = {
+  customer: { role: 'customer' as const, display_name: 'Fixture Customer' },
+  worker: { role: 'worker' as const, display_name: 'Fixture Worker' },
+};

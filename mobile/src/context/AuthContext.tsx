@@ -8,9 +8,11 @@ import { supabase } from '../lib/supabase';
 type AuthCtx = {
   session: Session | null;
   loading: boolean;
+  role: 'customer' | 'worker' | 'admin' | null;
+  signIn: (email: string, password: string) => Promise<void>;
+  signUp: (email: string, password: string) => Promise<void>;
   signOut: () => Promise<void>;
-  previewRole: 'customer' | 'worker';
-  setPreviewRole: (r: 'customer' | 'worker') => void;
+  setRole: (r: 'customer' | 'worker') => Promise<void>;
 };
 
 const Ctx = createContext<AuthCtx | null>(null);
@@ -38,10 +40,12 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [session, setSession] = useState<Session | null>(null);
   const [loading, setLoading] = useState(() => !useFixtureMode);
   const [previewRole, setPreviewRole] = useState<'customer' | 'worker'>('customer');
+  const [role, setRoleState] = useState<'customer' | 'worker' | 'admin' | null>(null);
 
   useEffect(() => {
     if (useFixtureMode) {
       setSession(buildFixtureSession(previewRole));
+      setRoleState(previewRole);
       setLoading(false);
       return;
     }
@@ -49,9 +53,15 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     let cancelled = false;
     supabase.auth
       .getSession()
-      .then(({ data: { session: s } }) => {
+      .then(async ({ data: { session: s } }) => {
         if (!cancelled) {
           setSession(s);
+          if (s?.user?.id) {
+            const { data } = await supabase.from('profiles').select('role').eq('id', s.user.id).maybeSingle();
+            setRoleState((data?.role as 'customer' | 'worker' | 'admin') ?? 'customer');
+          } else {
+            setRoleState(null);
+          }
           setLoading(false);
         }
       })
@@ -61,6 +71,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
     const { data: sub } = supabase.auth.onAuthStateChange((_event, s) => {
       setSession(s);
+      if (!s?.user?.id) setRoleState(null);
     });
 
     return () => {
@@ -72,8 +83,19 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   useEffect(() => {
     if (useFixtureMode) {
       setSession(buildFixtureSession(previewRole));
+      setRoleState(previewRole);
     }
   }, [previewRole, useFixtureMode]);
+
+  const signIn = async (email: string, password: string) => {
+    const { error } = await supabase.auth.signInWithPassword({ email, password });
+    if (error) throw error;
+  };
+
+  const signUp = async (email: string, password: string) => {
+    const { error } = await supabase.auth.signUp({ email, password });
+    if (error) throw error;
+  };
 
   const signOut = async () => {
     if (useFixtureMode) {
@@ -84,15 +106,24 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     await supabase.auth.signOut();
   };
 
+  const setRole = async (r: 'customer' | 'worker') => {
+    if (!session?.user?.id) return;
+    const { error } = await supabase.from('profiles').update({ role: r }).eq('id', session.user.id);
+    if (error) throw error;
+    setRoleState(r);
+  };
+
   const value = useMemo<AuthCtx>(
     () => ({
       session,
       loading,
+      role,
+      signIn,
+      signUp,
       signOut,
-      previewRole,
-      setPreviewRole,
+      setRole,
     }),
-    [session, loading, signOut, previewRole]
+    [session, loading, role]
   );
 
   return <Ctx.Provider value={value}>{children}</Ctx.Provider>;
