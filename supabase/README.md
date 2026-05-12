@@ -11,6 +11,7 @@
 2. Open **SQL Editor** and run migrations in order:
    - `migrations/20250206120000_phase1_schema.sql`
    - `migrations/20250206120100_seed_templates.sql`
+   - `migrations/20250407180000_review_worker_rating.sql`
    
    Or link the repo and push: `supabase link` then `supabase db push`.
 
@@ -36,3 +37,14 @@ Create buckets matching app usage:
 - `job-photos` — authenticated read/write via policy (configure when wiring uploads)
 
 Policies for storage are not included in Phase 1 SQL — add in a follow-up migration when upload paths are finalized.
+
+## Automated tests (pgTAP)
+
+With [Supabase CLI](https://supabase.com/docs/guides/cli) and Docker (`supabase start`):
+
+```bash
+supabase start
+supabase test db
+```
+
+Runs `*.test.sql` under `tests/database/` (Phase 1 schema + review trigger smoke tests).

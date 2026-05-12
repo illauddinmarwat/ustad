@@ -4,7 +4,7 @@ Living document: requirements, roadmap, and technical direction. Edit this file 
 
 **Focused MVP scope (booking rules, Rails A/B, modals):** [`WorkerzPk-MVP-SinglePage.md`](WorkerzPk-MVP-SinglePage.md)
 
-**Implementation plan by phase (engineering deliverables, acceptance criteria):** [`docs/implementation/README.md`](docs/implementation/README.md)
+**Implementation plan by phase (engineering deliverables, acceptance criteria):** [`implementation/README.md`](implementation/README.md)
 
 ---
 
@@ -299,16 +299,16 @@ Living document: requirements, roadmap, and technical direction. Edit this file 
 
 ## Development timeline (18–24 months)
 
-High-level roadmap below; **detailed acceptance criteria and technical work packages** live in [`docs/implementation/`](docs/implementation/README.md).
+High-level roadmap below; **detailed acceptance criteria and technical work packages** live in [`implementation/`](implementation/README.md).
 
 | Phase | Window | Product focus | Implementation doc |
 |-------|--------|---------------|-------------------|
-| **1 — MVP** | 0–3 months | Rails A+B, templates, messaging, ratings, **`pending_customer_confirm`** on Rail B | [`phase-1-mvp-foundations.md`](docs/implementation/phase-1-mvp-foundations.md) |
-| **2 — Beta** | 3–6 months | Pilot city, PSP pilot, observability, moderation tools (reactive) | [`phase-2-beta-hardening.md`](docs/implementation/phase-2-beta-hardening.md) |
-| **3 — Intelligence** | 6–9 months | Ranking/ML assist, FAQ bot, OCR assist, analytics warehouse | [`phase-3-intelligence-automation.md`](docs/implementation/phase-3-intelligence-automation.md) |
-| **4 — Depth** | 9–12 months | GPS/ETA lite, subscriptions, guarantees/QA, customer web/PWA | [`phase-4-product-depth.md`](docs/implementation/phase-4-product-depth.md) |
-| **5 — Scale** | 12–18 months | Multi-city, infra scale, referrals/campaigns, social hooks | [`phase-5-multi-city-scale.md`](docs/implementation/phase-5-multi-city-scale.md) |
-| **6 — Maturity** | 18–24 months | B2B, enterprise, compliance depth, optional white-label | [`phase-6-maturity-enterprise.md`](docs/implementation/phase-6-maturity-enterprise.md) |
+| **1 — MVP** | 0–3 months | Rails A+B, templates, messaging, ratings, **`pending_customer_confirm`** on Rail B | [`phase-1-mvp-foundations.md`](implementation/phase-1-mvp-foundations.md) |
+| **2 — Beta** | 3–6 months | Pilot city, PSP pilot, observability, moderation tools (reactive) | [`phase-2-beta-hardening.md`](implementation/phase-2-beta-hardening.md) |
+| **3 — Intelligence** | 6–9 months | Ranking/ML assist, FAQ bot, OCR assist, analytics warehouse | [`phase-3-intelligence-automation.md`](implementation/phase-3-intelligence-automation.md) |
+| **4 — Depth** | 9–12 months | GPS/ETA lite, subscriptions, guarantees/QA, customer web/PWA | [`phase-4-product-depth.md`](implementation/phase-4-product-depth.md) |
+| **5 — Scale** | 12–18 months | Multi-city, infra scale, referrals/campaigns, social hooks | [`phase-5-multi-city-scale.md`](implementation/phase-5-multi-city-scale.md) |
+| **6 — Maturity** | 18–24 months | B2B, enterprise, compliance depth, optional white-label | [`phase-6-maturity-enterprise.md`](implementation/phase-6-maturity-enterprise.md) |
 
 ---
 
@@ -322,7 +322,13 @@ Pakistan’s user base is heavily mobile (high smartphone share, limited desktop
 
 See inline critique in project chat or extend this section with decisions and date-stamped notes.
 
-**Scope note:** Treat “Core Features (MVP)” as a *wish list* until each item has a cut line. The **cut-line MVP** is defined in [`WorkerzPk-MVP-SinglePage.md`](WorkerzPk-MVP-SinglePage.md); heavy items (escrow, police checks, ML, multi-rail) map to [`docs/implementation/`](docs/implementation/README.md) later phases.
+## Current execution status
+
+- **Phase 1 (MVP foundations): complete** — acceptance criteria and test commands in [`implementation/phase-1-mvp-foundations.md`](implementation/phase-1-mvp-foundations.md). Mobile surfaces: **`JobDetail`** (quotes, messages, Rail B confirm, complete, review) and **`ListingDetail`** (apply). Automated DB smoke: **`supabase test db`**, SQL under [`../supabase/tests/database/`](../supabase/tests/database/). RPC/RLS narrative: [`implementation/phase-1-booking-state-machine.md`](implementation/phase-1-booking-state-machine.md).
+- **Phase 2 (Beta hardening): complete** — runbooks, KPI templates, payments ledger pilot, admin moderation tooling, UI lane + tests (see [`implementation/phase-2-closeout.md`](implementation/phase-2-closeout.md)).
+- **Next session target:** **Phase 3 (Intelligence)** — [`implementation/phase-3-intelligence-automation.md`](implementation/phase-3-intelligence-automation.md).
+
+**Scope note:** Treat “Core Features (MVP)” as a *wish list* until each item has a cut line. The **cut-line MVP** is defined in [`WorkerzPk-MVP-SinglePage.md`](WorkerzPk-MVP-SinglePage.md); heavy items (escrow, police checks, ML, multi-rail) map to [`implementation/`](implementation/README.md) later phases.
 
 **Compliance note:** “GDPR-ready” matters mainly if you store EU residents’ data; for Pakistan-first, prioritize **local legal advice** (consumer protection, digital payments, telecom/PTA if applicable).
 

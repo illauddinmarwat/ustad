@@ -188,7 +188,7 @@ Defer **commission collection** until you have volume; MVP can monetize via **fe
 
 ## 7. After MVP (order)
 
-Phased engineering plan with deliverables and acceptance tests: **`docs/implementation/README.md`**.  
+Phased engineering plan with deliverables and acceptance tests: [`implementation/README.md`](implementation/README.md).  
 
 Broadly: Realtime messaging → integrated payment rail → escrow (if pursued) → multi-city rollout → ranking/AI/OCR depth per [`WorkerzPk-Product-Blueprint.md`](WorkerzPk-Product-Blueprint.md).
 

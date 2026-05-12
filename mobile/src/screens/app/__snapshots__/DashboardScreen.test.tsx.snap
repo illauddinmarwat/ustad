@@ -1,0 +1,1207 @@
+// Jest Snapshot v1, https://goo.gl/fbAQLP
+
+exports[`DashboardScreen matches snapshot 1`] = `
+<RNCSafeAreaProvider
+  onInsetsChange={[Function]}
+  style={
+    [
+      {
+        "flex": 1,
+      },
+      undefined,
+    ]
+  }
+>
+  <RCTScrollView
+    contentContainerStyle={
+      [
+        {
+          "backgroundColor": "#F7F8FB",
+          "flexGrow": 1,
+          "padding": 16,
+        },
+        {
+          "paddingTop": 12,
+        },
+      ]
+    }
+  >
+    <View>
+      <View
+        colors={
+          [
+            "#0A65FC",
+            "#061257",
+          ]
+        }
+        end={
+          {
+            "x": 1,
+            "y": 1,
+          }
+        }
+        start={
+          {
+            "x": 0,
+            "y": 0,
+          }
+        }
+        style={
+          {
+            "borderRadius": 28,
+            "marginBottom": 16,
+            "padding": 20,
+          }
+        }
+      >
+        <View>
+          <Text
+            allowFontScaling={true}
+            style={
+              [
+                {
+                  "fontFamily": "SpaceGrotesk_700Bold",
+                  "fontSize": 30,
+                  "letterSpacing": -0.5,
+                  "lineHeight": 36,
+                },
+                {
+                  "color": "#FFFFFF",
+                  "textAlign": "left",
+                },
+                undefined,
+              ]
+            }
+          >
+            Get free quotes from local skilled workers
+          </Text>
+          <Text
+            allowFontScaling={true}
+            style={
+              [
+                {
+                  "fontFamily": "NotoNastaliqUrdu_600SemiBold",
+                  "fontSize": 22,
+                  "lineHeight": 34,
+                },
+                {
+                  "marginTop": 2,
+                  "textAlign": "right",
+                  "writingDirection": "rtl",
+                },
+                {
+                  "color": "rgba(255,255,255,0.85)",
+                },
+                undefined,
+              ]
+            }
+          >
+            مقامی ہنر مند کارکنوں سے مفت تخمینے حاصل کریں
+          </Text>
+        </View>
+        <View
+          style={
+            {
+              "marginBottom": 16,
+              "marginTop": 8,
+            }
+          }
+        >
+          <Text
+            allowFontScaling={true}
+            style={
+              [
+                {
+                  "fontFamily": "Manrope_400Regular",
+                  "fontSize": 15,
+                  "lineHeight": 22,
+                },
+                {
+                  "color": "#FFFFFF",
+                  "textAlign": "left",
+                },
+                undefined,
+              ]
+            }
+          >
+            Post tasks, compare responses, and choose the best professional.
+          </Text>
+          <Text
+            allowFontScaling={true}
+            style={
+              [
+                {
+                  "fontFamily": "NotoNastaliqUrdu_400Regular",
+                  "fontSize": 13,
+                  "lineHeight": 22,
+                },
+                {
+                  "marginTop": 2,
+                  "textAlign": "right",
+                  "writingDirection": "rtl",
+                },
+                {
+                  "color": "rgba(255,255,255,0.85)",
+                },
+                undefined,
+              ]
+            }
+          >
+            کام پوسٹ کریں، جوابات کا موازنہ کریں، اور بہترین پیشہ ور منتخب کریں۔
+          </Text>
+        </View>
+        <View
+          style={
+            {
+              "flexDirection": "row",
+              "flexWrap": "wrap",
+              "gap": 8,
+            }
+          }
+        >
+          <View
+            accessibilityLabel="Browse services"
+            accessibilityRole="button"
+            accessibilityState={
+              {
+                "busy": false,
+                "checked": undefined,
+                "disabled": false,
+                "expanded": undefined,
+                "selected": undefined,
+              }
+            }
+            accessibilityValue={
+              {
+                "max": undefined,
+                "min": undefined,
+                "now": undefined,
+                "text": undefined,
+              }
+            }
+            accessible={true}
+            collapsable={false}
+            focusable={true}
+            hitSlop={6}
+            onBlur={[Function]}
+            onClick={[Function]}
+            onFocus={[Function]}
+            onResponderGrant={[Function]}
+            onResponderMove={[Function]}
+            onResponderRelease={[Function]}
+            onResponderTerminate={[Function]}
+            onResponderTerminationRequest={[Function]}
+            onStartShouldSetResponder={[Function]}
+            style={
+              [
+                {
+                  "alignItems": "center",
+                  "borderRadius": 14,
+                  "borderWidth": 1,
+                  "justifyContent": "center",
+                },
+                {
+                  "minHeight": 48,
+                  "paddingHorizontal": 16,
+                  "paddingVertical": 8,
+                },
+                {
+                  "backgroundColor": "#FFFFFF",
+                  "borderColor": "#E5E7EB",
+                },
+                undefined,
+                false,
+                false,
+                {
+                  "flexBasis": "45%",
+                  "flexGrow": 1,
+                },
+              ]
+            }
+          >
+            <View
+              style={
+                {
+                  "alignItems": "center",
+                  "flexDirection": "row",
+                  "justifyContent": "center",
+                }
+              }
+            >
+              <View
+                style={
+                  {
+                    "marginRight": 8,
+                  }
+                }
+              >
+                <Text
+                  color="#0B0F19"
+                  name="search"
+                  size={18}
+                >
+                  [Feather:search]
+                </Text>
+              </View>
+              <View
+                style={
+                  {
+                    "alignItems": "center",
+                    "flexShrink": 1,
+                  }
+                }
+              >
+                <Text
+                  style={
+                    [
+                      {
+                        "fontFamily": "Manrope_600SemiBold",
+                        "fontSize": 15,
+                        "lineHeight": 20,
+                      },
+                      {
+                        "color": "#0B0F19",
+                        "textAlign": "center",
+                      },
+                    ]
+                  }
+                >
+                  Browse services
+                </Text>
+                <Text
+                  style={
+                    [
+                      {
+                        "fontFamily": "NotoNastaliqUrdu_400Regular",
+                        "fontSize": 12,
+                        "lineHeight": 18,
+                        "marginTop": 2,
+                      },
+                      {
+                        "color": "#0B0F19",
+                        "textAlign": "center",
+                      },
+                    ]
+                  }
+                >
+                  خدمات دیکھیں
+                </Text>
+              </View>
+            </View>
+          </View>
+          <View
+            accessibilityLabel="Post a job"
+            accessibilityRole="button"
+            accessibilityState={
+              {
+                "busy": false,
+                "checked": undefined,
+                "disabled": false,
+                "expanded": undefined,
+                "selected": undefined,
+              }
+            }
+            accessibilityValue={
+              {
+                "max": undefined,
+                "min": undefined,
+                "now": undefined,
+                "text": undefined,
+              }
+            }
+            accessible={true}
+            collapsable={false}
+            focusable={true}
+            hitSlop={6}
+            onBlur={[Function]}
+            onClick={[Function]}
+            onFocus={[Function]}
+            onResponderGrant={[Function]}
+            onResponderMove={[Function]}
+            onResponderRelease={[Function]}
+            onResponderTerminate={[Function]}
+            onResponderTerminationRequest={[Function]}
+            onStartShouldSetResponder={[Function]}
+            style={
+              [
+                {
+                  "alignItems": "center",
+                  "borderRadius": 14,
+                  "borderWidth": 1,
+                  "justifyContent": "center",
+                },
+                {
+                  "minHeight": 48,
+                  "paddingHorizontal": 16,
+                  "paddingVertical": 8,
+                },
+                {
+                  "backgroundColor": "#0A65FC",
+                  "borderColor": "#0A65FC",
+                },
+                undefined,
+                false,
+                false,
+                {
+                  "flexBasis": "45%",
+                  "flexGrow": 1,
+                },
+              ]
+            }
+          >
+            <View
+              style={
+                {
+                  "alignItems": "center",
+                  "flexDirection": "row",
+                  "justifyContent": "center",
+                }
+              }
+            >
+              <View
+                style={
+                  {
+                    "marginRight": 8,
+                  }
+                }
+              >
+                <Text
+                  color="#FFFFFF"
+                  name="plus"
+                  size={18}
+                >
+                  [Feather:plus]
+                </Text>
+              </View>
+              <View
+                style={
+                  {
+                    "alignItems": "center",
+                    "flexShrink": 1,
+                  }
+                }
+              >
+                <Text
+                  style={
+                    [
+                      {
+                        "fontFamily": "Manrope_600SemiBold",
+                        "fontSize": 15,
+                        "lineHeight": 20,
+                      },
+                      {
+                        "color": "#FFFFFF",
+                        "textAlign": "center",
+                      },
+                    ]
+                  }
+                >
+                  Post a job
+                </Text>
+                <Text
+                  style={
+                    [
+                      {
+                        "fontFamily": "NotoNastaliqUrdu_400Regular",
+                        "fontSize": 12,
+                        "lineHeight": 18,
+                        "marginTop": 2,
+                      },
+                      {
+                        "color": "#FFFFFF",
+                        "textAlign": "center",
+                      },
+                    ]
+                  }
+                >
+                  کام پوسٹ کریں
+                </Text>
+              </View>
+            </View>
+          </View>
+        </View>
+      </View>
+      <View
+        style={
+          [
+            {
+              "borderRadius": 20,
+              "marginBottom": 12,
+            },
+            {
+              "backgroundColor": "#FFFFFF",
+              "borderColor": "#E5E7EB",
+              "borderWidth": 1,
+            },
+            {
+              "padding": 16,
+            },
+            undefined,
+          ]
+        }
+      >
+        <View
+          style={
+            {
+              "marginBottom": 12,
+            }
+          }
+        >
+          <Text
+            allowFontScaling={true}
+            style={
+              [
+                {
+                  "fontFamily": "Manrope_700Bold",
+                  "fontSize": 18,
+                  "lineHeight": 24,
+                },
+                {
+                  "color": "#0B0F19",
+                  "textAlign": "left",
+                },
+                undefined,
+              ]
+            }
+          >
+            How it works
+          </Text>
+          <Text
+            allowFontScaling={true}
+            style={
+              [
+                {
+                  "fontFamily": "NotoNastaliqUrdu_600SemiBold",
+                  "fontSize": 15,
+                  "lineHeight": 24,
+                },
+                {
+                  "marginTop": 2,
+                  "textAlign": "right",
+                  "writingDirection": "rtl",
+                },
+                {
+                  "color": "#384151",
+                },
+                undefined,
+              ]
+            }
+          >
+            یہ کیسے کام کرتا ہے
+          </Text>
+        </View>
+        <View
+          style={
+            {
+              "alignItems": "flex-start",
+              "flexDirection": "row",
+              "paddingVertical": 8,
+            }
+          }
+        >
+          <View
+            style={
+              {
+                "alignItems": "center",
+                "backgroundColor": "#E6EEFF",
+                "borderRadius": 999,
+                "height": 36,
+                "justifyContent": "center",
+                "marginRight": 12,
+                "width": 36,
+              }
+            }
+          >
+            <Text
+              color="#0A65FC"
+              name="edit-3"
+              size={18}
+            >
+              [Feather:edit-3]
+            </Text>
+          </View>
+          <View
+            style={
+              {
+                "flex": 1,
+              }
+            }
+          >
+            <Text
+              style={
+                {
+                  "color": "#0A65FC",
+                  "fontFamily": "Manrope_600SemiBold",
+                  "fontSize": 11,
+                  "letterSpacing": 1,
+                  "lineHeight": 14,
+                  "marginBottom": 2,
+                  "textTransform": "uppercase",
+                }
+              }
+            >
+              01
+            </Text>
+            <View>
+              <Text
+                allowFontScaling={true}
+                style={
+                  [
+                    {
+                      "fontFamily": "Manrope_600SemiBold",
+                      "fontSize": 15,
+                      "lineHeight": 22,
+                    },
+                    {
+                      "color": "#0B0F19",
+                      "textAlign": "left",
+                    },
+                    undefined,
+                  ]
+                }
+              >
+                Post your task in seconds
+              </Text>
+              <Text
+                allowFontScaling={true}
+                style={
+                  [
+                    {
+                      "fontFamily": "NotoNastaliqUrdu_400Regular",
+                      "fontSize": 13,
+                      "lineHeight": 22,
+                    },
+                    {
+                      "marginTop": 2,
+                      "textAlign": "right",
+                      "writingDirection": "rtl",
+                    },
+                    {
+                      "color": "#384151",
+                    },
+                    undefined,
+                  ]
+                }
+              >
+                سیکنڈوں میں اپنا کام پوسٹ کریں
+              </Text>
+            </View>
+          </View>
+        </View>
+        <View
+          style={
+            {
+              "alignItems": "flex-start",
+              "flexDirection": "row",
+              "paddingVertical": 8,
+            }
+          }
+        >
+          <View
+            style={
+              {
+                "alignItems": "center",
+                "backgroundColor": "#E6EEFF",
+                "borderRadius": 999,
+                "height": 36,
+                "justifyContent": "center",
+                "marginRight": 12,
+                "width": 36,
+              }
+            }
+          >
+            <Text
+              color="#0A65FC"
+              name="message-square"
+              size={18}
+            >
+              [Feather:message-square]
+            </Text>
+          </View>
+          <View
+            style={
+              {
+                "flex": 1,
+              }
+            }
+          >
+            <Text
+              style={
+                {
+                  "color": "#0A65FC",
+                  "fontFamily": "Manrope_600SemiBold",
+                  "fontSize": 11,
+                  "letterSpacing": 1,
+                  "lineHeight": 14,
+                  "marginBottom": 2,
+                  "textTransform": "uppercase",
+                }
+              }
+            >
+              02
+            </Text>
+            <View>
+              <Text
+                allowFontScaling={true}
+                style={
+                  [
+                    {
+                      "fontFamily": "Manrope_600SemiBold",
+                      "fontSize": 15,
+                      "lineHeight": 22,
+                    },
+                    {
+                      "color": "#0B0F19",
+                      "textAlign": "left",
+                    },
+                    undefined,
+                  ]
+                }
+              >
+                Receive responses and quotes quickly
+              </Text>
+              <Text
+                allowFontScaling={true}
+                style={
+                  [
+                    {
+                      "fontFamily": "NotoNastaliqUrdu_400Regular",
+                      "fontSize": 13,
+                      "lineHeight": 22,
+                    },
+                    {
+                      "marginTop": 2,
+                      "textAlign": "right",
+                      "writingDirection": "rtl",
+                    },
+                    {
+                      "color": "#384151",
+                    },
+                    undefined,
+                  ]
+                }
+              >
+                جلدی جوابات اور تخمینے حاصل کریں
+              </Text>
+            </View>
+          </View>
+        </View>
+        <View
+          style={
+            {
+              "alignItems": "flex-start",
+              "flexDirection": "row",
+              "paddingVertical": 8,
+            }
+          }
+        >
+          <View
+            style={
+              {
+                "alignItems": "center",
+                "backgroundColor": "#E6EEFF",
+                "borderRadius": 999,
+                "height": 36,
+                "justifyContent": "center",
+                "marginRight": 12,
+                "width": 36,
+              }
+            }
+          >
+            <Text
+              color="#0A65FC"
+              name="check-circle"
+              size={18}
+            >
+              [Feather:check-circle]
+            </Text>
+          </View>
+          <View
+            style={
+              {
+                "flex": 1,
+              }
+            }
+          >
+            <Text
+              style={
+                {
+                  "color": "#0A65FC",
+                  "fontFamily": "Manrope_600SemiBold",
+                  "fontSize": 11,
+                  "letterSpacing": 1,
+                  "lineHeight": 14,
+                  "marginBottom": 2,
+                  "textTransform": "uppercase",
+                }
+              }
+            >
+              03
+            </Text>
+            <View>
+              <Text
+                allowFontScaling={true}
+                style={
+                  [
+                    {
+                      "fontFamily": "Manrope_600SemiBold",
+                      "fontSize": 15,
+                      "lineHeight": 22,
+                    },
+                    {
+                      "color": "#0B0F19",
+                      "textAlign": "left",
+                    },
+                    undefined,
+                  ]
+                }
+              >
+                Confirm, complete and review
+              </Text>
+              <Text
+                allowFontScaling={true}
+                style={
+                  [
+                    {
+                      "fontFamily": "NotoNastaliqUrdu_400Regular",
+                      "fontSize": 13,
+                      "lineHeight": 22,
+                    },
+                    {
+                      "marginTop": 2,
+                      "textAlign": "right",
+                      "writingDirection": "rtl",
+                    },
+                    {
+                      "color": "#384151",
+                    },
+                    undefined,
+                  ]
+                }
+              >
+                تصدیق، تکمیل اور جائزہ
+              </Text>
+            </View>
+          </View>
+        </View>
+      </View>
+      <View
+        style={
+          [
+            {
+              "borderRadius": 20,
+              "marginBottom": 12,
+            },
+            {
+              "backgroundColor": "#FFFFFF",
+              "borderColor": "#E5E7EB",
+              "borderWidth": 1,
+            },
+            {
+              "padding": 16,
+            },
+            undefined,
+          ]
+        }
+      >
+        <View
+          style={
+            {
+              "marginBottom": 12,
+            }
+          }
+        >
+          <Text
+            allowFontScaling={true}
+            style={
+              [
+                {
+                  "fontFamily": "Manrope_700Bold",
+                  "fontSize": 18,
+                  "lineHeight": 24,
+                },
+                {
+                  "color": "#0B0F19",
+                  "textAlign": "left",
+                },
+                undefined,
+              ]
+            }
+          >
+            Popular categories
+          </Text>
+          <Text
+            allowFontScaling={true}
+            style={
+              [
+                {
+                  "fontFamily": "NotoNastaliqUrdu_600SemiBold",
+                  "fontSize": 15,
+                  "lineHeight": 24,
+                },
+                {
+                  "marginTop": 2,
+                  "textAlign": "right",
+                  "writingDirection": "rtl",
+                },
+                {
+                  "color": "#384151",
+                },
+                undefined,
+              ]
+            }
+          >
+            مقبول زمرے
+          </Text>
+        </View>
+        <View
+          style={
+            {
+              "flexDirection": "row",
+              "flexWrap": "wrap",
+              "gap": 8,
+            }
+          }
+        >
+          <View
+            style={
+              {
+                "alignItems": "center",
+                "backgroundColor": "#E6EEFF",
+                "borderRadius": 999,
+                "flexDirection": "row",
+                "paddingHorizontal": 12,
+                "paddingVertical": 6,
+              }
+            }
+          >
+            <Text
+              color="#061257"
+              name="droplet"
+              size={14}
+            >
+              [Feather:droplet]
+            </Text>
+            <View
+              style={
+                {
+                  "marginLeft": 6,
+                }
+              }
+            >
+              <Text
+                style={
+                  {
+                    "color": "#061257",
+                    "fontFamily": "Manrope_500Medium",
+                    "fontSize": 13,
+                    "lineHeight": 18,
+                  }
+                }
+              >
+                Plumbing
+              </Text>
+              <Text
+                style={
+                  {
+                    "color": "#061257",
+                    "fontFamily": "NotoNastaliqUrdu_400Regular",
+                    "fontSize": 10,
+                    "lineHeight": 16,
+                    "textAlign": "right",
+                    "writingDirection": "rtl",
+                  }
+                }
+              >
+                پلمبنگ
+              </Text>
+            </View>
+          </View>
+          <View
+            style={
+              {
+                "alignItems": "center",
+                "backgroundColor": "#E6EEFF",
+                "borderRadius": 999,
+                "flexDirection": "row",
+                "paddingHorizontal": 12,
+                "paddingVertical": 6,
+              }
+            }
+          >
+            <Text
+              color="#061257"
+              name="zap"
+              size={14}
+            >
+              [Feather:zap]
+            </Text>
+            <View
+              style={
+                {
+                  "marginLeft": 6,
+                }
+              }
+            >
+              <Text
+                style={
+                  {
+                    "color": "#061257",
+                    "fontFamily": "Manrope_500Medium",
+                    "fontSize": 13,
+                    "lineHeight": 18,
+                  }
+                }
+              >
+                Electrical
+              </Text>
+              <Text
+                style={
+                  {
+                    "color": "#061257",
+                    "fontFamily": "NotoNastaliqUrdu_400Regular",
+                    "fontSize": 10,
+                    "lineHeight": 16,
+                    "textAlign": "right",
+                    "writingDirection": "rtl",
+                  }
+                }
+              >
+                بجلی
+              </Text>
+            </View>
+          </View>
+          <View
+            style={
+              {
+                "alignItems": "center",
+                "backgroundColor": "#E6EEFF",
+                "borderRadius": 999,
+                "flexDirection": "row",
+                "paddingHorizontal": 12,
+                "paddingVertical": 6,
+              }
+            }
+          >
+            <Text
+              color="#061257"
+              name="wind"
+              size={14}
+            >
+              [Feather:wind]
+            </Text>
+            <View
+              style={
+                {
+                  "marginLeft": 6,
+                }
+              }
+            >
+              <Text
+                style={
+                  {
+                    "color": "#061257",
+                    "fontFamily": "Manrope_500Medium",
+                    "fontSize": 13,
+                    "lineHeight": 18,
+                  }
+                }
+              >
+                Cleaning
+              </Text>
+              <Text
+                style={
+                  {
+                    "color": "#061257",
+                    "fontFamily": "NotoNastaliqUrdu_400Regular",
+                    "fontSize": 10,
+                    "lineHeight": 16,
+                    "textAlign": "right",
+                    "writingDirection": "rtl",
+                  }
+                }
+              >
+                صفائی
+              </Text>
+            </View>
+          </View>
+          <View
+            style={
+              {
+                "alignItems": "center",
+                "backgroundColor": "#E6EEFF",
+                "borderRadius": 999,
+                "flexDirection": "row",
+                "paddingHorizontal": 12,
+                "paddingVertical": 6,
+              }
+            }
+          >
+            <Text
+              color="#061257"
+              name="thermometer"
+              size={14}
+            >
+              [Feather:thermometer]
+            </Text>
+            <View
+              style={
+                {
+                  "marginLeft": 6,
+                }
+              }
+            >
+              <Text
+                style={
+                  {
+                    "color": "#061257",
+                    "fontFamily": "Manrope_500Medium",
+                    "fontSize": 13,
+                    "lineHeight": 18,
+                  }
+                }
+              >
+                AC Service
+              </Text>
+              <Text
+                style={
+                  {
+                    "color": "#061257",
+                    "fontFamily": "NotoNastaliqUrdu_400Regular",
+                    "fontSize": 10,
+                    "lineHeight": 16,
+                    "textAlign": "right",
+                    "writingDirection": "rtl",
+                  }
+                }
+              >
+                اے سی سروس
+              </Text>
+            </View>
+          </View>
+          <View
+            style={
+              {
+                "alignItems": "center",
+                "backgroundColor": "#E6EEFF",
+                "borderRadius": 999,
+                "flexDirection": "row",
+                "paddingHorizontal": 12,
+                "paddingVertical": 6,
+              }
+            }
+          >
+            <Text
+              color="#061257"
+              name="tool"
+              size={14}
+            >
+              [Feather:tool]
+            </Text>
+            <View
+              style={
+                {
+                  "marginLeft": 6,
+                }
+              }
+            >
+              <Text
+                style={
+                  {
+                    "color": "#061257",
+                    "fontFamily": "Manrope_500Medium",
+                    "fontSize": 13,
+                    "lineHeight": 18,
+                  }
+                }
+              >
+                Handyman
+              </Text>
+              <Text
+                style={
+                  {
+                    "color": "#061257",
+                    "fontFamily": "NotoNastaliqUrdu_400Regular",
+                    "fontSize": 10,
+                    "lineHeight": 16,
+                    "textAlign": "right",
+                    "writingDirection": "rtl",
+                  }
+                }
+              >
+                ہینڈی مین
+              </Text>
+            </View>
+          </View>
+        </View>
+      </View>
+      <View
+        style={
+          {
+            "alignItems": "center",
+            "flexDirection": "row",
+            "gap": 4,
+            "marginTop": 12,
+          }
+        }
+      >
+        <Text
+          color="#6B7280"
+          name="info"
+          size={14}
+        >
+          [Feather:info]
+        </Text>
+        <View
+          style={
+            {
+              "marginRight": 4,
+            }
+          }
+        >
+          <Text
+            allowFontScaling={true}
+            style={
+              [
+                {
+                  "fontFamily": "Manrope_400Regular",
+                  "fontSize": 12,
+                  "lineHeight": 16,
+                },
+                {
+                  "color": "#6B7280",
+                  "textAlign": "left",
+                },
+                undefined,
+              ]
+            }
+          >
+            Current mode
+          </Text>
+        </View>
+        <View>
+          <Text
+            allowFontScaling={true}
+            style={
+              [
+                {
+                  "fontFamily": "Manrope_400Regular",
+                  "fontSize": 12,
+                  "lineHeight": 16,
+                },
+                {
+                  "color": "#0B0F19",
+                  "textAlign": "left",
+                },
+                undefined,
+              ]
+            }
+          >
+            Guest
+          </Text>
+        </View>
+      </View>
+    </View>
+  </RCTScrollView>
+</RNCSafeAreaProvider>
+`;

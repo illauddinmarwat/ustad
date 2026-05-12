@@ -1,6 +1,6 @@
 # WorkerzPk
 
-Pakistan-focused two-sided labour marketplace (**React Native / Expo** + **Supabase**). Product docs live in Markdown at repo root and under `docs/implementation/`.
+Pakistan-focused two-sided labour marketplace (**React Native / Expo** + **Supabase**). Product specs and phased plans live under `docs/` (see table below).
 
 ## Repo layout
 
@@ -9,8 +9,10 @@ Pakistan-focused two-sided labour marketplace (**React Native / Expo** + **Supab
 | `mobile/` | **Expo (SDK 54) + TypeScript** app — Phase 1 shell + navigation + Supabase client |
 | `supabase/migrations/` | Postgres schema, RLS, booking RPCs, seed templates |
 | `supabase/README.md` | How to apply SQL + RPC reference |
-| `WorkerzPk-MVP-SinglePage.md` | MVP scope & flows |
+| `docs/WorkerzPk-Product-Blueprint.md` | Product vision, roadmap, tech direction |
+| `docs/WorkerzPk-MVP-SinglePage.md` | MVP scope, flows, data model |
 | `docs/implementation/` | Phased engineering plan |
+| [`docs/getting-started.md`](docs/getting-started.md) | **Start app, backend modes (Docker / cloud), tests, production, Android build** |
 
 ## Libraries (installed)
 
@@ -34,11 +36,13 @@ copy env.fixture.sample .env   # creates .env with EXPO_PUBLIC_USE_FIXTURES=1 (n
 npm run start
 ```
 
-For **Docker + local Postgres** instead, see **`docs/local-development.md`**.
+For **Docker + local Postgres**, hosted Supabase, **tests**, and **APK/EAS** overview, see **[`docs/getting-started.md`](docs/getting-started.md)**. Database-only details: [`docs/local-development.md`](docs/local-development.md).
 
 With cloud Supabase later, edit `.env`: remove `EXPO_PUBLIC_USE_FIXTURES` and add URL + anon key.
 
 `npm run typecheck` runs `tsc --noEmit`.
+
+**Database tests:** with Supabase CLI + Docker (`supabase start`), run **`supabase test db`** from the repo root to execute Phase 1 pgTAP tests in [`supabase/tests/database/`](supabase/tests/database/).
 
 ## Quick start — database
 

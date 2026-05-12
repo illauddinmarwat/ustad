@@ -1,5 +1,7 @@
 # Local development — database options
 
+**Start here for the full picture** (Docker vs cloud, tests, production, Android): [`getting-started.md`](getting-started.md).
+
 You can progress **without** a hosted Supabase project in two ways.
 
 ## Option A — Fixture mode (no Docker, no network DB)
@@ -33,8 +35,9 @@ Runs real Postgres + Auth + Studio on your machine (**same migrations** as produ
 ```powershell
 cd d:\Personal\workerzpk
 npx supabase@latest start
-npx supabase@latest migration up
 ```
+
+`start` brings up the stack and applies migrations from `supabase/migrations/`. Use `npx supabase migration list` if you need to confirm applied versions.
 
 Get API URL and anon key:
 

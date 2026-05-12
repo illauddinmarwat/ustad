@@ -29,11 +29,18 @@ Serve **B2B** demand, deepen **compliance** and **reporting**, and prepare optio
 
 - Theming, custom domain, isolated branding — **only** if revenue justifies maintenance.
 
+### UI polish lane (Airtasker-inspired)
+
+- Formalize design-system governance (tokens, component versioning, visual regression checks).
+- Ensure B2B/enterprise dashboards meet consumer-level usability quality despite denser workflows.
+- Keep patterns marketplace-familiar while preserving WorkerzPk brand identity (no direct asset copying).
+
 ## Acceptance criteria
 
 - Enterprise pilot with SLAs documented.  
 - Security review pass for sensitive data paths.  
 - Core consumer booking (Rails A/B + confirm step) remains a **single** code path shared with B2B.
+- Visual QA gate enforced for release readiness (consumer + enterprise surfaces).
 
 ---
 

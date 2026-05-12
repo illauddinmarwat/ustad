@@ -54,24 +54,33 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     supabase.auth
       .getSession()
       .then(async ({ data: { session: s } }) => {
-        if (!cancelled) {
+        if (cancelled) return;
+        try {
           setSession(s);
           if (s?.user?.id) {
             const { data } = await supabase.from('profiles').select('role').eq('id', s.user.id).maybeSingle();
-            setRoleState((data?.role as 'customer' | 'worker' | 'admin') ?? 'customer');
-          } else {
+            if (!cancelled) {
+              setRoleState((data?.role as 'customer' | 'worker' | 'admin') ?? 'customer');
+            }
+          } else if (!cancelled) {
             setRoleState(null);
           }
-          setLoading(false);
+        } finally {
+          if (!cancelled) setLoading(false);
         }
       })
       .catch(() => {
         if (!cancelled) setLoading(false);
       });
 
-    const { data: sub } = supabase.auth.onAuthStateChange((_event, s) => {
+    const { data: sub } = supabase.auth.onAuthStateChange(async (_event, s) => {
       setSession(s);
-      if (!s?.user?.id) setRoleState(null);
+      if (!s?.user?.id) {
+        setRoleState(null);
+        return;
+      }
+      const { data } = await supabase.from('profiles').select('role').eq('id', s.user.id).maybeSingle();
+      setRoleState((data?.role as 'customer' | 'worker' | 'admin') ?? 'customer');
     });
 
     return () => {

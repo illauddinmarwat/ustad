@@ -25,6 +25,18 @@
     },
     "web": {
       "favicon": "./assets/favicon.png"
+    },
+    "extra": {
+      "supabaseUrl": "",
+      "supabaseAnonKey": "",
+      "useFixtures": "",
+      "googleVisionApiKey": "",
+      "groqApiKey": "",
+      "groqVisionModel": "",
+      "visionProvider": "",
+      "eas": {
+        "projectId": "1dd17107-c528-42e9-afed-c2b834674916"
+      }
     }
   }
 }
