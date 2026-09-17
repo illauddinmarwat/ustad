@@ -1,15 +1,21 @@
 import React from 'react';
-import { render } from '@testing-library/react-native';
+import { fireEvent, render } from '@testing-library/react-native';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 
 import DashboardScreen from './DashboardScreen';
 
+const mockNavigate = jest.fn();
+
+const mockAuth: { current: { role: 'customer' | 'worker' | null; session: { user: { id: string } } | null } } = {
+  current: { role: 'customer', session: null },
+};
+
 jest.mock('../../context/AuthContext', () => ({
-  useAuth: () => ({ role: 'customer', session: null }),
+  useAuth: () => mockAuth.current,
 }));
 
 jest.mock('@react-navigation/native', () => ({
-  useNavigation: () => ({ navigate: jest.fn() }),
+  useNavigation: () => ({ navigate: mockNavigate }),
 }));
 
 const wrap = (node: React.ReactElement) =>
@@ -24,6 +30,11 @@ const wrap = (node: React.ReactElement) =>
     </SafeAreaProvider>,
   );
 
+beforeEach(() => {
+  mockNavigate.mockReset();
+  mockAuth.current = { role: 'customer', session: null };
+});
+
 describe('DashboardScreen', () => {
   it('renders the bilingual hero', () => {
     const { getByText } = wrap(<DashboardScreen />);
@@ -36,5 +47,19 @@ describe('DashboardScreen', () => {
   it('matches snapshot', () => {
     const tree = wrap(<DashboardScreen />).toJSON();
     expect(tree).toMatchSnapshot();
+  });
+
+  it('routes the guest "Browse services" CTA to the Services tab', () => {
+    mockAuth.current = { role: null, session: null };
+    const { getByText } = wrap(<DashboardScreen />);
+    fireEvent.press(getByText('Browse services'));
+    expect(mockNavigate).toHaveBeenCalledWith('Services');
+  });
+
+  it('routes the guest "Post a job" CTA to the Jobs tab (no NAVIGATE error)', () => {
+    mockAuth.current = { role: null, session: null };
+    const { getByText } = wrap(<DashboardScreen />);
+    fireEvent.press(getByText('Post a job'));
+    expect(mockNavigate).toHaveBeenCalledWith('Jobs');
   });
 });

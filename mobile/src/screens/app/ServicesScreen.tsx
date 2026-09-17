@@ -12,13 +12,11 @@ import { BiText } from '../../components/ui/BiText';
 import { Button } from '../../components/ui/Button';
 import { Card } from '../../components/ui/Card';
 import { Chip } from '../../components/ui/Chip';
-import { EmptyState } from '../../components/ui/EmptyState';
 import { Icon } from '../../components/ui/Icon';
 import { Input } from '../../components/ui/Input';
 import { ScreenHeader } from '../../components/ui/ScreenHeader';
 import { useAuth } from '../../context/AuthContext';
 import type { StringId } from '../../i18n/strings';
-import { useT } from '../../i18n/useT';
 import { trackEvent } from '../../lib/analytics';
 import { ensureAuthenticated, ensureRole } from '../../lib/authGuards';
 import { boostChipLabel } from '../../lib/boosts';
@@ -93,21 +91,23 @@ export default function ServicesScreen() {
   const setMsgText = (text: string) => setMsg({ kind: 'text', text });
 
   const loadTemplates = async () => {
-    const { data } = await supabase
+    const { data, error } = await supabase
       .from('service_templates')
       .select('id,title,category')
       .eq('active', true)
       .limit(20);
+    if (error) throw new Error(error.message);
     setTemplates((data ?? []) as Template[]);
   };
 
   const loadFallback = async (): Promise<Array<RankableListing<Listing>>> => {
-    const { data } = await supabase
+    const { data, error } = await supabase
       .from('worker_service_listings')
       .select('*')
       .eq('status', 'active')
       .order('created_at', { ascending: false })
       .limit(30);
+    if (error) throw new Error(error.message);
     const rows = (data ?? []) as Listing[];
     return rows.map((row) => ({ ...row, signals: { rating: 0 } }));
   };
@@ -258,7 +258,10 @@ export default function ServicesScreen() {
   };
 
   useEffect(() => {
-    load().catch(() => setMsgId('services.error.load'));
+    load().catch((e) => {
+      const detail = e instanceof Error ? e.message : String(e);
+      setMsgText(detail || 'Failed to load services');
+    });
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
@@ -373,7 +376,12 @@ export default function ServicesScreen() {
   const discoverySubtitle = buildDiscoverySubtitle(rankingEnabled, boostsEnabled, cityCode, cityAwareDiscovery);
 
   return (
-    <ScrollView contentContainerStyle={[styles.root, { paddingTop: insets.top + spacing.md }]}>
+    <ScrollView
+      contentContainerStyle={[
+        styles.root,
+        { paddingTop: insets.top + spacing.md, paddingBottom: insets.bottom + spacing.xl },
+      ]}
+    >
       <ScreenHeader titleId="services.title" subtitleId="services.subtitle" />
 
       {role === 'worker' && (
@@ -393,18 +401,6 @@ export default function ServicesScreen() {
             iconLeft="dollar-sign"
           />
           <Button labelId="services.publish.cta" onPress={publishListing} iconLeft="upload" fullWidth />
-        </Card>
-      )}
-
-      {!session?.user.id && (
-        <Card padding="lg">
-          <EmptyState
-            icon="user-plus"
-            titleId="services.guest.title"
-            subtitleId="services.guest.subtitle"
-            ctaLabelId="common.signInOrCreate"
-            onCta={() => navigation.navigate('Auth')}
-          />
         </Card>
       )}
 
@@ -449,6 +445,19 @@ export default function ServicesScreen() {
             </Pressable>
           ))
         )}
+
+        {!session?.user.id && (
+          <View style={styles.guestHint}>
+            <Banner id="services.guest.inlineHint" tone="info" icon="user-plus" />
+            <Button
+              labelId="common.signInOrCreate"
+              onPress={() => navigation.navigate('Auth')}
+              variant="secondary"
+              iconLeft="log-in"
+              fullWidth
+            />
+          </View>
+        )}
       </Card>
     </ScrollView>
   );
@@ -472,4 +481,5 @@ const styles = StyleSheet.create({
   listingPrice: { ...typography.bodySm, color: colors.textMuted, marginTop: 2 },
   chipRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 6, marginTop: 6 },
   chevron: { padding: 4 },
+  guestHint: { marginTop: spacing.md, gap: spacing.sm },
 });

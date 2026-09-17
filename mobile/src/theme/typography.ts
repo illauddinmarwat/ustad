@@ -87,16 +87,16 @@ export const typography: Record<TypeVariant, TextStyle> = {
   },
 };
 
-/** Urdu variant sizing tuned to look balanced beneath the English line. */
+/** Urdu variant sizing — smaller than English `fontSize` with tighter lineHeight so Nastaliq does not dominate vertically. */
 export const urduTypography: Record<TypeVariant, TextStyle> = {
-  displayLg: { fontFamily: fontFamilies.urduBold, fontSize: 22, lineHeight: 34 },
-  displayMd: { fontFamily: fontFamilies.urduBold, fontSize: 18, lineHeight: 28 },
-  title: { fontFamily: fontFamilies.urduBold, fontSize: 15, lineHeight: 24 },
-  subtitle: { fontFamily: fontFamilies.urdu, fontSize: 13, lineHeight: 22 },
-  body: { fontFamily: fontFamilies.urdu, fontSize: 13, lineHeight: 22 },
-  bodySm: { fontFamily: fontFamilies.urdu, fontSize: 12, lineHeight: 20 },
-  label: { fontFamily: fontFamilies.urdu, fontSize: 11, lineHeight: 18 },
-  button: { fontFamily: fontFamilies.urdu, fontSize: 12, lineHeight: 18 },
-  caption: { fontFamily: fontFamilies.urdu, fontSize: 10, lineHeight: 16 },
-  overline: { fontFamily: fontFamilies.urdu, fontSize: 10, lineHeight: 14 },
+  displayLg: { fontFamily: fontFamilies.urduBold, fontSize: 18, lineHeight: 26 },
+  displayMd: { fontFamily: fontFamilies.urduBold, fontSize: 15, lineHeight: 22 },
+  title: { fontFamily: fontFamilies.urdu, fontSize: 13, lineHeight: 20 },
+  subtitle: { fontFamily: fontFamilies.urdu, fontSize: 12, lineHeight: 18 },
+  body: { fontFamily: fontFamilies.urdu, fontSize: 12, lineHeight: 18 },
+  bodySm: { fontFamily: fontFamilies.urdu, fontSize: 11, lineHeight: 16 },
+  label: { fontFamily: fontFamilies.urdu, fontSize: 10, lineHeight: 14 },
+  button: { fontFamily: fontFamilies.urdu, fontSize: 11, lineHeight: 16 },
+  caption: { fontFamily: fontFamilies.urdu, fontSize: 10, lineHeight: 14 },
+  overline: { fontFamily: fontFamilies.urdu, fontSize: 9, lineHeight: 12 },
 };

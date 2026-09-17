@@ -1,54 +1,82 @@
 # WorkerzPk
 
-Pakistan-focused two-sided labour marketplace (**React Native / Expo** + **Supabase**). Product specs and phased plans live under `docs/` (see table below).
+## What is this app?
 
-## Repo layout
+**WorkerzPk** is a Pakistan-focused **two-sided marketplace** for local skilled work: customers find workers (or post jobs), and workers offer services, quote jobs, and get hired. The mobile app is the primary client; **Supabase** (Postgres + Auth + APIs) is the backend.
 
-| Path | Contents |
-|------|-----------|
-| `mobile/` | **Expo (SDK 54) + TypeScript** app — Phase 1 shell + navigation + Supabase client |
-| `supabase/migrations/` | Postgres schema, RLS, booking RPCs, seed templates |
-| `supabase/README.md` | How to apply SQL + RPC reference |
-| `docs/WorkerzPk-Product-Blueprint.md` | Product vision, roadmap, tech direction |
-| `docs/WorkerzPk-MVP-SinglePage.md` | MVP scope, flows, data model |
-| `docs/implementation/` | Phased engineering plan |
-| [`docs/getting-started.md`](docs/getting-started.md) | **Start app, backend modes (Docker / cloud), tests, production, Android build** |
+The product supports two complementary flows:
 
-## Libraries (installed)
+- **Job-led:** a customer posts a need → workers quote → customer hires → work completes on a shared **job** record (chat, status, reviews).
+- **Service-led:** workers publish **listings** from admin-defined **service templates** → customers browse, apply, worker accepts → customer confirms → same **job** spine as above.
 
-Inside `mobile/`, verified via `package.json`:
+For full MVP scope, flows, and data model, see [`docs/WorkerzPk-MVP-SinglePage.md`](docs/WorkerzPk-MVP-SinglePage.md). High-level vision and roadmap: [`docs/WorkerzPk-Product-Blueprint.md`](docs/WorkerzPk-Product-Blueprint.md).
 
-- `expo`, `react-native`, `react`
-- `@supabase/supabase-js`
-- `@react-navigation/native`, `@react-navigation/native-stack`
-- `react-native-screens`, `react-native-safe-area-context`
-- `@react-native-async-storage/async-storage`
-- `react-native-url-polyfill`
-- `expo-constants`
+## How does it work?
 
-Run `npm install` in `mobile/` after clone.
+1. **Sign in** with Supabase **email + password** (role: customer, worker, or admin where enabled).
+2. **Customers** use **Home / Services / Jobs / Account** (and related screens) to browse listings, post or track jobs, message, and manage their profile.
+3. **Workers** use overlapping tabs plus **applications**, onboarding, and listing flows tied to the same backend.
+4. **Data** (jobs, listings, messages, profiles) lives in **Postgres** behind Supabase; the app uses the **anon key** and Row Level Security (RLS) as designed in `supabase/migrations/`.
 
-## Quick start — app (**no cloud DB needed**)
+Phased engineering notes and checklists live under [`docs/implementation/`](docs/implementation/README.md). Deeper setup (Docker, cloud Supabase, tests): [`docs/getting-started.md`](docs/getting-started.md) and [`docs/local-development.md`](docs/local-development.md).
+
+## Tech stack and repo layout
+
+| Area | Stack / path |
+|------|----------------|
+| Mobile | **Expo (SDK 54)** + **React Native** + **TypeScript** in [`mobile/`](mobile/) |
+| Backend | **Supabase** — SQL migrations in [`supabase/migrations/`](supabase/migrations/), notes in [`supabase/README.md`](supabase/README.md) |
+| Docs | Product + MVP + runbooks in [`docs/`](docs/) |
+
+Useful scripts from `mobile/` (after `npm install`):
+
+- `npm run start` — Expo dev server  
+- `npm run typecheck` — TypeScript  
+- `npm test` — Jest unit tests  
+
+Database tests (with Supabase CLI + local stack): from repo root, `supabase test db` (see `supabase/tests/database/`).
+
+## How to run builds
+
+### Local development (no installable APK)
+
+From the repo root:
 
 ```bash
 cd mobile
-copy env.fixture.sample .env   # creates .env with EXPO_PUBLIC_USE_FIXTURES=1 (no database)
+```
+
+**Option A — fixtures only (no live database):**
+
+```bash
+copy env.fixture.sample .env
 npm run start
 ```
 
-For **Docker + local Postgres**, hosted Supabase, **tests**, and **APK/EAS** overview, see **[`docs/getting-started.md`](docs/getting-started.md)**. Database-only details: [`docs/local-development.md`](docs/local-development.md).
+(On macOS/Linux, use `cp env.fixture.sample .env`.)
 
-With cloud Supabase later, edit `.env`: remove `EXPO_PUBLIC_USE_FIXTURES` and add URL + anon key.
+**Option B — real Supabase:** put `EXPO_PUBLIC_SUPABASE_URL` and `EXPO_PUBLIC_SUPABASE_ANON_KEY` in `mobile/.env` (do not commit `.env`). Remove fixture flags if you use a live project.
 
-`npm run typecheck` runs `tsc --noEmit`.
+Scan the QR code in the terminal with **Expo Go**, or press `a` for an emulator if configured.
 
-**Database tests:** with Supabase CLI + Docker (`supabase start`), run **`supabase test db`** from the repo root to execute Phase 1 pgTAP tests in [`supabase/tests/database/`](supabase/tests/database/).
+### EAS cloud builds (installable Android binary)
 
-## Quick start — database
+Prerequisites: [Expo](https://expo.dev) account, [`eas-cli`](https://docs.expo.dev/build/setup/) (`npm install -g eas-cli`), and once per machine `eas login`.
 
-Apply migrations to your Supabase project (SQL Editor or CLI). See **`supabase/README.md`**.
+From **`mobile/`** (where `eas.json` and `app.config.ts` live):
 
-## Clarifications needed (before deep UI work)
+```bash
+cd mobile
+eas build --platform android --profile preview
+```
 
-1. **Supabase project** ready? (URL + anon key → `mobile/.env`)
-2. **Auth for MVP builds:** Email + password via Supabase dashboard, Magic Link, or **Phone OTP** (OTP needs SMS provider + Supabase SMS config)?
+- **`preview`** — internal distribution, **APK** (good for sideloading / testing). Defined in [`mobile/eas.json`](mobile/eas.json).
+- **`production`** — **AAB** for Play Store–style submission:
+
+  ```bash
+  eas build --platform android --profile production
+  ```
+
+When the build finishes, open the URL printed in the terminal and download the artifact. You do **not** have to push to GitHub for a local `eas build`; EAS uploads your current project from disk. Pushing is still recommended for history and any CI that builds from Git.
+
+For iOS or credential questions, see [EAS Build](https://docs.expo.dev/build/introduction/) and [`docs/getting-started.md`](docs/getting-started.md).

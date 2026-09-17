@@ -3,14 +3,17 @@ import React, { createContext, useContext, useEffect, useMemo, useState } from '
 
 import { useFixtureMode } from '../config/env';
 import { FIXTURE_CUSTOMER_ID, FIXTURE_WORKER_ID } from '../dev/fixtures';
+import { claimAllAnonJobs } from '../lib/anonJobs';
 import { supabase } from '../lib/supabase';
+
+export type SignUpResult = { requiresConfirmation: boolean };
 
 type AuthCtx = {
   session: Session | null;
   loading: boolean;
   role: 'customer' | 'worker' | 'admin' | null;
   signIn: (email: string, password: string) => Promise<void>;
-  signUp: (email: string, password: string) => Promise<void>;
+  signUp: (email: string, password: string) => Promise<SignUpResult>;
   signOut: () => Promise<void>;
   setRole: (r: 'customer' | 'worker') => Promise<void>;
 };
@@ -62,6 +65,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
             if (!cancelled) {
               setRoleState((data?.role as 'customer' | 'worker' | 'admin') ?? 'customer');
             }
+            claimAllAnonJobs().catch(() => {
+              // Non-blocking; retry on next auth event.
+            });
           } else if (!cancelled) {
             setRoleState(null);
           }
@@ -81,6 +87,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       }
       const { data } = await supabase.from('profiles').select('role').eq('id', s.user.id).maybeSingle();
       setRoleState((data?.role as 'customer' | 'worker' | 'admin') ?? 'customer');
+      claimAllAnonJobs().catch(() => {
+        // Non-blocking: failed claims keep their tokens locally and retry next time.
+      });
     });
 
     return () => {
@@ -101,9 +110,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     if (error) throw error;
   };
 
-  const signUp = async (email: string, password: string) => {
-    const { error } = await supabase.auth.signUp({ email, password });
+  const signUp = async (email: string, password: string): Promise<SignUpResult> => {
+    const { data, error } = await supabase.auth.signUp({ email, password });
     if (error) throw error;
+    return { requiresConfirmation: !data.session };
   };
 
   const signOut = async () => {
@@ -112,7 +122,21 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       setSession(buildFixtureSession('customer'));
       return;
     }
-    await supabase.auth.signOut();
+    let signOutError: unknown = null;
+    try {
+      // `scope: 'local'` always clears local storage even if the server-side
+      // `/logout` call fails (revoked JWT, network blip, etc.). We never want
+      // a logout tap to leave the UI authenticated.
+      const { error } = await supabase.auth.signOut({ scope: 'local' });
+      if (error) signOutError = error;
+    } catch (e) {
+      signOutError = e;
+    }
+    // Force-clear React state so the UI flips to guest immediately, regardless
+    // of whether `onAuthStateChange` fires.
+    setSession(null);
+    setRoleState(null);
+    if (signOutError) throw signOutError;
   };
 
   const setRole = async (r: 'customer' | 'worker') => {

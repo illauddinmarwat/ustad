@@ -18,11 +18,13 @@ import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { useFonts } from 'expo-font';
 import { StatusBar } from 'expo-status-bar';
 import { ActivityIndicator, View } from 'react-native';
+import { SafeAreaProvider, useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { Icon } from './src/components/ui/Icon';
 import { TabBarLabel } from './src/components/ui/TabBarLabel';
 import { AuthProvider, useAuth } from './src/context/AuthContext';
 import { en } from './src/i18n/useT';
+import { getTabBarStyle } from './src/navigation/tabBarStyle';
 import type { RootStackParamList, TabParamList } from './src/navigation/types';
 import AccountScreen from './src/screens/app/AccountScreen';
 import AdminOpsScreen from './src/screens/app/AdminOpsScreen';
@@ -56,58 +58,25 @@ const navTheme: Theme = {
   },
 };
 
-const tabScreenOptions = {
-  headerShown: false,
-  tabBarActiveTintColor: colors.primary,
-  tabBarInactiveTintColor: colors.textMuted,
-  tabBarStyle: {
-    backgroundColor: colors.surface,
-    borderTopColor: colors.divider,
-    height: 70,
-    paddingTop: 6,
-    paddingBottom: 8,
-  },
-  tabBarLabelStyle: { fontFamily: fontFamilies.bodySemiBold, fontSize: 10 },
-} as const;
-
 type TabIconArgs = { focused: boolean; color: string; size: number };
 
 function tabIcon(name: Parameters<typeof Icon>[0]['name']) {
   return ({ color, size }: TabIconArgs) => <Icon name={name} size={size} color={color} />;
 }
 
-function GuestCustomerTabs() {
-  return (
-    <Tab.Navigator screenOptions={tabScreenOptions}>
-      <Tab.Screen
-        name="Dashboard"
-        component={DashboardScreen}
-        options={{
-          tabBarLabel: ({ focused }) => <TabBarLabel id="tabs.dashboard" focused={focused} />,
-          tabBarIcon: tabIcon('home'),
-        }}
-      />
-      <Tab.Screen
-        name="Services"
-        component={ServicesScreen}
-        options={{
-          tabBarLabel: ({ focused }) => <TabBarLabel id="tabs.services" focused={focused} />,
-          tabBarIcon: tabIcon('grid'),
-        }}
-      />
-      <Tab.Screen
-        name="Account"
-        component={AccountScreen}
-        options={{
-          tabBarLabel: ({ focused }) => <TabBarLabel id="tabs.account" focused={focused} />,
-          tabBarIcon: tabIcon('user'),
-        }}
-      />
-    </Tab.Navigator>
-  );
+function useTabScreenOptions() {
+  const insets = useSafeAreaInsets();
+  return {
+    headerShown: false,
+    tabBarActiveTintColor: colors.primary,
+    tabBarInactiveTintColor: colors.textMuted,
+    tabBarStyle: getTabBarStyle({ bottom: insets.bottom }),
+    tabBarLabelStyle: { fontFamily: fontFamilies.bodySemiBold, fontSize: 10 },
+  } as const;
 }
 
 function AdminTabs() {
+  const tabScreenOptions = useTabScreenOptions();
   return (
     <Tab.Navigator screenOptions={tabScreenOptions}>
       <Tab.Screen
@@ -139,6 +108,7 @@ function AdminTabs() {
 }
 
 function WorkerTabs() {
+  const tabScreenOptions = useTabScreenOptions();
   return (
     <Tab.Navigator screenOptions={tabScreenOptions}>
       <Tab.Screen
@@ -186,6 +156,7 @@ function WorkerTabs() {
 }
 
 function CustomerTabs() {
+  const tabScreenOptions = useTabScreenOptions();
   return (
     <Tab.Navigator screenOptions={tabScreenOptions}>
       <Tab.Screen
@@ -227,9 +198,8 @@ function CustomerTabs() {
 function AppTabs() {
   const { role, session } = useAuth();
 
-  if (!session) return <GuestCustomerTabs />;
-  if (role === 'admin') return <AdminTabs />;
-  if (role === 'worker') return <WorkerTabs />;
+  if (session && role === 'admin') return <AdminTabs />;
+  if (session && role === 'worker') return <WorkerTabs />;
 
   return <CustomerTabs />;
 }
@@ -290,11 +260,13 @@ export default function App() {
   }
 
   return (
-    <AuthProvider>
-      <NavigationContainer theme={navTheme}>
-        <StatusBar style="dark" />
-        <RootNavigator />
-      </NavigationContainer>
-    </AuthProvider>
+    <SafeAreaProvider>
+      <AuthProvider>
+        <NavigationContainer theme={navTheme}>
+          <StatusBar style="dark" />
+          <RootNavigator />
+        </NavigationContainer>
+      </AuthProvider>
+    </SafeAreaProvider>
   );
 }

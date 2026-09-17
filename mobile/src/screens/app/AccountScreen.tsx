@@ -96,7 +96,12 @@ export default function AccountScreen() {
   const roleLabel = role ? t(`role.${role}` as StringId).en : t('role.guest').en;
 
   return (
-    <ScrollView contentContainerStyle={[styles.root, { paddingTop: insets.top + spacing.md }]}>
+    <ScrollView
+      contentContainerStyle={[
+        styles.root,
+        { paddingTop: insets.top + spacing.md, paddingBottom: insets.bottom + spacing.xl },
+      ]}
+    >
       <Card padding="lg">
         <View style={styles.profileRow}>
           <Avatar name={email ?? 'Guest'} size={56} tone="primary" />
@@ -199,7 +204,11 @@ export default function AccountScreen() {
       {!isGuest && (
         <Button
           labelId="common.signOut"
-          onPress={signOut}
+          onPress={() => {
+            signOut().catch((e) => {
+              setSubMsg({ kind: 'text', text: e instanceof Error ? e.message : 'Sign out failed' });
+            });
+          }}
           variant="secondary"
           iconLeft="log-out"
           fullWidth

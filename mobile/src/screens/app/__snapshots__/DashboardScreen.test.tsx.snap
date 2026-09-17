@@ -21,6 +21,7 @@ exports[`DashboardScreen matches snapshot 1`] = `
           "padding": 16,
         },
         {
+          "paddingBottom": 20,
           "paddingTop": 12,
         },
       ]
@@ -81,8 +82,8 @@ exports[`DashboardScreen matches snapshot 1`] = `
               [
                 {
                   "fontFamily": "NotoNastaliqUrdu_600SemiBold",
-                  "fontSize": 22,
-                  "lineHeight": 34,
+                  "fontSize": 18,
+                  "lineHeight": 26,
                 },
                 {
                   "marginTop": 2,
@@ -132,8 +133,8 @@ exports[`DashboardScreen matches snapshot 1`] = `
               [
                 {
                   "fontFamily": "NotoNastaliqUrdu_400Regular",
-                  "fontSize": 13,
-                  "lineHeight": 22,
+                  "fontSize": 12,
+                  "lineHeight": 18,
                 },
                 {
                   "marginTop": 2,
@@ -273,8 +274,8 @@ exports[`DashboardScreen matches snapshot 1`] = `
                     [
                       {
                         "fontFamily": "NotoNastaliqUrdu_400Regular",
-                        "fontSize": 12,
-                        "lineHeight": 18,
+                        "fontSize": 11,
+                        "lineHeight": 16,
                         "marginTop": 2,
                       },
                       {
@@ -403,8 +404,8 @@ exports[`DashboardScreen matches snapshot 1`] = `
                     [
                       {
                         "fontFamily": "NotoNastaliqUrdu_400Regular",
-                        "fontSize": 12,
-                        "lineHeight": 18,
+                        "fontSize": 11,
+                        "lineHeight": 16,
                         "marginTop": 2,
                       },
                       {
@@ -471,9 +472,9 @@ exports[`DashboardScreen matches snapshot 1`] = `
             style={
               [
                 {
-                  "fontFamily": "NotoNastaliqUrdu_600SemiBold",
-                  "fontSize": 15,
-                  "lineHeight": 24,
+                  "fontFamily": "NotoNastaliqUrdu_400Regular",
+                  "fontSize": 13,
+                  "lineHeight": 20,
                 },
                 {
                   "marginTop": 2,
@@ -568,8 +569,8 @@ exports[`DashboardScreen matches snapshot 1`] = `
                   [
                     {
                       "fontFamily": "NotoNastaliqUrdu_400Regular",
-                      "fontSize": 13,
-                      "lineHeight": 22,
+                      "fontSize": 12,
+                      "lineHeight": 18,
                     },
                     {
                       "marginTop": 2,
@@ -666,8 +667,8 @@ exports[`DashboardScreen matches snapshot 1`] = `
                   [
                     {
                       "fontFamily": "NotoNastaliqUrdu_400Regular",
-                      "fontSize": 13,
-                      "lineHeight": 22,
+                      "fontSize": 12,
+                      "lineHeight": 18,
                     },
                     {
                       "marginTop": 2,
@@ -764,8 +765,8 @@ exports[`DashboardScreen matches snapshot 1`] = `
                   [
                     {
                       "fontFamily": "NotoNastaliqUrdu_400Regular",
-                      "fontSize": 13,
-                      "lineHeight": 22,
+                      "fontSize": 12,
+                      "lineHeight": 18,
                     },
                     {
                       "marginTop": 2,
@@ -835,9 +836,9 @@ exports[`DashboardScreen matches snapshot 1`] = `
             style={
               [
                 {
-                  "fontFamily": "NotoNastaliqUrdu_600SemiBold",
-                  "fontSize": 15,
-                  "lineHeight": 24,
+                  "fontFamily": "NotoNastaliqUrdu_400Regular",
+                  "fontSize": 13,
+                  "lineHeight": 20,
                 },
                 {
                   "marginTop": 2,
@@ -907,7 +908,7 @@ exports[`DashboardScreen matches snapshot 1`] = `
                     "color": "#061257",
                     "fontFamily": "NotoNastaliqUrdu_400Regular",
                     "fontSize": 10,
-                    "lineHeight": 16,
+                    "lineHeight": 14,
                     "textAlign": "right",
                     "writingDirection": "rtl",
                   }
@@ -961,7 +962,7 @@ exports[`DashboardScreen matches snapshot 1`] = `
                     "color": "#061257",
                     "fontFamily": "NotoNastaliqUrdu_400Regular",
                     "fontSize": 10,
-                    "lineHeight": 16,
+                    "lineHeight": 14,
                     "textAlign": "right",
                     "writingDirection": "rtl",
                   }
@@ -1015,7 +1016,7 @@ exports[`DashboardScreen matches snapshot 1`] = `
                     "color": "#061257",
                     "fontFamily": "NotoNastaliqUrdu_400Regular",
                     "fontSize": 10,
-                    "lineHeight": 16,
+                    "lineHeight": 14,
                     "textAlign": "right",
                     "writingDirection": "rtl",
                   }
@@ -1069,7 +1070,7 @@ exports[`DashboardScreen matches snapshot 1`] = `
                     "color": "#061257",
                     "fontFamily": "NotoNastaliqUrdu_400Regular",
                     "fontSize": 10,
-                    "lineHeight": 16,
+                    "lineHeight": 14,
                     "textAlign": "right",
                     "writingDirection": "rtl",
                   }
@@ -1123,7 +1124,7 @@ exports[`DashboardScreen matches snapshot 1`] = `
                     "color": "#061257",
                     "fontFamily": "NotoNastaliqUrdu_400Regular",
                     "fontSize": 10,
-                    "lineHeight": 16,
+                    "lineHeight": 14,
                     "textAlign": "right",
                     "writingDirection": "rtl",
                   }

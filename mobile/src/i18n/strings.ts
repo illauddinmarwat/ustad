@@ -69,6 +69,10 @@ export const strings = {
   },
   'auth.welcome': { en: 'Welcome back', ur: 'خوش آمدید' },
   'auth.error.failed': { en: 'Authentication failed', ur: 'تصدیق ناکام ہوگئی' },
+  'auth.signup.checkEmail': {
+    en: 'Account created. Check your email to confirm, then sign in.',
+    ur: 'اکاؤنٹ بن گیا۔ تصدیق کے لیے اپنی ای میل دیکھیں، پھر لاگ ان کریں۔',
+  },
 
   // --------------------------- DASHBOARD ---------------------------
   'dashboard.hero.title': {
@@ -110,6 +114,10 @@ export const strings = {
   'services.guest.subtitle': {
     en: 'Sign in to publish listings, apply for services, and track bookings.',
     ur: 'لاگ ان کریں تاکہ فہرستیں شائع کر سکیں، درخواست دے سکیں اور بکنگ کو ٹریک کر سکیں۔',
+  },
+  'services.guest.inlineHint': {
+    en: 'Sign in to apply or save services.',
+    ur: 'درخواست دینے یا محفوظ کرنے کے لیے لاگ ان کریں۔',
   },
   'services.list.title': { en: 'Active listings', ur: 'فعال فہرستیں' },
   'services.list.empty': { en: 'No active listings yet.', ur: 'ابھی کوئی فعال فہرست نہیں۔' },
@@ -155,6 +163,10 @@ export const strings = {
   'jobs.signInPrompt': {
     en: 'Browse services as guest, then sign in to post or manage jobs.',
     ur: 'مہمان کے طور پر خدمات دیکھیں، پھر لاگ ان کر کے کام پوسٹ یا منظم کریں۔',
+  },
+  'jobs.guest.draftHint': {
+    en: 'Post a job without an account. Sign in later to chat with workers and accept quotes.',
+    ur: 'بغیر اکاؤنٹ کے کام پوسٹ کریں۔ کارکنوں سے بات کرنے اور تخمینے قبول کرنے کے لیے بعد میں لاگ ان کریں۔',
   },
   'jobs.post.title': { en: 'Post a new job', ur: 'نیا کام پوسٹ کریں' },
   'jobs.post.placeholder': { en: 'Need electrician for fan install', ur: 'فین لگوانے کے لیے الیکٹریشن چاہیے' },

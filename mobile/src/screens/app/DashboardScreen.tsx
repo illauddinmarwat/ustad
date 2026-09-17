@@ -43,7 +43,12 @@ export default function DashboardScreen() {
     : 'role.guest';
 
   return (
-    <ScrollView contentContainerStyle={[styles.root, { paddingTop: insets.top + spacing.md }]}>
+    <ScrollView
+      contentContainerStyle={[
+        styles.root,
+        { paddingTop: insets.top + spacing.md, paddingBottom: insets.bottom + spacing.xl },
+      ]}
+    >
       <LinearGradient
         colors={[colors.primary, colors.primaryDeep]}
         start={{ x: 0, y: 0 }}

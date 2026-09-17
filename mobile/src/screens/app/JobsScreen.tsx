@@ -11,13 +11,18 @@ import { BiText } from '../../components/ui/BiText';
 import { Button } from '../../components/ui/Button';
 import { Card } from '../../components/ui/Card';
 import { Chip } from '../../components/ui/Chip';
-import { EmptyState } from '../../components/ui/EmptyState';
 import { Icon } from '../../components/ui/Icon';
 import { Input } from '../../components/ui/Input';
 import { ScreenHeader } from '../../components/ui/ScreenHeader';
 import { useAuth } from '../../context/AuthContext';
 import type { StringId } from '../../i18n/strings';
 import { trackEvent } from '../../lib/analytics';
+import {
+  addAnonToken,
+  fetchOwnAnonJobs,
+  generateAnonToken,
+  type AnonJobRow,
+} from '../../lib/anonJobs';
 import { ensureAuthenticated, ensureRole } from '../../lib/authGuards';
 import { supabase } from '../../lib/supabase';
 import type { RootStackParamList, TabParamList } from '../../navigation/types';
@@ -29,9 +34,20 @@ type Job = {
   title: string;
   status: string;
   origin: string;
-  customer_id: string;
+  customer_id: string | null;
   worker_id: string | null;
+  posted_by_anon?: boolean;
 };
+
+const anonJobToRow = (j: AnonJobRow): Job => ({
+  id: j.id,
+  title: j.title,
+  status: j.status,
+  origin: j.origin,
+  customer_id: null,
+  worker_id: j.worker_id,
+  posted_by_anon: true,
+});
 
 type JobsNav = CompositeNavigationProp<
   BottomTabNavigationProp<TabParamList, 'Jobs'>,
@@ -60,27 +76,55 @@ export default function JobsScreen() {
   const msgText = (text: string) => setMsg({ kind: 'text', text });
 
   const load = async () => {
-    const { data, error } = await supabase.from('jobs').select('*').order('created_at', { ascending: false }).limit(40);
+    const uid = session?.user.id;
+    if (!uid) {
+      const anonRows = await fetchOwnAnonJobs();
+      setJobs(anonRows.map(anonJobToRow));
+      return;
+    }
+    const { data, error } = await supabase
+      .from('jobs')
+      .select('*')
+      .order('created_at', { ascending: false })
+      .limit(40);
     if (error) msgText(error.message);
     else setJobs((data ?? []) as Job[]);
   };
 
   useEffect(() => {
     load().catch(() => msgId('jobs.error.load'));
-  }, []);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [session?.user.id]);
 
   const postJob = async () => {
+    if (!jobTitle.trim()) return;
     const uid = session?.user.id;
-    if (
-      !ensureAuthenticated({
-        userId: uid,
-        message: 'Sign in to post a job.',
-        setMessage: () => msgId('jobs.gate.postSignIn'),
-        goToAuth: () => navigation.navigate('Auth'),
-      })
-    ) {
+
+    if (!uid) {
+      const token = generateAnonToken();
+      const { error } = await supabase.from('jobs').insert({
+        customer_id: null,
+        title: jobTitle.trim(),
+        description: 'Posted as guest from Jobs tab',
+        category: 'general',
+        status: 'open',
+        origin: 'customer_job',
+        worker_id: null,
+        posted_by_anon: true,
+        anon_post_token: token,
+      });
+      if (error) {
+        msgText(error.message);
+        return;
+      }
+      await addAnonToken(token);
+      msgId('jobs.post.toast');
+      void trackEvent('job_posted_anon', null, { origin: 'customer_job' });
+      setJobTitle('');
+      await load();
       return;
     }
+
     if (
       !ensureRole({
         role,
@@ -91,9 +135,8 @@ export default function JobsScreen() {
     ) {
       return;
     }
-    if (!jobTitle.trim()) return;
     const { error } = await supabase.from('jobs').insert({
-      customer_id: uid!,
+      customer_id: uid,
       title: jobTitle.trim(),
       description: 'Customer posted from Jobs tab',
       category: 'general',
@@ -105,7 +148,7 @@ export default function JobsScreen() {
       msgText(error.message);
     } else {
       msgId('jobs.post.toast');
-      await trackEvent('job_posted', uid!, { origin: 'customer_job' });
+      await trackEvent('job_posted', uid, { origin: 'customer_job' });
       setJobTitle('');
       await load();
     }
@@ -126,22 +169,21 @@ export default function JobsScreen() {
   };
 
   return (
-    <ScrollView contentContainerStyle={[styles.root, { paddingTop: insets.top + spacing.md }]}>
+    <ScrollView
+      contentContainerStyle={[
+        styles.root,
+        { paddingTop: insets.top + spacing.md, paddingBottom: insets.bottom + spacing.xl },
+      ]}
+    >
       <ScreenHeader titleId="jobs.title" subtitleId="jobs.subtitle" />
 
       {!session?.user.id && (
-        <Card padding="lg">
-          <EmptyState
-            icon="log-in"
-            titleId="jobs.signInRequired"
-            subtitleId="jobs.signInPrompt"
-            ctaLabelId="common.signInOrCreate"
-            onCta={() => navigation.navigate('Auth')}
-          />
-        </Card>
+        <View style={styles.guestBanner}>
+          <Banner id="jobs.guest.draftHint" tone="info" icon="info" />
+        </View>
       )}
 
-      {role === 'customer' && (
+      {(!session?.user.id || role === 'customer') && (
         <Card padding="lg">
           <BiText id="jobs.post.title" variant="title" tone="strong" style={styles.cardTitle} />
           <Input
@@ -187,6 +229,7 @@ export default function JobsScreen() {
 const styles = StyleSheet.create({
   root: { padding: spacing.lg, backgroundColor: colors.bg, flexGrow: 1 },
   cardTitle: { marginBottom: spacing.md },
+  guestBanner: { marginBottom: spacing.sm },
   empty: { paddingVertical: spacing.lg, alignItems: 'center' },
   jobRow: {
     flexDirection: 'row',
