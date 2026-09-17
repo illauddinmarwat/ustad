@@ -77,8 +77,8 @@ export default function AuthScreen() {
             <View style={styles.brandMark}>
               <Icon name="zap" size={18} color={colors.primaryInk} />
             </View>
-            <Text style={styles.brandText}>WorkerzPk</Text>
-            <Text style={styles.brandUrdu}>ورکرز پی کے</Text>
+            <Text style={styles.brandText}>Ustad</Text>
+            <Text style={styles.brandUrdu}>استاد</Text>
           </View>
           <BiText id="auth.hero.title" variant="displayLg" tone="inverse" style={styles.heroTitle} />
           <BiText id="auth.hero.subtitle" variant="body" tone="inverse" style={styles.heroSub} />

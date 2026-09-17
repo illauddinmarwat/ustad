@@ -111,7 +111,7 @@ exports[`AuthScreen matches snapshot 1`] = `
                 }
               }
             >
-              WorkerzPk
+              Ustad
             </Text>
             <Text
               style={
@@ -124,7 +124,7 @@ exports[`AuthScreen matches snapshot 1`] = `
                 }
               }
             >
-              ورکرز پی کے
+              استاد
             </Text>
           </View>
           <View

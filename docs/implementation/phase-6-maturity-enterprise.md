@@ -33,7 +33,7 @@ Serve **B2B** demand, deepen **compliance** and **reporting**, and prepare optio
 
 - Formalize design-system governance (tokens, component versioning, visual regression checks).
 - Ensure B2B/enterprise dashboards meet consumer-level usability quality despite denser workflows.
-- Keep patterns marketplace-familiar while preserving WorkerzPk brand identity (no direct asset copying).
+- Keep patterns marketplace-familiar while preserving Ustad brand identity (no direct asset copying).
 
 ## Acceptance criteria
 

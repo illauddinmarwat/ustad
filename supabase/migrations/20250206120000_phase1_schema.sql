@@ -1,4 +1,4 @@
--- WorkerzPk Phase 1 — core schema & RLS
+-- Ustad Phase 1 — core schema & RLS
 -- Apply with: supabase db push / SQL editor
 
 -- ─── Extensions ─────────────────────────────────────────

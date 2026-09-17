@@ -6,8 +6,8 @@ The mobile app reads `GOOGLE_VISION_API_KEY` from `.env` (surfaced via Expo `ext
 
 1. Open **APIs & Services** → **Credentials** → select your API key.
 2. Under **Application restrictions**:
-   - **Android apps**: add your package name `com.workerzpk.mobile` and the SHA-1 of your release (and debug) signing cert.
-   - **iOS apps**: add your bundle ID `com.workerzpk.mobile`.
+   - **Android apps**: add your package name `com.ustad.mobile` and the SHA-1 of your release (and debug) signing cert.
+   - **iOS apps**: add your bundle ID `com.ustad.mobile`.
    - For **Expo web**, optionally add **HTTP referrers** for your hosted domain only (not `*`).
 3. Under **API restrictions**, choose **Restrict key** → enable only **Cloud Vision API**.
 4. Save, then redeploy the app and smoke-test OCR from a device.

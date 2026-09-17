@@ -32,7 +32,7 @@ type FaqRow = {
 
 type Lang = 'en' | 'ur';
 
-const SUPPORT_EMAIL = 'support@workerzpk.local';
+const SUPPORT_EMAIL = 'support@ustad.local';
 
 export default function FaqScreen() {
   const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
@@ -98,7 +98,7 @@ export default function FaqScreen() {
   };
 
   const contactSupport = () => {
-    const url = `mailto:${SUPPORT_EMAIL}?subject=${encodeURIComponent('WorkerzPk support request')}`;
+    const url = `mailto:${SUPPORT_EMAIL}?subject=${encodeURIComponent('Ustad support request')}`;
     void trackEvent('faq_support_handoff', userId, { q: query });
     void Linking.openURL(url).catch(() => setBannerError('Could not open email client'));
   };

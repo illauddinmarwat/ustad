@@ -12,9 +12,9 @@ module.exports = {
   apps: {
     'ios.debug': {
       type: 'ios.app',
-      binaryPath: 'ios/build/Build/Products/Debug-iphonesimulator/workerzpk.app',
+      binaryPath: 'ios/build/Build/Products/Debug-iphonesimulator/ustad.app',
       build:
-        'xcodebuild -workspace ios/workerzpk.xcworkspace -scheme workerzpk -configuration Debug -sdk iphonesimulator -derivedDataPath ios/build',
+        'xcodebuild -workspace ios/ustad.xcworkspace -scheme ustad -configuration Debug -sdk iphonesimulator -derivedDataPath ios/build',
     },
   },
   devices: {

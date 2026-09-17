@@ -1,4 +1,4 @@
-# WorkerzPk — App, backend, tests, and releases
+# Ustad — App, backend, tests, and releases
 
 This doc answers: **where the backend runs**, **how the project ties to Docker**, **how to run the mobile app and tests**, and **how production / Android builds work**.
 
@@ -19,13 +19,13 @@ The Expo app in `mobile/` talks to Supabase over HTTPS (or HTTP on device emulat
 ## Docker Desktop ≠ “already connected” to this repo
 
 - **Docker “Engine running”** only means the Docker daemon can start containers.
-- This repository is **wired to Docker** when you run the **Supabase CLI** from the **repo root** (`d:\Personal\workerzpk`, where [`supabase/config.toml`](../supabase/config.toml) lives). Then the CLI pulls images and creates containers (often named like `supabase_db_workerzpk`, `supabase_kong_workerzpk`, etc.).
+- This repository is **wired to Docker** when you run the **Supabase CLI** from the **repo root** (`d:\Personal\ustad`, where [`supabase/config.toml`](../supabase/config.toml) lives). Then the CLI pulls images and creates containers (often named like `supabase_db_ustad`, `supabase_kong_ustad`, etc.).
 - **Before** `supabase start`, the **Containers** list can be empty — that’s normal.
 
 **Verify local backend:**
 
 ```powershell
-cd d:\Personal\workerzpk
+cd d:\Personal\ustad
 npx supabase start
 npx supabase status
 ```
@@ -63,7 +63,7 @@ Schema, migrations, RPCs: [`supabase/README.md`](../supabase/README.md).
 ### Option A — No database (fastest)
 
 ```powershell
-cd d:\Personal\workerzpk\mobile
+cd d:\Personal\ustad\mobile
 copy env.fixture.sample .env
 npm run start
 ```
@@ -75,7 +75,7 @@ Opens Expo dev tools; use Expo Go or an emulator. **No Supabase** is required.
 1. Start Docker Desktop, then from **repo root**:
 
    ```powershell
-   cd d:\Personal\workerzpk
+   cd d:\Personal\ustad
    npx supabase start
    npx supabase status
    ```
@@ -143,7 +143,7 @@ The app is **Expo (SDK 54)**. Release binaries are usually built with **EAS Buil
 5. Build Android:
 
    ```powershell
-   cd d:\Personal\workerzpk\mobile
+   cd d:\Personal\ustad\mobile
    eas build --platform android
    ```
 

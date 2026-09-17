@@ -2,23 +2,23 @@
 -- Run in Supabase SQL editor after accounts exist.
 
 -- Set roles and names
-update public.profiles set role = 'admin', display_name = 'Super Admin' where id in (select id from auth.users where email = 'admin@workerzpk.com');
+update public.profiles set role = 'admin', display_name = 'Super Admin' where id in (select id from auth.users where email = 'admin@ustad.com');
 
 -- Workers
 update public.profiles p
 set role = 'worker', display_name = s.display_name
 from (
   values
-    ('worker1@workerzpk.com','Ali Raza'),
-    ('worker2@workerzpk.com','Ahmed Khan'),
-    ('worker3@workerzpk.com','Bilal Tariq'),
-    ('worker4@workerzpk.com','Usman Javed'),
-    ('worker5@workerzpk.com','Hamza Iqbal'),
-    ('worker6@workerzpk.com','Danish Noor'),
-    ('worker7@workerzpk.com','Kashif Malik'),
-    ('worker8@workerzpk.com','Saad Hassan'),
-    ('worker9@workerzpk.com','Faisal Shah'),
-    ('worker10@workerzpk.com','Imran Latif')
+    ('worker1@ustad.com','Ali Raza'),
+    ('worker2@ustad.com','Ahmed Khan'),
+    ('worker3@ustad.com','Bilal Tariq'),
+    ('worker4@ustad.com','Usman Javed'),
+    ('worker5@ustad.com','Hamza Iqbal'),
+    ('worker6@ustad.com','Danish Noor'),
+    ('worker7@ustad.com','Kashif Malik'),
+    ('worker8@ustad.com','Saad Hassan'),
+    ('worker9@ustad.com','Faisal Shah'),
+    ('worker10@ustad.com','Imran Latif')
 ) as s(email, display_name)
 where p.id in (select id from auth.users where email = s.email);
 
@@ -27,10 +27,10 @@ update public.profiles p
 set role = 'customer', display_name = s.display_name
 from (
   values
-    ('customer1@workerzpk.com','Customer 01'),('customer2@workerzpk.com','Customer 02'),('customer3@workerzpk.com','Customer 03'),('customer4@workerzpk.com','Customer 04'),('customer5@workerzpk.com','Customer 05'),
-    ('customer6@workerzpk.com','Customer 06'),('customer7@workerzpk.com','Customer 07'),('customer8@workerzpk.com','Customer 08'),('customer9@workerzpk.com','Customer 09'),('customer10@workerzpk.com','Customer 10'),
-    ('customer11@workerzpk.com','Customer 11'),('customer12@workerzpk.com','Customer 12'),('customer13@workerzpk.com','Customer 13'),('customer14@workerzpk.com','Customer 14'),('customer15@workerzpk.com','Customer 15'),
-    ('customer16@workerzpk.com','Customer 16'),('customer17@workerzpk.com','Customer 17'),('customer18@workerzpk.com','Customer 18'),('customer19@workerzpk.com','Customer 19'),('customer20@workerzpk.com','Customer 20')
+    ('customer1@ustad.com','Customer 01'),('customer2@ustad.com','Customer 02'),('customer3@ustad.com','Customer 03'),('customer4@ustad.com','Customer 04'),('customer5@ustad.com','Customer 05'),
+    ('customer6@ustad.com','Customer 06'),('customer7@ustad.com','Customer 07'),('customer8@ustad.com','Customer 08'),('customer9@ustad.com','Customer 09'),('customer10@ustad.com','Customer 10'),
+    ('customer11@ustad.com','Customer 11'),('customer12@ustad.com','Customer 12'),('customer13@ustad.com','Customer 13'),('customer14@ustad.com','Customer 14'),('customer15@ustad.com','Customer 15'),
+    ('customer16@ustad.com','Customer 16'),('customer17@ustad.com','Customer 17'),('customer18@ustad.com','Customer 18'),('customer19@ustad.com','Customer 19'),('customer20@ustad.com','Customer 20')
 ) as s(email, display_name)
 where p.id in (select id from auth.users where email = s.email);
 
@@ -42,8 +42,8 @@ select u.id,
        '["Lahore","Karachi","Islamabad"]'::jsonb
 from (
   values
-    ('worker1@workerzpk.com','plumbing'),('worker2@workerzpk.com','electrical'),('worker3@workerzpk.com','hvac'),('worker4@workerzpk.com','cleaning'),('worker5@workerzpk.com','handyman'),
-    ('worker6@workerzpk.com','painting'),('worker7@workerzpk.com','carpentry'),('worker8@workerzpk.com','tiling'),('worker9@workerzpk.com','appliance-repair'),('worker10@workerzpk.com','roofing')
+    ('worker1@ustad.com','plumbing'),('worker2@ustad.com','electrical'),('worker3@ustad.com','hvac'),('worker4@ustad.com','cleaning'),('worker5@ustad.com','handyman'),
+    ('worker6@ustad.com','painting'),('worker7@ustad.com','carpentry'),('worker8@ustad.com','tiling'),('worker9@ustad.com','appliance-repair'),('worker10@ustad.com','roofing')
 ) as s(email, skill)
 join auth.users u on u.email = s.email
 on conflict (user_id) do update set categories = excluded.categories, bio = excluded.bio, service_areas = excluded.service_areas;

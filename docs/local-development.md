@@ -33,7 +33,7 @@ Runs real Postgres + Auth + Studio on your machine (**same migrations** as produ
 ### Commands (repo root)
 
 ```powershell
-cd d:\Personal\workerzpk
+cd d:\Personal\ustad
 npx supabase@latest start
 ```
 

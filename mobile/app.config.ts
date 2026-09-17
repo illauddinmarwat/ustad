@@ -2,8 +2,8 @@ import { ExpoConfig, ConfigContext } from 'expo/config';
 
 export default ({ config }: ConfigContext): ExpoConfig => ({
   ...config,
-  name: 'workerzpk',
-  slug: 'workerzpk',
+  name: 'ustad',
+  slug: 'ustad',
   version: '1.0.0',
   orientation: 'portrait',
   icon: './assets/icon.png',
@@ -14,13 +14,13 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
     resizeMode: 'contain',
     backgroundColor: '#F7F8FB',
   },
-  ios: { supportsTablet: true, bundleIdentifier: 'com.workerzpk.mobile' },
+  ios: { supportsTablet: true, bundleIdentifier: 'com.ustad.mobile' },
   android: {
     adaptiveIcon: {
       foregroundImage: './assets/adaptive-icon.png',
       backgroundColor: '#F7F8FB',
     },
-    package: 'com.workerzpk.mobile',
+    package: 'com.ustad.mobile',
     edgeToEdgeEnabled: true,
   },
   extra: {

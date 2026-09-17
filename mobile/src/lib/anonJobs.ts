@@ -2,7 +2,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 
 import { supabase } from './supabase';
 
-const STORAGE_KEY = 'workerzpk.anonJobTokens.v1';
+const STORAGE_KEY = 'ustad.anonJobTokens.v1';
 
 /**
  * Anon job tokens are opaque UUIDs the client generates when posting a job

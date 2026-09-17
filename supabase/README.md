@@ -1,4 +1,4 @@
-# WorkerzPk — Supabase (Phase 1)
+# Ustad — Supabase (Phase 1)
 
 ## Prerequisites
 

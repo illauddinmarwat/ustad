@@ -1,19 +1,19 @@
 services:
   postgres:
     image: postgres:17
-    container_name: workerzpk_postgres
+    container_name: ustad_postgres
     environment:
       POSTGRES_PASSWORD: postgres
       POSTGRES_USER: postgres
-      POSTGRES_DB: workerzpk
+      POSTGRES_DB: ustad
     ports:
       - "5432:5432"
     volumes:
-      - workerzpk_pgdata:/var/lib/postgresql/data
+      - ustad_pgdata:/var/lib/postgresql/data
 
   pgadmin:
     image: dpage/pgadmin4:8
-    container_name: workerzpk_pgadmin
+    container_name: ustad_pgadmin
     environment:
       PGADMIN_DEFAULT_EMAIL: admin@local
       PGADMIN_DEFAULT_PASSWORD: admin
@@ -23,5 +23,5 @@ services:
       - postgres
 
 volumes:
-  workerzpk_pgdata:
+  ustad_pgdata:
 

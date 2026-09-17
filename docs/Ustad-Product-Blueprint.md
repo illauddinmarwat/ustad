@@ -1,8 +1,8 @@
-# WorkerzPk — Product Blueprint
+# Ustad — Product Blueprint
 
 Living document: requirements, roadmap, and technical direction. Edit this file as the product evolves.
 
-**Focused MVP scope (booking rules, Rails A/B, modals):** [`WorkerzPk-MVP-SinglePage.md`](WorkerzPk-MVP-SinglePage.md)
+**Focused MVP scope (booking rules, Rails A/B, modals):** [`Ustad-MVP-SinglePage.md`](Ustad-MVP-SinglePage.md)
 
 **Implementation plan by phase (engineering deliverables, acceptance criteria):** [`implementation/README.md`](implementation/README.md)
 
@@ -328,7 +328,7 @@ See inline critique in project chat or extend this section with decisions and da
 - **Phase 2 (Beta hardening): complete** — runbooks, KPI templates, payments ledger pilot, admin moderation tooling, UI lane + tests (see [`implementation/phase-2-closeout.md`](implementation/phase-2-closeout.md)).
 - **Next session target:** **Phase 3 (Intelligence)** — [`implementation/phase-3-intelligence-automation.md`](implementation/phase-3-intelligence-automation.md).
 
-**Scope note:** Treat “Core Features (MVP)” as a *wish list* until each item has a cut line. The **cut-line MVP** is defined in [`WorkerzPk-MVP-SinglePage.md`](WorkerzPk-MVP-SinglePage.md); heavy items (escrow, police checks, ML, multi-rail) map to [`implementation/`](implementation/README.md) later phases.
+**Scope note:** Treat “Core Features (MVP)” as a *wish list* until each item has a cut line. The **cut-line MVP** is defined in [`Ustad-MVP-SinglePage.md`](Ustad-MVP-SinglePage.md); heavy items (escrow, police checks, ML, multi-rail) map to [`implementation/`](implementation/README.md) later phases.
 
 **Compliance note:** “GDPR-ready” matters mainly if you store EU residents’ data; for Pakistan-first, prioritize **local legal advice** (consumer protection, digital payments, telecom/PTA if applicable).
 

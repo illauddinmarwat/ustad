@@ -1,15 +1,15 @@
-# WorkerzPk
+# Ustad
 
 ## What is this app?
 
-**WorkerzPk** is a Pakistan-focused **two-sided marketplace** for local skilled work: customers find workers (or post jobs), and workers offer services, quote jobs, and get hired. The mobile app is the primary client; **Supabase** (Postgres + Auth + APIs) is the backend.
+**Ustad** is a Pakistan-focused **two-sided marketplace** for local skilled work: customers find workers (or post jobs), and workers offer services, quote jobs, and get hired. The mobile app is the primary client; **Supabase** (Postgres + Auth + APIs) is the backend.
 
 The product supports two complementary flows:
 
 - **Job-led:** a customer posts a need → workers quote → customer hires → work completes on a shared **job** record (chat, status, reviews).
 - **Service-led:** workers publish **listings** from admin-defined **service templates** → customers browse, apply, worker accepts → customer confirms → same **job** spine as above.
 
-For full MVP scope, flows, and data model, see [`docs/WorkerzPk-MVP-SinglePage.md`](docs/WorkerzPk-MVP-SinglePage.md). High-level vision and roadmap: [`docs/WorkerzPk-Product-Blueprint.md`](docs/WorkerzPk-Product-Blueprint.md).
+For full MVP scope, flows, and data model, see [`docs/Ustad-MVP-SinglePage.md`](docs/Ustad-MVP-SinglePage.md). High-level vision and roadmap: [`docs/Ustad-Product-Blueprint.md`](docs/Ustad-Product-Blueprint.md).
 
 ## How does it work?
 

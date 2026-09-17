@@ -1,11 +1,11 @@
 -- Local-only auth seeding for Phase 1 test accounts.
 with accounts as (
-  select 'admin@workerzpk.com'::text as email, 'Admin123!'::text as pwd
+  select 'admin@ustad.com'::text as email, 'Admin123!'::text as pwd
   union all
-  select 'worker' || gs::text || '@workerzpk.com', 'Worker123!'
+  select 'worker' || gs::text || '@ustad.com', 'Worker123!'
   from generate_series(1,10) as gs
   union all
-  select 'customer' || gs::text || '@workerzpk.com', 'Customer123!'
+  select 'customer' || gs::text || '@ustad.com', 'Customer123!'
   from generate_series(1,20) as gs
 ), inserted as (
   insert into auth.users (

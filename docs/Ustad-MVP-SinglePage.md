@@ -1,4 +1,4 @@
-# WorkerzPk — Single-page MVP spec & build plan
+# Ustad — Single-page MVP spec & build plan
 
 **Goal:** Prove the marketplace loop in **one city**, with **minimal moving parts**. Success = repeat jobs weekly, low dispute rate, workers paid without manual chaos.
 
@@ -190,7 +190,7 @@ Defer **commission collection** until you have volume; MVP can monetize via **fe
 
 Phased engineering plan with deliverables and acceptance tests: [`implementation/README.md`](implementation/README.md).  
 
-Broadly: Realtime messaging → integrated payment rail → escrow (if pursued) → multi-city rollout → ranking/AI/OCR depth per [`WorkerzPk-Product-Blueprint.md`](WorkerzPk-Product-Blueprint.md).
+Broadly: Realtime messaging → integrated payment rail → escrow (if pursued) → multi-city rollout → ranking/AI/OCR depth per [`Ustad-Product-Blueprint.md`](Ustad-Product-Blueprint.md).
 
 ---
 

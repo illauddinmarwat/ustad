@@ -16,7 +16,7 @@ export type Strings = {
 
 export const strings = {
   // --------------------------- COMMON / SHARED ---------------------------
-  'common.appName': { en: 'WorkerzPk', ur: 'ورکرز پی کے' },
+  'common.appName': { en: 'Ustad', ur: 'استاد' },
   'common.signIn': { en: 'Sign in', ur: 'لاگ ان' },
   'common.signOut': { en: 'Sign out', ur: 'لاگ آؤٹ' },
   'common.createAccount': { en: 'Create account', ur: 'اکاؤنٹ بنائیں' },
@@ -52,7 +52,7 @@ export const strings = {
   'tabs.admin': { en: 'Admin', ur: 'ایڈمن' },
 
   // --------------------------- NAV TITLES ---------------------------
-  'nav.app': { en: 'WorkerzPk', ur: 'ورکرز پی کے' },
+  'nav.app': { en: 'Ustad', ur: 'استاد' },
   'nav.signIn': { en: 'Sign in', ur: 'لاگ ان' },
   'nav.job': { en: 'Job', ur: 'کام' },
   'nav.service': { en: 'Service', ur: 'سروس' },

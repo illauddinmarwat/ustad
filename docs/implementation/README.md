@@ -1,6 +1,6 @@
-# WorkerzPk — implementation plan (phased)
+# Ustad — implementation plan (phased)
 
-This folder is the **engineering and delivery** companion to the product vision in [`WorkerzPk-Product-Blueprint.md`](../WorkerzPk-Product-Blueprint.md) and the **MVP scope** in [`WorkerzPk-MVP-SinglePage.md`](../WorkerzPk-MVP-SinglePage.md).
+This folder is the **engineering and delivery** companion to the product vision in [`Ustad-Product-Blueprint.md`](../Ustad-Product-Blueprint.md) and the **MVP scope** in [`Ustad-MVP-SinglePage.md`](../Ustad-MVP-SinglePage.md).
 
 ## How to use
 
