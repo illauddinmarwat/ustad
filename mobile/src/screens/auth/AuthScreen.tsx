@@ -5,7 +5,6 @@ import { useState } from 'react';
 import { KeyboardAvoidingView, Platform, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
-import { Banner } from '../../components/ui/Banner';
 import { BiText } from '../../components/ui/BiText';
 import { Button } from '../../components/ui/Button';
 import { Card } from '../../components/ui/Card';
@@ -18,36 +17,24 @@ import { colors, radius, spacing } from '../../theme/tokens';
 import { fontFamilies, typography, urduTypography } from '../../theme/typography';
 
 export default function AuthScreen() {
-  const { signIn, signUp } = useAuth();
+  const { signIn } = useAuth();
   const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
   const insets = useSafeAreaInsets();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
-  const [busy, setBusy] = useState<'signin' | 'signup' | null>(null);
+  const [busy, setBusy] = useState<'signin' | null>(null);
   const [error, setError] = useState<string | null>(null);
-  const [notice, setNotice] = useState<'checkEmail' | null>(null);
 
   const popIfPossible = () => {
     if (navigation.canGoBack()) navigation.goBack();
   };
 
-  const run = async (mode: 'signin' | 'signup') => {
+  const run = async (mode: 'signin') => {
     setBusy(mode);
     setError(null);
-    setNotice(null);
     try {
-      if (mode === 'signin') {
-        await signIn(email.trim(), password);
-        popIfPossible();
-      } else {
-        const result = await signUp(email.trim(), password);
-        if (result.requiresConfirmation) {
-          setNotice('checkEmail');
-          setPassword('');
-        } else {
-          popIfPossible();
-        }
-      }
+      await signIn(email.trim(), password);
+      popIfPossible();
     } catch (e) {
       setError(e instanceof Error ? e.message : en('auth.error.failed'));
     } finally {
@@ -111,11 +98,6 @@ export default function AuthScreen() {
               <Text style={styles.errorText}>{error}</Text>
             </View>
           )}
-          {notice === 'checkEmail' && (
-            <View style={styles.notice}>
-              <Banner id="auth.signup.checkEmail" tone="info" />
-            </View>
-          )}
           <Button
             labelId="common.signIn"
             onPress={() => run('signin')}
@@ -128,8 +110,7 @@ export default function AuthScreen() {
           />
           <Button
             labelId="common.createAccount"
-            onPress={() => run('signup')}
-            loading={busy === 'signup'}
+            onPress={() => navigation.navigate('RegisterChoice')}
             disabled={busy !== null}
             variant="secondary"
             size="lg"

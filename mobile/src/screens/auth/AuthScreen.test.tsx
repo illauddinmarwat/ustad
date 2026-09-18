@@ -5,16 +5,16 @@ import { SafeAreaProvider } from 'react-native-safe-area-context';
 import AuthScreen from './AuthScreen';
 
 const mockSignIn = jest.fn();
-const mockSignUp = jest.fn();
 const mockGoBack = jest.fn();
 const mockCanGoBack = jest.fn(() => true);
+const mockNavigate = jest.fn();
 
 jest.mock('../../context/AuthContext', () => ({
-  useAuth: () => ({ signIn: mockSignIn, signUp: mockSignUp }),
+  useAuth: () => ({ signIn: mockSignIn }),
 }));
 
 jest.mock('@react-navigation/native', () => ({
-  useNavigation: () => ({ goBack: mockGoBack, canGoBack: mockCanGoBack }),
+  useNavigation: () => ({ goBack: mockGoBack, canGoBack: mockCanGoBack, navigate: mockNavigate }),
 }));
 
 const wrap = (node: React.ReactElement) =>
@@ -31,10 +31,10 @@ const wrap = (node: React.ReactElement) =>
 
 beforeEach(() => {
   mockSignIn.mockReset();
-  mockSignUp.mockReset();
   mockGoBack.mockReset();
   mockCanGoBack.mockReset();
   mockCanGoBack.mockReturnValue(true);
+  mockNavigate.mockReset();
 });
 
 describe('AuthScreen', () => {
@@ -59,25 +59,13 @@ describe('AuthScreen', () => {
     expect(mockGoBack).toHaveBeenCalledTimes(1);
   });
 
-  it('shows the check-email banner when signup requires confirmation and does not goBack', async () => {
-    mockSignUp.mockResolvedValueOnce({ requiresConfirmation: true });
+  it('navigates to the register choice screen on "Create account"', async () => {
     const { getByText } = wrap(<AuthScreen />);
     await act(async () => {
       fireEvent.press(getByText('Create account'));
     });
-    await waitFor(() => expect(mockSignUp).toHaveBeenCalledTimes(1));
+    expect(mockNavigate).toHaveBeenCalledWith('RegisterChoice');
     expect(mockGoBack).not.toHaveBeenCalled();
-    expect(getByText('Account created. Check your email to confirm, then sign in.')).toBeTruthy();
-  });
-
-  it('pops back when signup returns a session (no confirmation needed)', async () => {
-    mockSignUp.mockResolvedValueOnce({ requiresConfirmation: false });
-    const { getByText } = wrap(<AuthScreen />);
-    await act(async () => {
-      fireEvent.press(getByText('Create account'));
-    });
-    await waitFor(() => expect(mockSignUp).toHaveBeenCalledTimes(1));
-    expect(mockGoBack).toHaveBeenCalledTimes(1);
   });
 
   it('shows an error message when signin fails', async () => {

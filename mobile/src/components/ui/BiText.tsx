@@ -58,6 +58,12 @@ export function BiText({
   const colorPair = TONE_MAP[tone];
 
   const enAlign = align === 'auto' ? 'left' : align;
+  // Urdu defaults to right (natural RTL reading position) when no explicit
+  // alignment is requested, but must follow an explicit `align` (e.g.
+  // "center") — otherwise centered layouts (like category cards) end up
+  // with English centered and Urdu still pinned right, which reads as
+  // overlapping/misaligned in tight containers.
+  const urAlign = align === 'auto' ? 'right' : align;
 
   return (
     <View style={style}>
@@ -73,7 +79,7 @@ export function BiText({
           style={[
             urType,
             styles.urdu,
-            { color: colorPair.ur },
+            { color: colorPair.ur, textAlign: urAlign },
             urStyle,
           ]}
           numberOfLines={numberOfLines}
@@ -88,7 +94,6 @@ export function BiText({
 
 const styles = StyleSheet.create({
   urdu: {
-    textAlign: 'right',
     writingDirection: 'rtl',
     marginTop: 2,
   },

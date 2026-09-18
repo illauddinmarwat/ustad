@@ -28,6 +28,8 @@ export type InputProps = Omit<TextInputProps, 'placeholder'> & {
   /** Optional error string shown below the field. */
   error?: string | null;
   containerStyle?: StyleProp<ViewStyle>;
+  /** Hide the small Urdu translation of the placeholder shown below the field — use when the field sits directly on a colored background where that muted text loses contrast. */
+  hideUrduHint?: boolean;
 };
 
 export function Input({
@@ -37,6 +39,7 @@ export function Input({
   iconLeft,
   error,
   containerStyle,
+  hideUrduHint,
   style,
   onFocus,
   onBlur,
@@ -86,7 +89,7 @@ export function Input({
           {...rest}
         />
       </View>
-      {placeholderEntry ? (
+      {placeholderEntry && !hideUrduHint ? (
         <Text style={[urduTypography.caption, styles.urduPlaceholder]}>{placeholderEntry.ur}</Text>
       ) : null}
       {error ? <Text style={styles.errorText}>{error}</Text> : null}

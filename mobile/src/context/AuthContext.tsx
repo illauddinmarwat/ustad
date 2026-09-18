@@ -3,7 +3,6 @@ import React, { createContext, useContext, useEffect, useMemo, useState } from '
 
 import { useFixtureMode } from '../config/env';
 import { FIXTURE_CUSTOMER_ID, FIXTURE_WORKER_ID } from '../dev/fixtures';
-import { claimAllAnonJobs } from '../lib/anonJobs';
 import { supabase } from '../lib/supabase';
 
 export type SignUpResult = { requiresConfirmation: boolean };
@@ -65,9 +64,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
             if (!cancelled) {
               setRoleState((data?.role as 'customer' | 'worker' | 'admin') ?? 'customer');
             }
-            claimAllAnonJobs().catch(() => {
-              // Non-blocking; retry on next auth event.
-            });
           } else if (!cancelled) {
             setRoleState(null);
           }
@@ -87,9 +83,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       }
       const { data } = await supabase.from('profiles').select('role').eq('id', s.user.id).maybeSingle();
       setRoleState((data?.role as 'customer' | 'worker' | 'admin') ?? 'customer');
-      claimAllAnonJobs().catch(() => {
-        // Non-blocking: failed claims keep their tokens locally and retry next time.
-      });
     });
 
     return () => {

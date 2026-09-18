@@ -1,5 +1,6 @@
 import { useNavigation } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
+import * as Location from 'expo-location';
 import { useEffect, useState } from 'react';
 import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -38,6 +39,8 @@ export default function AccountScreen() {
   const [subEndsAt, setSubEndsAt] = useState<string | null>(null);
   const [subMsg, setSubMsg] = useState<Msg>(null);
   const [communityEnabled, setCommunityEnabled] = useState(false);
+  const [locationBusy, setLocationBusy] = useState(false);
+  const [locationMsg, setLocationMsg] = useState<Msg>(null);
 
   const loadSubscription = async () => {
     const flags = await fetchPhase4Flags();
@@ -86,6 +89,37 @@ export default function AccountScreen() {
         text: `${code === 'worker_pro' ? 'Worker Pro' : 'Customer Plus'} activated`,
       });
       await loadSubscription();
+    }
+  };
+
+  const shareLocation = async () => {
+    if (!session?.user.id) return;
+    setLocationBusy(true);
+    setLocationMsg(null);
+    try {
+      const permission = await Location.requestForegroundPermissionsAsync();
+      if (!permission.granted) {
+        setLocationMsg({ kind: 'id', id: 'nearby.locate.denied' });
+        return;
+      }
+      const position = await Location.getCurrentPositionAsync({ accuracy: Location.Accuracy.Balanced });
+      const { error } = await supabase
+        .from('worker_profiles')
+        .update({
+          lat: position.coords.latitude,
+          lng: position.coords.longitude,
+          location_updated_at: new Date().toISOString(),
+        })
+        .eq('user_id', session.user.id);
+      if (error) {
+        setLocationMsg({ kind: 'text', text: error.message });
+      } else {
+        setLocationMsg({ kind: 'id', id: 'account.location.saved' });
+      }
+    } catch {
+      setLocationMsg({ kind: 'id', id: 'account.location.failed' });
+    } finally {
+      setLocationBusy(false);
     }
   };
 
@@ -161,6 +195,24 @@ export default function AccountScreen() {
             iconLeft="shield"
             variant="success"
             fullWidth
+          />
+        </Card>
+      )}
+
+      {role === 'worker' && (
+        <Card padding="lg">
+          <BiText id="account.location.title" variant="title" tone="strong" style={styles.cardTitle} />
+          <BiText id="account.location.subtitle" variant="body" tone="muted" style={styles.cardSubtitle} />
+          {locationMsg ? (
+            locationMsg.kind === 'id' ? <Banner id={locationMsg.id} tone="info" /> : <Banner text={locationMsg.text} tone="warning" />
+          ) : null}
+          <Button
+            labelId="account.location.cta"
+            onPress={shareLocation}
+            loading={locationBusy}
+            iconLeft="map-pin"
+            fullWidth
+            style={styles.actionBtn}
           />
         </Card>
       )}

@@ -1,6 +1,7 @@
 import { useFocusEffect } from '@react-navigation/native';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
-import { useCallback, useEffect, useState } from 'react';
+import * as Location from 'expo-location';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
@@ -38,7 +39,6 @@ type Job = {
 };
 
 type MessageRow = { id: string; body: string; sender_id: string; created_at: string };
-type QuoteRow = { id: string; amount_pkr: number; message: string | null; status: string; worker_id: string };
 type ReviewRow = { id: string; rating: number; comment: string | null };
 type QualitySurveyRow = { id: string; satisfaction: number; would_rehire: boolean; comment: string | null };
 
@@ -63,11 +63,8 @@ export default function JobDetailScreen({ route, navigation }: Props) {
   const insets = useSafeAreaInsets();
   const [job, setJob] = useState<Job | null>(null);
   const [messages, setMessages] = useState<MessageRow[]>([]);
-  const [quotes, setQuotes] = useState<QuoteRow[]>([]);
   const [existingReview, setExistingReview] = useState<ReviewRow | null>(null);
   const [msgBody, setMsgBody] = useState('');
-  const [quoteAmount, setQuoteAmount] = useState('2500');
-  const [quoteMessage, setQuoteMessage] = useState('Happy to take this job.');
   const [rating, setRating] = useState(5);
   const [reviewComment, setReviewComment] = useState('');
   const [paymentAmount, setPaymentAmount] = useState('3000');
@@ -111,13 +108,11 @@ export default function JobDetailScreen({ route, navigation }: Props) {
     setJob(j as Job);
     setBanner(null);
 
-    const [m, q, r] = await Promise.all([
+    const [m, r] = await Promise.all([
       supabase.from('messages').select('id,body,sender_id,created_at').eq('job_id', jobId).order('created_at', { ascending: true }),
-      supabase.from('quotes').select('id,amount_pkr,message,status,worker_id').eq('job_id', jobId).order('created_at', { ascending: true }),
       supabase.from('reviews').select('id,rating,comment').eq('job_id', jobId).maybeSingle(),
     ]);
     setMessages((m.data ?? []) as MessageRow[]);
-    setQuotes((q.data ?? []) as QuoteRow[]);
     setExistingReview((r.data as ReviewRow | null) ?? null);
 
     const flags = await fetchPhase4Flags();
@@ -126,7 +121,7 @@ export default function JobDetailScreen({ route, navigation }: Props) {
     if (flags.realtimeEnabled) {
       const rt = await supabase
         .from('job_realtime_states')
-        .select('is_en_route,eta_bucket,timer_started_at,timer_accum_seconds,started_work_at')
+        .select('is_en_route,eta_bucket,timer_started_at,timer_accum_seconds,started_work_at,lat,lng')
         .eq('job_id', jobId)
         .maybeSingle();
       setRealtimeState((rt.data as JobRealtimeState | null) ?? null);
@@ -161,6 +156,38 @@ export default function JobDetailScreen({ route, navigation }: Props) {
     return () => clearInterval(id);
   }, [phase4RealtimeEnabled, realtimeState?.timer_started_at]);
 
+  const isWorkerOwner = role === 'worker' && job?.worker_id === uid;
+  const watchSubRef = useRef<Location.LocationSubscription | null>(null);
+
+  useEffect(() => {
+    const shouldTrack = phase4RealtimeEnabled && isWorkerOwner && realtimeState?.is_en_route;
+    if (!shouldTrack) {
+      watchSubRef.current?.remove();
+      watchSubRef.current = null;
+      return;
+    }
+    let cancelled = false;
+    (async () => {
+      const permission = await Location.requestForegroundPermissionsAsync();
+      if (!permission.granted || cancelled) return;
+      watchSubRef.current = await Location.watchPositionAsync(
+        { accuracy: Location.Accuracy.Balanced, timeInterval: 10000, distanceInterval: 30 },
+        (position) => {
+          void supabase.rpc('worker_update_job_location', {
+            p_job_id: jobId,
+            p_lat: position.coords.latitude,
+            p_lng: position.coords.longitude,
+          });
+        }
+      );
+    })();
+    return () => {
+      cancelled = true;
+      watchSubRef.current?.remove();
+      watchSubRef.current = null;
+    };
+  }, [phase4RealtimeEnabled, isWorkerOwner, realtimeState?.is_en_route, jobId]);
+
   const sendMessage = async () => {
     if (
       !ensureAuthenticated({
@@ -183,41 +210,6 @@ export default function JobDetailScreen({ route, navigation }: Props) {
     } else {
       setBanner(null);
       setMsgBody('');
-      await load();
-    }
-  };
-
-  const sendQuote = async () => {
-    if (!uid) return;
-    const amount = Number(quoteAmount);
-    if (!Number.isFinite(amount) || amount < 0) {
-      bannerId('jobDetail.quote.invalidAmount', 'warning');
-      return;
-    }
-    const { error } = await supabase.from('quotes').insert({
-      job_id: jobId,
-      worker_id: uid,
-      amount_pkr: amount,
-      message: quoteMessage.trim() || null,
-      status: 'pending',
-    });
-    if (error) {
-      bannerText(error.message, 'danger');
-    } else {
-      bannerId('jobDetail.quote.toast', 'success');
-      await trackEvent('quote_submitted', uid ?? null, { job_id: jobId, amount_pkr: amount });
-      await trackEvent('ranking_quote_submitted', uid ?? null, { job_id: jobId, amount_pkr: amount });
-      await refreshWorkerSignalsIfNeeded();
-      await load();
-    }
-  };
-
-  const acceptQuote = async (quoteId: string) => {
-    const { error } = await supabase.rpc('customer_accept_quote', { quote_id: quoteId });
-    if (error) bannerText(error.message, 'danger');
-    else {
-      bannerId('jobDetail.quotes.accepted', 'success');
-      await trackEvent('job_assigned', uid ?? null, { job_id: jobId, origin: 'customer_job' });
       await load();
     }
   };
@@ -412,8 +404,6 @@ export default function JobDetailScreen({ route, navigation }: Props) {
 
   const isCustomer = role === 'customer' && job.customer_id === uid;
   const isWorker = role === 'worker' && job.worker_id === uid;
-  const openRailA = job.origin === 'customer_job' && job.status === 'open';
-  const showQuoteForm = role === 'worker' && openRailA;
   const showConfirm = isCustomer && job.status === 'pending_customer_confirm' && job.origin === 'service_listing';
   const showComplete = (isCustomer || isWorker) && job.status === 'assigned';
   const showReview = isCustomer && job.status === 'completed' && job.worker_id && !existingReview;
@@ -459,52 +449,6 @@ export default function JobDetailScreen({ route, navigation }: Props) {
           <BiText id="jobDetail.confirm.title" variant="title" tone="strong" style={styles.cardTitle} />
           <BiText id="jobDetail.confirm.subtitle" variant="body" tone="muted" style={styles.cardSubtitle} />
           <Button labelId="jobDetail.confirm.cta" onPress={confirmBooking} iconLeft="check" fullWidth />
-        </Card>
-      )}
-
-      {showQuoteForm && (
-        <Card padding="lg">
-          <BiText id="jobDetail.quote.title" variant="title" tone="strong" style={styles.cardTitle} />
-          <View style={styles.field}>
-            <Text style={styles.fieldLabel}>{t('jobDetail.quote.amount').en}</Text>
-            <TextInput
-              value={quoteAmount}
-              onChangeText={setQuoteAmount}
-              keyboardType="numeric"
-              placeholder={t('jobDetail.quote.amount').en}
-              placeholderTextColor={colors.textMuted}
-              style={styles.input}
-            />
-          </View>
-          <View style={styles.field}>
-            <Text style={styles.fieldLabel}>{t('jobDetail.quote.message').en}</Text>
-            <TextInput
-              value={quoteMessage}
-              onChangeText={setQuoteMessage}
-              placeholder={t('jobDetail.quote.message').en}
-              placeholderTextColor={colors.textMuted}
-              style={styles.input}
-            />
-          </View>
-          <Button labelId="jobDetail.quote.submit" onPress={sendQuote} iconRight="send" fullWidth />
-        </Card>
-      )}
-
-      {role === 'customer' && job.origin === 'customer_job' && job.status === 'open' && quotes.length > 0 && (
-        <Card padding="lg">
-          <BiText id="jobDetail.quotes.title" variant="title" tone="strong" style={styles.cardTitle} />
-          {quotes.map((q) => (
-            <View key={q.id} style={styles.quoteRow}>
-              <View style={styles.quoteBody}>
-                <Text style={styles.quotePrice}>Rs {q.amount_pkr}</Text>
-                <Text style={styles.quoteMessage}>{q.message ?? '—'}</Text>
-                <Chip label={q.status} tone={STATUS_TONE[q.status] ?? 'neutral'} />
-              </View>
-              {q.status === 'pending' && isCustomer && (
-                <Button labelId="jobDetail.quotes.accept" onPress={() => acceptQuote(q.id)} size="sm" iconLeft="check" hideUrdu />
-              )}
-            </View>
-          ))}
         </Card>
       )}
 
@@ -554,6 +498,16 @@ export default function JobDetailScreen({ route, navigation }: Props) {
               <Button labelId="jobDetail.timeline.startTimer" onPress={() => setRealtime({ timerRunning: true })} variant="secondary" iconLeft="play" />
               <Button labelId="jobDetail.timeline.pauseTimer" onPress={() => setRealtime({ timerRunning: false })} variant="secondary" iconLeft="pause" />
             </View>
+          )}
+          {realtimeState?.is_en_route && (isCustomer || isWorker) && (
+            <Button
+              labelId="tracking.cta"
+              onPress={() => navigation.navigate('JobTracking', { jobId })}
+              iconLeft="map"
+              variant="success"
+              fullWidth
+              style={styles.trackBtn}
+            />
           )}
         </Card>
       )}
@@ -786,18 +740,7 @@ const styles = StyleSheet.create({
   statusLabel: { marginRight: 4 },
   statusValue: { ...typography.bodySm, color: colors.textStrong },
   realtimeCtas: { gap: spacing.sm, marginTop: spacing.md },
-  quoteRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    paddingVertical: spacing.md,
-    borderTopWidth: 1,
-    borderTopColor: colors.divider,
-    gap: spacing.sm,
-  },
-  quoteBody: { flex: 1, gap: 4 },
-  quotePrice: { ...typography.title, color: colors.textStrong },
-  quoteMessage: { ...typography.bodySm, color: colors.textMuted },
+  trackBtn: { marginTop: spacing.md },
   meta: { ...typography.caption, color: colors.textMuted, marginTop: 4 },
   rowBetween: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingVertical: 4 },
   link: { ...typography.button, color: colors.primary },

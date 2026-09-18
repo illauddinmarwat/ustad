@@ -36,12 +36,14 @@ beforeEach(() => {
 });
 
 describe('DashboardScreen', () => {
-  it('renders the bilingual hero', () => {
+  it('renders the bilingual brand header and categories', () => {
     const { getByText } = wrap(<DashboardScreen />);
-    expect(getByText('Get free quotes from local skilled workers')).toBeTruthy();
-    expect(getByText('مقامی ہنر مند کارکنوں سے مفت تخمینے حاصل کریں')).toBeTruthy();
-    expect(getByText('How it works')).toBeTruthy();
+    expect(getByText('Ustad')).toBeTruthy();
+    expect(getByText('استاد')).toBeTruthy();
+    expect(getByText('Your skill, your livelihood')).toBeTruthy();
     expect(getByText('Popular categories')).toBeTruthy();
+    expect(getByText('Electrician')).toBeTruthy();
+    expect(getByText('Welder')).toBeTruthy();
   });
 
   it('matches snapshot', () => {
@@ -49,17 +51,31 @@ describe('DashboardScreen', () => {
     expect(tree).toMatchSnapshot();
   });
 
-  it('routes the guest "Browse services" CTA to the Services tab', () => {
+  it('routes the guest "Register as Professional" CTA to the professional registration form', () => {
     mockAuth.current = { role: null, session: null };
+    const { getByText } = wrap(<DashboardScreen />);
+    fireEvent.press(getByText('Register as Professional'));
+    expect(mockNavigate).toHaveBeenCalledWith('RegisterProfessional');
+  });
+
+  it('routes the guest "Register as Customer" CTA to the customer registration form', () => {
+    mockAuth.current = { role: null, session: null };
+    const { getByText } = wrap(<DashboardScreen />);
+    fireEvent.press(getByText('Register as Customer'));
+    expect(mockNavigate).toHaveBeenCalledWith('RegisterCustomer');
+  });
+
+  it('routes the signed-in customer "Browse services" CTA to the Services tab', () => {
+    mockAuth.current = { role: 'customer', session: { user: { id: 'u1' } } };
     const { getByText } = wrap(<DashboardScreen />);
     fireEvent.press(getByText('Browse services'));
     expect(mockNavigate).toHaveBeenCalledWith('Services');
   });
 
-  it('routes the guest "Post a job" CTA to the Jobs tab (no NAVIGATE error)', () => {
-    mockAuth.current = { role: null, session: null };
+  it('routes the signed-in customer "Find nearby Ustads" CTA to the Nearby tab', () => {
+    mockAuth.current = { role: 'customer', session: { user: { id: 'u1' } } };
     const { getByText } = wrap(<DashboardScreen />);
-    fireEvent.press(getByText('Post a job'));
-    expect(mockNavigate).toHaveBeenCalledWith('Jobs');
+    fireEvent.press(getByText('Find nearby Ustads'));
+    expect(mockNavigate).toHaveBeenCalledWith('Nearby');
   });
 });

@@ -1,5 +1,5 @@
 /**
- * Design tokens (v2) — Airtasker-inspired with a Pakistan-flavored emerald accent.
+ * Design tokens (v2) — Ustad brand green, matching the reference blueprints.
  *
  * Use these instead of hardcoded hex values. Older keys (`primarySoft`,
  * `successSoft`, etc.) are preserved as aliases so existing screens keep
@@ -8,16 +8,16 @@
 
 export const colors = {
   // Surfaces
-  bg: '#F7F8FB',
+  bg: '#F4FBF6',
   surface: '#FFFFFF',
-  surfaceAlt: '#F1F4FA',
-  border: '#E5E7EB',
-  divider: '#EEF0F4',
+  surfaceAlt: '#EAF6EE',
+  border: '#DCEFE1',
+  divider: '#E7F3EA',
 
   // Brand
-  primary: '#0A65FC',
-  primaryDeep: '#061257',
-  primarySoft: '#E6EEFF',
+  primary: '#15803D',
+  primaryDeep: '#14532D',
+  primarySoft: '#DCFCE7',
   primaryInk: '#FFFFFF',
 
   // Accent (verification, trust, success)

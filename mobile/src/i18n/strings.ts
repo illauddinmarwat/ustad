@@ -46,10 +46,10 @@ export const strings = {
   // --------------------------- TABS ---------------------------
   'tabs.dashboard': { en: 'Home', ur: 'ہوم' },
   'tabs.services': { en: 'Services', ur: 'خدمات' },
-  'tabs.jobs': { en: 'Jobs', ur: 'کام' },
   'tabs.applications': { en: 'Inbox', ur: 'درخواستیں' },
   'tabs.account': { en: 'Account', ur: 'اکاؤنٹ' },
   'tabs.admin': { en: 'Admin', ur: 'ایڈمن' },
+  'tabs.nearby': { en: 'Nearby', ur: 'قریبی' },
 
   // --------------------------- NAV TITLES ---------------------------
   'nav.app': { en: 'Ustad', ur: 'استاد' },
@@ -60,6 +60,10 @@ export const strings = {
   'nav.faq': { en: 'Help & FAQ', ur: 'مدد اور سوالات' },
   'nav.faqChat': { en: 'Help chat', ur: 'چیٹ سے مدد' },
   'nav.communityTips': { en: 'Community tips', ur: 'کمیونٹی مشورے' },
+  'nav.registerChoice': { en: 'Join Ustad', ur: 'استاد میں شامل ہوں' },
+  'nav.registerCustomer': { en: 'Register as Customer', ur: 'گاہک کے طور پر رجسٹر ہوں' },
+  'nav.registerProfessional': { en: 'Register as Professional', ur: 'ہنر مند کے طور پر رجسٹر ہوں' },
+  'nav.jobTracking': { en: 'Live Tracking', ur: 'لائیو ٹریکنگ' },
 
   // --------------------------- AUTH SCREEN ---------------------------
   'auth.hero.title': { en: 'Find local skilled workers quickly', ur: 'مقامی ہنر مند کارکن جلدی تلاش کریں' },
@@ -74,7 +78,98 @@ export const strings = {
     ur: 'اکاؤنٹ بن گیا۔ تصدیق کے لیے اپنی ای میل دیکھیں، پھر لاگ ان کریں۔',
   },
 
+  // --------------------------- REGISTER: CHOICE ---------------------------
+  'register.choice.title': { en: 'Join Ustad', ur: 'استاد میں شامل ہوں' },
+  'register.choice.subtitle': {
+    en: 'How would you like to register?',
+    ur: 'آپ کس طور پر رجسٹر ہونا چاہتے ہیں؟',
+  },
+  'register.choice.professional': { en: 'Register as Professional', ur: 'ہنر مند کے طور پر رجسٹر ہوں' },
+  'register.choice.professionalSub': { en: 'Join as a skilled worker', ur: 'ہنر مند کارکن کے طور پر شامل ہوں' },
+  'register.choice.customer': { en: 'Register as Customer', ur: 'گاہک کے طور پر رجسٹر ہوں' },
+  'register.choice.customerSub': { en: 'Hire skilled professionals', ur: 'ہنر مند پیشہ ور افراد کی خدمات حاصل کریں' },
+
+  // --------------------------- REGISTER: CUSTOMER ---------------------------
+  'register.customer.title': { en: 'Register as Customer', ur: 'گاہک کے طور پر رجسٹر ہوں' },
+  'register.customer.subtitle': {
+    en: 'Create your customer account',
+    ur: 'اپنا گاہک اکاؤنٹ بنائیں',
+  },
+  'register.customer.fullName': { en: 'Full Name', ur: 'پورا نام' },
+  'register.customer.fullNamePh': { en: 'Enter your full name', ur: 'اپنا پورا نام درج کریں' },
+  'register.customer.mobile': { en: 'Mobile Number', ur: 'موبائل نمبر' },
+  'register.customer.mobilePh': { en: '+92 3xx xxxxxxx', ur: '+92 3xx xxxxxxx' },
+  'register.customer.city': { en: 'City/Area', ur: 'شہر/علاقہ' },
+  'register.customer.cityPh': { en: 'e.g. Lahore, Gulberg', ur: 'مثال: لاہور، گلبرگ' },
+  'register.customer.address': { en: 'Home Address', ur: 'گھر کا پتہ' },
+  'register.customer.addressPh': { en: 'House/Street, Area, Landmark', ur: 'گھر/سٹریٹ، علاقہ، نشانی' },
+  'register.customer.language': { en: 'Preferred Language', ur: 'پسندیدہ زبان' },
+  'register.customer.submit': { en: 'Create Account', ur: 'اکاؤنٹ بنائیں' },
+  'register.customer.creating': { en: 'Creating…', ur: 'بن رہا ہے…' },
+
+  // --------------------------- REGISTER: PROFESSIONAL ---------------------------
+  'register.professional.title': { en: 'Register as Professional', ur: 'ہنر مند کے طور پر رجسٹر ہوں' },
+  'register.professional.subtitle': {
+    en: 'Join as a professional and start receiving job requests',
+    ur: 'ہنر مند کے طور پر شامل ہوں اور کام کی درخواستیں وصول کرنا شروع کریں',
+  },
+  'register.professional.fullName': { en: 'Full Name', ur: 'پورا نام' },
+  'register.professional.fullNamePh': { en: 'Enter your full name', ur: 'اپنا پورا نام درج کریں' },
+  'register.professional.mobile': { en: 'Mobile Number', ur: 'موبائل نمبر' },
+  'register.professional.mobilePh': { en: '+92 3xx xxxxxxx', ur: '+92 3xx xxxxxxx' },
+  'register.professional.cnic': { en: 'CNIC', ur: 'شناختی کارڈ' },
+  'register.professional.cnicPh': { en: 'xxxxx-xxxxxxx-x', ur: 'xxxxx-xxxxxxx-x' },
+  'register.professional.cnicFront': { en: 'CNIC Front', ur: 'شناختی کارڈ کا اگلا حصہ' },
+  'register.professional.cnicBack': { en: 'CNIC Back', ur: 'شناختی کارڈ کا پچھلا حصہ' },
+  'register.professional.cnicUpload': { en: 'Upload image', ur: 'تصویر اپ لوڈ کریں' },
+  'register.professional.cnicHint': { en: 'JPG/PNG, max 5MB', ur: 'JPG/PNG، زیادہ سے زیادہ 5MB' },
+  'register.professional.city': { en: 'City/Area', ur: 'شہر/علاقہ' },
+  'register.professional.cityPh': { en: 'e.g. Lahore, Gulberg', ur: 'مثال: لاہور، گلبرگ' },
+  'register.professional.skillCategory': { en: 'Skill Category', ur: 'مہارت کی قسم' },
+  'register.professional.skillCategoryPh': {
+    en: 'Select skill category (Electrician, Plumber, Carpenter etc)',
+    ur: 'مہارت کی قسم منتخب کریں (الیکٹریشن، پلمبر، بڑھئی وغیرہ)',
+  },
+  'register.professional.experience': { en: 'Years of Experience', ur: 'تجربے کے سال' },
+  'register.professional.experiencePh': { en: 'e.g. 3', ur: 'مثال: 3' },
+  'register.professional.rate': { en: 'Daily / Hourly Rate (PKR)', ur: 'یومیہ / فی گھنٹہ اجرت (روپے)' },
+  'register.professional.ratePh': { en: 'e.g. 1500 / day or 300 / hour', ur: 'مثال: 1500 یومیہ یا 300 فی گھنٹہ' },
+  'register.professional.rateUnitDay': { en: 'Per Day', ur: 'یومیہ' },
+  'register.professional.rateUnitHour': { en: 'Per Hour', ur: 'فی گھنٹہ' },
+  'register.professional.workingHours': { en: 'Working Hours', ur: 'کام کے اوقات' },
+  'register.professional.workingHoursPh': { en: 'e.g. 9am – 6pm, Mon–Sat', ur: 'مثال: 9 بجے – 6 بجے، پیر تا ہفتہ' },
+  'register.professional.photo': { en: 'Profile Photo', ur: 'پروفائل تصویر' },
+  'register.professional.photoUpload': { en: 'Upload photo', ur: 'تصویر اپ لوڈ کریں' },
+  'register.professional.photoHint': { en: 'JPG/PNG, max 5MB', ur: 'JPG/PNG، زیادہ سے زیادہ 5MB' },
+  'register.professional.bio': { en: 'Brief Introduction', ur: 'مختصر تعارف' },
+  'register.professional.bioPh': {
+    en: 'Briefly describe your experience, expertise, and services…',
+    ur: 'اپنے تجربے، مہارت اور خدمات کے بارے میں مختصر بتائیں…',
+  },
+  'register.professional.submit': { en: 'Submit Registration', ur: 'رجسٹریشن جمع کروائیں' },
+  'register.professional.submitting': { en: 'Submitting…', ur: 'جمع ہو رہا ہے…' },
+
+  // --------------------------- REGISTER: SKILL CATEGORIES ---------------------------
+  'register.skill.electrician': { en: 'Electrician', ur: 'الیکٹریشن' },
+  'register.skill.plumber': { en: 'Plumber', ur: 'پلمبر' },
+  'register.skill.carpenter': { en: 'Carpenter', ur: 'بڑھئی' },
+  'register.skill.painter': { en: 'Painter', ur: 'پینٹر' },
+  'register.skill.acTechnician': { en: 'AC Technician', ur: 'اے سی ٹیکنیشن' },
+  'register.skill.welder': { en: 'Welder', ur: 'ویلڈر' },
+  'register.skill.cleaner': { en: 'Cleaner', ur: 'صفائی' },
+  'register.skill.handyman': { en: 'Handyman', ur: 'کاریگر' },
+
+  // --------------------------- REGISTER: SHARED ---------------------------
+  'register.accountSection': { en: 'Account', ur: 'اکاؤنٹ' },
+  'register.termsNotice': { en: "By submitting, you agree to Ustad's Terms & Privacy Policy", ur: 'جمع کروانے سے آپ استاد کی شرائط اور پرائیویسی پالیسی سے اتفاق کرتے ہیں' },
+  'register.error.required': { en: 'Please fill in all required fields', ur: 'براہ کرم تمام لازمی خانے پُر کریں' },
+
   // --------------------------- DASHBOARD ---------------------------
+  'dashboard.brand.tagline': { en: 'Your skill, your livelihood', ur: 'آپ کا ہنر، آپ کا روزگار' },
+  'dashboard.trust.line': {
+    en: '10,000+ skilled professionals across Pakistan · Safe · Verified · Trusted',
+    ur: 'پاکستان بھر میں 10,000+ ہنر مند پیشہ ور · محفوظ · تصدیق شدہ · قابل اعتماد',
+  },
   'dashboard.hero.title': {
     en: 'Get free quotes from local skilled workers',
     ur: 'مقامی ہنر مند کارکنوں سے مفت تخمینے حاصل کریں',
@@ -84,9 +179,9 @@ export const strings = {
     ur: 'کام پوسٹ کریں، جوابات کا موازنہ کریں، اور بہترین پیشہ ور منتخب کریں۔',
   },
   'dashboard.cta.browse': { en: 'Browse services', ur: 'خدمات دیکھیں' },
-  'dashboard.cta.postJob': { en: 'Post a job', ur: 'کام پوسٹ کریں' },
+  'dashboard.cta.findNearby': { en: 'Find nearby Ustads', ur: 'قریبی استاد تلاش کریں' },
   'dashboard.cta.myListings': { en: 'My listings', ur: 'میری فہرستیں' },
-  'dashboard.cta.openJobs': { en: 'Open jobs', ur: 'دستیاب کام' },
+  'dashboard.cta.applications': { en: 'Applications', ur: 'درخواستیں' },
   'dashboard.howItWorks.title': { en: 'How it works', ur: 'یہ کیسے کام کرتا ہے' },
   'dashboard.howItWorks.step1': { en: 'Post your task in seconds', ur: 'سیکنڈوں میں اپنا کام پوسٹ کریں' },
   'dashboard.howItWorks.step2': { en: 'Receive responses and quotes quickly', ur: 'جلدی جوابات اور تخمینے حاصل کریں' },
@@ -153,32 +248,6 @@ export const strings = {
   'listing.gate.applySignIn': { en: 'Sign in to apply for this service.', ur: 'اس سروس کے لیے درخواست دینے کے لیے لاگ ان کریں۔' },
   'listing.gate.applyRole': { en: 'Switch to customer role to apply for services.', ur: 'درخواست دینے کے لیے صارف کے کردار پر جائیں۔' },
 
-  // --------------------------- JOBS SCREEN ---------------------------
-  'jobs.title': { en: 'Jobs board', ur: 'کاموں کا بورڈ' },
-  'jobs.subtitle': {
-    en: 'Open a job for quotes, messages, confirm booking, complete, and review.',
-    ur: 'کام کھولیں تاکہ تخمینے، پیغامات، بکنگ، تکمیل اور جائزہ ہو سکے۔',
-  },
-  'jobs.signInRequired': { en: 'Sign in required', ur: 'لاگ ان درکار' },
-  'jobs.signInPrompt': {
-    en: 'Browse services as guest, then sign in to post or manage jobs.',
-    ur: 'مہمان کے طور پر خدمات دیکھیں، پھر لاگ ان کر کے کام پوسٹ یا منظم کریں۔',
-  },
-  'jobs.guest.draftHint': {
-    en: 'Post a job without an account. Sign in later to chat with workers and accept quotes.',
-    ur: 'بغیر اکاؤنٹ کے کام پوسٹ کریں۔ کارکنوں سے بات کرنے اور تخمینے قبول کرنے کے لیے بعد میں لاگ ان کریں۔',
-  },
-  'jobs.post.title': { en: 'Post a new job', ur: 'نیا کام پوسٹ کریں' },
-  'jobs.post.placeholder': { en: 'Need electrician for fan install', ur: 'فین لگوانے کے لیے الیکٹریشن چاہیے' },
-  'jobs.post.cta': { en: 'Post job', ur: 'کام پوسٹ کریں' },
-  'jobs.post.toast': { en: 'Job posted', ur: 'کام پوسٹ ہو گیا' },
-  'jobs.list.title': { en: 'Recent jobs', ur: 'حالیہ کام' },
-  'jobs.list.empty': { en: 'No jobs yet.', ur: 'ابھی کوئی کام نہیں۔' },
-  'jobs.error.load': { en: 'Failed to load jobs', ur: 'کام لوڈ نہیں ہو سکے' },
-  'jobs.gate.postSignIn': { en: 'Sign in to post a job.', ur: 'کام پوسٹ کرنے کے لیے لاگ ان کریں۔' },
-  'jobs.gate.postRole': { en: 'Switch to customer role to post jobs.', ur: 'کام پوسٹ کرنے کے لیے صارف کے کردار پر جائیں۔' },
-  'jobs.gate.openSignIn': { en: 'Sign in to open job details.', ur: 'کام کی تفصیلات دیکھنے کے لیے لاگ ان کریں۔' },
-
   // --------------------------- JOB DETAIL ---------------------------
   'jobDetail.offline': {
     en: 'Connect Supabase to open job threads and reviews.',
@@ -211,15 +280,6 @@ export const strings = {
   },
   'jobDetail.confirm.cta': { en: 'Confirm booking', ur: 'بکنگ کی تصدیق' },
   'jobDetail.confirm.toast': { en: 'Booking confirmed', ur: 'بکنگ کی تصدیق ہو گئی' },
-  'jobDetail.quote.title': { en: 'Send a quote', ur: 'تخمینہ بھیجیں' },
-  'jobDetail.quote.amount': { en: 'Amount (PKR)', ur: 'رقم (روپے)' },
-  'jobDetail.quote.message': { en: 'Short message', ur: 'مختصر پیغام' },
-  'jobDetail.quote.submit': { en: 'Submit quote', ur: 'تخمینہ جمع کروائیں' },
-  'jobDetail.quote.toast': { en: 'Quote sent', ur: 'تخمینہ بھیج دیا گیا' },
-  'jobDetail.quote.invalidAmount': { en: 'Enter a valid amount', ur: 'درست رقم درج کریں' },
-  'jobDetail.quotes.title': { en: 'Quotes', ur: 'تخمینے' },
-  'jobDetail.quotes.accept': { en: 'Accept', ur: 'قبول' },
-  'jobDetail.quotes.accepted': { en: 'Quote accepted', ur: 'تخمینہ قبول' },
   'jobDetail.complete.cta': { en: 'Mark job complete', ur: 'کام مکمل کریں' },
   'jobDetail.complete.toast': { en: 'Marked complete', ur: 'مکمل کر دیا گیا' },
   'jobDetail.payment.title': { en: 'Payment (pilot)', ur: 'ادائیگی (پائلٹ)' },
@@ -277,8 +337,8 @@ export const strings = {
   'account.runtime.fixture': { en: 'Fixture mode', ur: 'فکسچر موڈ' },
   'account.guest.title': { en: 'Welcome', ur: 'خوش آمدید' },
   'account.guest.subtitle': {
-    en: 'Sign in to post jobs, apply for services, and access role-based pages.',
-    ur: 'لاگ ان کریں تاکہ کام پوسٹ کر سکیں، درخواست دے سکیں اور اپنے کردار کے صفحات دیکھ سکیں۔',
+    en: 'Sign in to apply for services and access role-based pages.',
+    ur: 'لاگ ان کریں تاکہ درخواست دے سکیں اور اپنے کردار کے صفحات دیکھ سکیں۔',
   },
   'account.switchRole': { en: 'Switch role', ur: 'کردار تبدیل کریں' },
   'account.verifyDocs': { en: 'Document verification', ur: 'دستاویز کی تصدیق' },
@@ -287,6 +347,14 @@ export const strings = {
     ur: 'اپنا شناختی کارڈ یا ڈرائیونگ لائسنس اپ لوڈ کریں — OCR ممکنہ معلومات بھر دے گا۔',
   },
   'account.verifyDocs.cta': { en: 'Verify documents', ur: 'دستاویزات کی تصدیق' },
+  'account.location.title': { en: 'Your location', ur: 'آپ کی لوکیشن' },
+  'account.location.subtitle': {
+    en: 'Share your current location so nearby customers can find you.',
+    ur: 'اپنی موجودہ لوکیشن شیئر کریں تاکہ قریبی گاہک آپ کو تلاش کر سکیں۔',
+  },
+  'account.location.cta': { en: 'Share my location', ur: 'میری لوکیشن شیئر کریں' },
+  'account.location.saved': { en: 'Location updated', ur: 'لوکیشن اپ ڈیٹ ہو گئی' },
+  'account.location.failed': { en: 'Could not get your location', ur: 'لوکیشن حاصل نہیں ہو سکی' },
   'account.membership.title': { en: 'Membership', ur: 'ممبرشپ' },
   'account.membership.subtitle': { en: 'Subscriptions (flagged rollout).', ur: 'سبسکرپشن (مرحلہ وار)' },
   'account.membership.plan': { en: 'Plan', ur: 'پلان' },
@@ -355,6 +423,57 @@ export const strings = {
   'faqChat.placeholder': { en: 'Type your question…', ur: 'سوال لکھیں…' },
   'faqChat.send': { en: 'Send', ur: 'بھیجیں' },
   'faqChat.emailSupport': { en: 'Email support', ur: 'سپورٹ کو ای میل' },
+
+  // --------------------------- NEARBY USTAD ---------------------------
+  'nearby.title': { en: 'Qareebi Ustad', ur: 'قریبی استاد' },
+  'nearby.searchPh': { en: 'Search for professionals…', ur: 'پیشہ ور تلاش کریں…' },
+  'nearby.filterAll': { en: 'All', ur: 'سب' },
+  'nearby.locate.title': { en: 'Turn on location', ur: 'لوکیشن آن کریں' },
+  'nearby.locate.subtitle': {
+    en: 'We need your location to find professionals near you.',
+    ur: 'آپ کے قریب پیشہ ور تلاش کرنے کے لیے آپ کی لوکیشن درکار ہے۔',
+  },
+  'nearby.locate.cta': { en: 'Share my location', ur: 'میری لوکیشن شیئر کریں' },
+  'nearby.locate.denied': { en: 'Location permission denied', ur: 'لوکیشن کی اجازت نہیں ملی' },
+  'nearby.empty': { en: 'No professionals found nearby yet.', ur: 'ابھی قریب کوئی پیشہ ور نہیں ملا۔' },
+  'nearby.error.load': { en: 'Unable to load nearby professionals.', ur: 'قریبی پیشہ ور لوڈ نہیں ہو سکے۔' },
+  'nearby.card.years': { en: 'years exp', ur: 'سال تجربہ' },
+  'nearby.card.verified': { en: 'Verified', ur: 'تصدیق شدہ' },
+  'nearby.card.call': { en: 'Call Now', ur: 'ابھی کال کریں' },
+  'nearby.card.book': { en: 'Book Now', ur: 'ابھی بک کریں' },
+  'nearby.card.perDay': { en: '/day', ur: '/یومیہ' },
+  'nearby.card.perHour': { en: '/hour', ur: '/گھنٹہ' },
+  'nearby.book.notice': {
+    en: 'Direct booking is coming soon — browse this professional\'s services and apply instead.',
+    ur: 'براہ راست بکنگ جلد آ رہی ہے — اس پیشہ ور کی خدمات دیکھیں اور درخواست دیں۔',
+  },
+  'nearby.noPhone': { en: 'No phone number on file', ur: 'کوئی فون نمبر موجود نہیں' },
+
+  // --------------------------- JOB TRACKING (LIVE MAP) ---------------------------
+  'tracking.title': { en: 'Live Tracking', ur: 'لائیو ٹریکنگ' },
+  'tracking.cta': { en: 'Track live location', ur: 'لائیو لوکیشن دیکھیں' },
+  'tracking.you': { en: 'You · Your Location', ur: 'آپ · آپ کی لوکیشن' },
+  'tracking.moving': { en: 'moving', ur: 'حرکت میں' },
+  'tracking.waiting.title': { en: 'Waiting for location', ur: 'لوکیشن کا انتظار' },
+  'tracking.waiting.subtitle': {
+    en: 'The professional has not shared their live location yet.',
+    ur: 'پیشہ ور نے ابھی تک اپنی لائیو لوکیشن شیئر نہیں کی۔',
+  },
+  'tracking.away': { en: 'away', ur: 'دور' },
+  'tracking.etaAway': { en: 'mins away', ur: 'منٹ میں پہنچیں گے' },
+  'tracking.call': { en: 'Call', ur: 'کال کریں' },
+  'tracking.liveLocation': { en: 'Live Location', ur: 'براہ راست مقام' },
+  'tracking.permission.title': { en: 'Location needed', ur: 'لوکیشن درکار ہے' },
+  'tracking.permission.subtitle': {
+    en: 'Share your location to see the live map.',
+    ur: 'لائیو نقشہ دیکھنے کے لیے اپنی لوکیشن شیئر کریں۔',
+  },
+  'tracking.permission.cta': { en: 'Share my location', ur: 'میری لوکیشن شیئر کریں' },
+  'tracking.web.unavailable': { en: 'Mobile app only', ur: 'صرف موبائل ایپ' },
+  'tracking.web.unavailable.subtitle': {
+    en: 'Live map tracking is available in the Ustad mobile app.',
+    ur: 'لائیو نقشہ ٹریکنگ استاد موبائل ایپ میں دستیاب ہے۔',
+  },
 
   // --------------------------- COMMUNITY TIPS ---------------------------
   'community.title': { en: 'Community tips', ur: 'کمیونٹی مشورے' },

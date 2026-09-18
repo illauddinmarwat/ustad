@@ -17,7 +17,7 @@ exports[`AuthScreen matches snapshot 1`] = `
     style={
       [
         {
-          "backgroundColor": "#F7F8FB",
+          "backgroundColor": "#F4FBF6",
           "flex": 1,
         },
         {
@@ -46,8 +46,8 @@ exports[`AuthScreen matches snapshot 1`] = `
         <View
           colors={
             [
-              "#0A65FC",
-              "#061257",
+              "#15803D",
+              "#14532D",
             ]
           }
           end={
@@ -165,11 +165,11 @@ exports[`AuthScreen matches snapshot 1`] = `
                   },
                   {
                     "marginTop": 2,
-                    "textAlign": "right",
                     "writingDirection": "rtl",
                   },
                   {
                     "color": "rgba(255,255,255,0.85)",
+                    "textAlign": "right",
                   },
                   undefined,
                 ]
@@ -211,11 +211,11 @@ exports[`AuthScreen matches snapshot 1`] = `
                   },
                   {
                     "marginTop": 2,
-                    "textAlign": "right",
                     "writingDirection": "rtl",
                   },
                   {
                     "color": "rgba(255,255,255,0.85)",
+                    "textAlign": "right",
                   },
                   undefined,
                 ]
@@ -234,7 +234,7 @@ exports[`AuthScreen matches snapshot 1`] = `
               },
               {
                 "backgroundColor": "#FFFFFF",
-                "borderColor": "#E5E7EB",
+                "borderColor": "#DCEFE1",
                 "borderWidth": 1,
               },
               {
@@ -281,11 +281,11 @@ exports[`AuthScreen matches snapshot 1`] = `
                   },
                   {
                     "marginTop": 2,
-                    "textAlign": "right",
                     "writingDirection": "rtl",
                   },
                   {
                     "color": "#384151",
+                    "textAlign": "right",
                   },
                   undefined,
                 ]
@@ -352,7 +352,7 @@ exports[`AuthScreen matches snapshot 1`] = `
                   {
                     "alignItems": "center",
                     "backgroundColor": "#FFFFFF",
-                    "borderColor": "#E5E7EB",
+                    "borderColor": "#DCEFE1",
                     "borderRadius": 14,
                     "borderWidth": 1,
                     "flexDirection": "row",
@@ -485,7 +485,7 @@ exports[`AuthScreen matches snapshot 1`] = `
                   {
                     "alignItems": "center",
                     "backgroundColor": "#FFFFFF",
-                    "borderColor": "#E5E7EB",
+                    "borderColor": "#DCEFE1",
                     "borderRadius": 14,
                     "borderWidth": 1,
                     "flexDirection": "row",
@@ -606,8 +606,8 @@ exports[`AuthScreen matches snapshot 1`] = `
                   "paddingVertical": 12,
                 },
                 {
-                  "backgroundColor": "#0A65FC",
-                  "borderColor": "#0A65FC",
+                  "backgroundColor": "#15803D",
+                  "borderColor": "#15803D",
                 },
                 {
                   "alignSelf": "stretch",
@@ -738,7 +738,7 @@ exports[`AuthScreen matches snapshot 1`] = `
                 },
                 {
                   "backgroundColor": "#FFFFFF",
-                  "borderColor": "#E5E7EB",
+                  "borderColor": "#DCEFE1",
                 },
                 {
                   "alignSelf": "stretch",

@@ -34,11 +34,15 @@ import DashboardScreen from './src/screens/app/DashboardScreen';
 import FaqChatScreen from './src/screens/app/FaqChatScreen';
 import FaqScreen from './src/screens/app/FaqScreen';
 import JobDetailScreen from './src/screens/app/JobDetailScreen';
-import JobsScreen from './src/screens/app/JobsScreen';
+import JobTrackingScreen from './src/screens/app/JobTrackingScreen';
 import ListingDetailScreen from './src/screens/app/ListingDetailScreen';
+import NearbyUstadScreen from './src/screens/app/NearbyUstadScreen';
 import ServicesScreen from './src/screens/app/ServicesScreen';
 import WorkerOnboardingScreen from './src/screens/app/WorkerOnboardingScreen';
 import AuthScreen from './src/screens/auth/AuthScreen';
+import RegisterChoiceScreen from './src/screens/auth/RegisterChoiceScreen';
+import RegisterCustomerScreen from './src/screens/auth/RegisterCustomerScreen';
+import RegisterProfessionalScreen from './src/screens/auth/RegisterProfessionalScreen';
 import { colors } from './src/theme/tokens';
 import { fontFamilies } from './src/theme/typography';
 
@@ -128,14 +132,6 @@ function WorkerTabs() {
         }}
       />
       <Tab.Screen
-        name="Jobs"
-        component={JobsScreen}
-        options={{
-          tabBarLabel: ({ focused }) => <TabBarLabel id="tabs.jobs" focused={focused} />,
-          tabBarIcon: tabIcon('briefcase'),
-        }}
-      />
-      <Tab.Screen
         name="Applications"
         component={ApplicationsScreen}
         options={{
@@ -168,19 +164,19 @@ function CustomerTabs() {
         }}
       />
       <Tab.Screen
+        name="Nearby"
+        component={NearbyUstadScreen}
+        options={{
+          tabBarLabel: ({ focused }) => <TabBarLabel id="tabs.nearby" focused={focused} />,
+          tabBarIcon: tabIcon('map-pin'),
+        }}
+      />
+      <Tab.Screen
         name="Services"
         component={ServicesScreen}
         options={{
           tabBarLabel: ({ focused }) => <TabBarLabel id="tabs.services" focused={focused} />,
           tabBarIcon: tabIcon('grid'),
-        }}
-      />
-      <Tab.Screen
-        name="Jobs"
-        component={JobsScreen}
-        options={{
-          tabBarLabel: ({ focused }) => <TabBarLabel id="tabs.jobs" focused={focused} />,
-          tabBarIcon: tabIcon('briefcase'),
         }}
       />
       <Tab.Screen
@@ -225,7 +221,27 @@ function RootNavigator() {
     <Stack.Navigator screenOptions={stackScreenOptions}>
       <Stack.Screen name="Tabs" component={AppTabs} options={{ title: en('nav.app'), headerShown: false }} />
       <Stack.Screen name="Auth" component={AuthScreen} options={{ title: en('nav.signIn') }} />
+      <Stack.Screen name="RegisterChoice" component={RegisterChoiceScreen} options={{ title: en('nav.registerChoice') }} />
+      <Stack.Screen
+        name="RegisterCustomer"
+        component={RegisterCustomerScreen}
+        options={{ title: en('nav.registerCustomer') }}
+      />
+      <Stack.Screen
+        name="RegisterProfessional"
+        component={RegisterProfessionalScreen}
+        options={{ title: en('nav.registerProfessional') }}
+      />
       <Stack.Screen name="JobDetail" component={JobDetailScreen} options={{ title: en('nav.job') }} />
+      <Stack.Screen
+        name="JobTracking"
+        component={JobTrackingScreen}
+        options={{
+          title: en('nav.jobTracking'),
+          headerStyle: { backgroundColor: colors.primary },
+          headerTintColor: colors.primaryInk,
+        }}
+      />
       <Stack.Screen name="ListingDetail" component={ListingDetailScreen} options={{ title: en('nav.service') }} />
       <Stack.Screen
         name="WorkerOnboarding"
