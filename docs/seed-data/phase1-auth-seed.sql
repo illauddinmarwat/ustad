@@ -11,6 +11,8 @@ with accounts as (
   insert into auth.users (
     id, instance_id, aud, role, email, encrypted_password,
     email_confirmed_at,
+    confirmation_token, recovery_token, email_change, email_change_token_new,
+    email_change_token_current, phone_change, phone_change_token, reauthentication_token,
     raw_app_meta_data, raw_user_meta_data,
     created_at, updated_at
   )
@@ -22,16 +24,16 @@ with accounts as (
     a.email,
     crypt(a.pwd, gen_salt('bf')),
     now(),
+    '', '', '', '', '', '', '', '',
     '{"provider":"email","providers":["email"]}'::jsonb,
     '{}'::jsonb,
     now(), now()
   from accounts a
-  on conflict (email) do update
-    set email = excluded.email
+  where not exists (select 1 from auth.users u where u.email = a.email)
   returning id, email
 )
 insert into auth.identities (
-  id, provider_id, user_id, identity_data, provider, created_at, updated_at, email
+  id, provider_id, user_id, identity_data, provider, created_at, updated_at
 )
 select
   gen_random_uuid(),
@@ -39,6 +41,6 @@ select
   i.id,
   jsonb_build_object('sub', i.id::text, 'email', i.email),
   'email',
-  now(), now(), i.email
+  now(), now()
 from inserted i
-on conflict (provider, provider_id) do nothing;
+on conflict do nothing;
