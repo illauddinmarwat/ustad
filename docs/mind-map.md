@@ -96,15 +96,17 @@ mindmap
       Jest and Detox tests
     web-admin/
       Next.js + Tailwind
+      static site export
       dashboard pages
     supabase/
       Postgres with RLS
-      migrations phases 1-11
-      pgTAP tests
+      migrations through direct requests, job posting, payments, notifications, Hisab
+      pgTAP tests with seeded users
     Ops
       GitHub Actions CI
       auto-deploy migrations on master
-      EAS builds
+      auto-deploy admin panel by FTP
+      EAS builds: installable APK
     docs/
       blueprint and MVP
       setup guides

@@ -36,6 +36,21 @@ To update the site later: rebuild and upload `out/` again, replacing the old fil
 
 Change the seeded admin password before making the site public. Vercel, Netlify, Cloudflare Pages and Render can host the same `out/` folder if you ever prefer one of them.
 
+**Automatic deploy (GitHub Actions).** `.github/workflows/deploy-admin.yml` builds the site and uploads `web-admin/out/` over FTPS whenever a push to `master` changes `web-admin/`; you can also run it by hand from the Actions tab. It needs these repository secrets (Settings -> Secrets and variables -> Actions):
+
+| Secret | Value |
+|--------|-------|
+| `FTP_SERVER` | the FTP host, for example `ftp.koderkids.pk` (use a name that resolves publicly; the name shown in cPanel may not) |
+| `FTP_USERNAME` | the FTP account, for example `ustad@frontend.koderkids.pk` |
+| `FTP_PASSWORD` | that account's password |
+| `FTP_DIR` | `/` (the account is already limited to the site's folder) |
+| `NEXT_PUBLIC_SUPABASE_URL` | your Supabase project URL |
+| `NEXT_PUBLIC_SUPABASE_ANON_KEY` | the public anon key |
+
+The FTP account should be created in cPanel with its directory set to the site's folder only. The action uploads changed files and removes files it uploaded earlier; it overwrites same-named files, so the folder must be reserved for the admin panel. If a run fails with `ENOTFOUND` the server name does not resolve; with a certificate or TLS message, the host's certificate does not match the name.
+
+Currently live at https://frontend.koderkids.pk (HTTPS is forced by the `.htaccess` in the build).
+
 ## Database
 Add a new file in `supabase/migrations/` named `YYYYMMDDHHMMSS_description.sql`, then push to `master`. The deploy workflow runs `supabase db push`. Never edit a migration that already ran; add a new one.
 

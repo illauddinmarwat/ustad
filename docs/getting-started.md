@@ -127,7 +127,7 @@ See also the root [`README.md`](../README.md).
 
 ---
 
-## Android APK / AAB (release builds)
+## Android APK (release build)
 
 The app is **Expo (SDK 54)**. Release binaries are usually built with **EAS Build** (Expo Application Services).
 
@@ -147,9 +147,9 @@ The app is **Expo (SDK 54)**. Release binaries are usually built with **EAS Buil
    eas build --platform android
    ```
 
-   Use `--profile production` (or your profile name) once `eas.json` defines it. Output is an **AAB** (Play Store) or **APK** depending on profile — see [Expo EAS Build docs](https://docs.expo.dev/build/introduction/).
+   Use `--profile apk` for an installable APK. (An AAB for the Play Store is left for later.) See [Expo EAS Build docs](https://docs.expo.dev/build/introduction/).
 
-**Note:** This repo does not yet include `eas.json`; add it when you are ready for store pipeline. Local dev remains `npm run start`.
+**Note:** `mobile/eas.json` defines the `apk` profile. Local dev remains `npm run start`.
 
 ---
 

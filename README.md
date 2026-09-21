@@ -4,7 +4,7 @@
 
 **Ustad** is a Pakistan-focused **two-sided marketplace** for local skilled work: customers find workers (or post jobs), and workers offer services, quote jobs, and get hired. The mobile app is the primary client; **Supabase** (Postgres + Auth + APIs) is the backend.
 
-The product supports two complementary flows:
+The product supports three ways to get work done (see [`docs/features.md`](docs/features.md) for everything the app can do): the two flows below, plus **direct requests** (a customer sends a request to one chosen worker from Nearby). Payment is cash, with Ustad's commission tracked per worker.
 
 - **Job-led:** a customer posts a need → workers quote → customer hires → work completes on a shared **job** record (chat, status, reviews).
 - **Service-led:** workers publish **listings** from admin-defined **service templates** → customers browse, apply, worker accepts → customer confirms → same **job** spine as above.
@@ -26,7 +26,7 @@ Phased engineering notes and checklists live under [`docs/implementation/`](docs
 |------|----------------|
 | Mobile | **Expo (SDK 54)** + **React Native** + **TypeScript** in [`mobile/`](mobile/) |
 | Backend | **Supabase** — SQL migrations in [`supabase/migrations/`](supabase/migrations/), notes in [`supabase/README.md`](supabase/README.md) |
-| Docs | Product + MVP + runbooks in [`docs/`](docs/); app overview in [`docs/mind-map.md`](docs/mind-map.md); [run](docs/how-to-run.md), [build](docs/how-to-build.md), [admin panel](docs/admin-panel.md), [API reference](docs/api-reference.md) |
+| Docs | Product + MVP + runbooks in [`docs/`](docs/); app overview in [`docs/mind-map.md`](docs/mind-map.md); [features](docs/features.md), [run](docs/how-to-run.md), [build](docs/how-to-build.md), [admin panel](docs/admin-panel.md), [API reference](docs/api-reference.md) |
 
 Useful scripts from `mobile/` (after `npm install`):
 
@@ -34,7 +34,7 @@ Useful scripts from `mobile/` (after `npm install`):
 - `npm run typecheck` — TypeScript  
 - `npm test` — Jest unit tests  
 
-Database tests (with Supabase CLI + local stack): from repo root, `supabase test db` (see `supabase/tests/database/`).
+Database tests (with Supabase CLI + local stack): from repo root, `supabase test db` (see `supabase/tests/database/`). Every feature has structural tests and seeded-user tests (real people acting under the app's database roles); 971 assertions pass on a clean database.
 
 ## How to run builds
 
@@ -67,15 +67,11 @@ From **`mobile/`** (where `eas.json` and `app.config.ts` live):
 
 ```bash
 cd mobile
-eas build --platform android --profile preview
+eas build --platform android --profile apk
 ```
 
-- **`preview`** — internal distribution, **APK** (good for sideloading / testing). Defined in [`mobile/eas.json`](mobile/eas.json).
-- **`production`** — **AAB** for Play Store–style submission:
-
-  ```bash
-  eas build --platform android --profile production
-  ```
+- **`apk`** builds an installable **APK**: download it and install it on any Android phone. Defined in [`mobile/eas.json`](mobile/eas.json).
+- Play Store publishing (an AAB, profile `production`) is left for later.
 
 When the build finishes, open the URL printed in the terminal and download the artifact. You do **not** have to push to GitHub for a local `eas build`; EAS uploads your current project from disk. Pushing is still recommended for history and any CI that builds from Git.
 

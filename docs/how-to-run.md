@@ -70,7 +70,7 @@ Create `web-admin/.env.local`:
 NEXT_PUBLIC_SUPABASE_URL=https://<project>.supabase.co
 NEXT_PUBLIC_SUPABASE_ANON_KEY=<anon key>
 ```
-Then `npm run dev` and open http://localhost:3000. Sign in with an account whose profile `role` is `admin`.
+Then `npm run dev` and open http://localhost:3000. Sign in with an account whose profile `role` is `admin`. The live site is a static build hosted separately; see [how-to-build.md](how-to-build.md).
 
 ## Database
 - **Hosted**: migrations in `supabase/migrations/` are pushed automatically by GitHub Actions when you push to `master` (`.github/workflows/deploy-supabase.yml`). It needs the repo secrets `SUPABASE_ACCESS_TOKEN` and `SUPABASE_PROJECT_REF`.
