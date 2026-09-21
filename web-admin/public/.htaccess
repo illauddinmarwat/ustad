@@ -1,0 +1,11 @@
+# Used by Apache / LiteSpeed shared hosting (cPanel and similar). Other hosts ignore it.
+# Show the site's own 404 page and never list folder contents.
+ErrorDocument 404 /404.html
+Options -Indexes
+DirectoryIndex index.html
+
+# Once HTTPS (free SSL) is switched on for this subdomain, remove the leading # on the next 3 lines
+# so every visit is forced onto HTTPS. Do not enable them before SSL works, or the site becomes unreachable.
+# RewriteEngine On
+# RewriteCond %{HTTPS} off
+# RewriteRule ^ https://%{HTTP_HOST}%{REQUEST_URI} [L,R=301]

@@ -5,39 +5,36 @@ Prerequisites: Expo account, `npm install -g eas-cli`, and `eas login` (once).
 
 ```bash
 cd mobile
-eas build --platform android --profile apk          # installable APK: download it and install it on any Android phone
-eas build --platform android --profile production   # AAB, only for uploading to the Play Store
+eas build --platform android --profile apk    # installable APK: download it and install it on any Android phone
 ```
-Profiles live in `mobile/eas.json`:
-
-| Profile | Output | Use |
-|---------|--------|-----|
-| `apk` | APK | Install directly on a phone. This is the normal way to run the real app. |
-| `production` | AAB | Play Store submission only (an AAB cannot be installed on a phone directly) |
+The `apk` profile in `mobile/eas.json` builds a real release app. Play Store publishing (an AAB file, profile `production`) is left for later; you do not need it to install and use the app.
 
 Before the first build, set these so the installed app matches what you see locally: `GOOGLE_MAPS_API_KEY` (live tracking map), Firebase credentials for push (`eas credentials`), the feature flags in `how-to-run.md`, and `pg_cron` / `pg_net` enabled in Supabase.
 
-Both profiles inject `EXPO_PUBLIC_SUPABASE_URL` and `EXPO_PUBLIC_SUPABASE_ANON_KEY`. The anon key is meant to be public; security comes from Row Level Security. Never put the `service_role` key in the app or in `eas.json`.
+The profile injects `EXPO_PUBLIC_SUPABASE_URL` and `EXPO_PUBLIC_SUPABASE_ANON_KEY`. The anon key is meant to be public; security comes from Row Level Security. Never put the `service_role` key in the app or in `eas.json`.
 
 When the build finishes, open the URL printed in the terminal and download the file. EAS uploads from disk, so pushing to GitHub is not required.
 
 ## Admin panel (Next.js, static files)
-The admin panel has no server code, so it is built as plain static files.
+The admin panel has no server code, so it is built as plain static files. Any web hosting can serve it, including ordinary shared hosting; no Node server is needed.
 ```bash
 cd web-admin
 npm run build      # writes the finished site into web-admin/out/
 npm run typecheck
 npm run lint
 ```
-Set `NEXT_PUBLIC_SUPABASE_URL` and `NEXT_PUBLIC_SUPABASE_ANON_KEY` in the host's environment (or `.env.local`) **before** building, because `NEXT_PUBLIC_*` values are baked in at build time. The `out/` folder is the whole site: upload it to any static host.
+Set `NEXT_PUBLIC_SUPABASE_URL` and `NEXT_PUBLIC_SUPABASE_ANON_KEY` (in `web-admin/.env.local`) **before** building, because `NEXT_PUBLIC_*` values are baked in at build time. The `out/` folder is the whole site.
 
-**Hosting on Render (Static Site):** New -> Static Site, connect the GitHub repo, then set
-- Root Directory: `web-admin`
-- Build Command: `npm install && npm run build`
-- Publish Directory: `out`
-- Environment: the two `NEXT_PUBLIC_*` values above
+**Putting it on shared hosting (cPanel or similar), on a subdomain:**
+1. In the hosting control panel, create a subdomain such as `admin.yourdomain.com`. It gets its own folder (for example `public_html/admin`). Until you have your own domain, use a subdomain of a domain you already have on that hosting.
+2. On your computer run `npm run build` inside `web-admin`.
+3. Upload the **contents** of `web-admin/out/` (not the `out` folder itself) into the subdomain's folder, using the File Manager or FTP. Include the hidden `.htaccess` file; it makes the site show its own 404 page and never list folders.
+4. Turn on the free SSL certificate (AutoSSL / Let's Encrypt) for the subdomain so logins use HTTPS. After it works, remove the `#` on the three redirect lines at the bottom of `.htaccess` to force HTTPS.
+5. Open `https://admin.yourdomain.com` and sign in with an admin account.
 
-Then add your custom domain in Render's Settings -> Custom Domains and create the DNS record Render shows you at your domain seller. Vercel, Netlify and Cloudflare Pages work the same way. Change the seeded admin password before making the site public.
+To update the site later: rebuild and upload `out/` again, replacing the old files. When you buy your own domain, add it in the hosting panel (or point its DNS at the hosting) and rebuild only if the Supabase values change; the site itself does not depend on its address.
+
+Change the seeded admin password before making the site public. Vercel, Netlify, Cloudflare Pages and Render can host the same `out/` folder if you ever prefer one of them.
 
 ## Database
 Add a new file in `supabase/migrations/` named `YYYYMMDDHHMMSS_description.sql`, then push to `master`. The deploy workflow runs `supabase db push`. Never edit a migration that already ran; add a new one.
