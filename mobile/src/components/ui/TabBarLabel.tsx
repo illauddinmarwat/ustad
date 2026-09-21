@@ -36,8 +36,8 @@ const styles = StyleSheet.create({
   },
   ur: {
     fontFamily: fontFamilies.urdu,
-    fontSize: 9,
-    lineHeight: 12,
+    fontSize: 10,
+    lineHeight: 18,
     marginTop: 1,
     writingDirection: 'rtl',
   },

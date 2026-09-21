@@ -1,4 +1,18 @@
 import { ExpoConfig, ConfigContext } from 'expo/config';
+import { existsSync, readFileSync } from 'fs';
+import { join } from 'path';
+
+// Expo's own .env loading never overwrites variables already present in the
+// shell/OS environment, so a stale EXPO_PUBLIC_* value there silently beats
+// this file. Re-apply .env with override so the file is the source of truth.
+const envPath = join(__dirname, '.env');
+if (existsSync(envPath)) {
+  for (const line of readFileSync(envPath, 'utf8').split(/\r?\n/)) {
+    const m = line.match(/^\s*([A-Za-z_][A-Za-z0-9_]*)\s*=\s*(.*?)\s*$/);
+    if (!m) continue;
+    process.env[m[1]] = m[2].replace(/^(['"])(.*)\1$/, '$2');
+  }
+}
 
 export default ({ config }: ConfigContext): ExpoConfig => ({
   ...config,
@@ -52,6 +66,7 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
   plugins: [
     'expo-localization',
     'expo-font',
+    'expo-notifications',
     [
       'expo-location',
       {

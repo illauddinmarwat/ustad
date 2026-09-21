@@ -16,8 +16,11 @@ jest.mock('../../context/AuthContext', () => ({
   useAuth: () => mockAuth.current,
 }));
 
+const mockRouteParams: { current: { category?: string } | undefined } = { current: undefined };
+
 jest.mock('@react-navigation/native', () => ({
   useNavigation: () => ({ navigate: mockNavigate }),
+  useRoute: () => ({ params: mockRouteParams.current }),
 }));
 
 const mockListingRow = {
@@ -30,29 +33,44 @@ const mockListingRow = {
   created_at: new Date().toISOString(),
 };
 
+const mockListingCalls: Array<{ templateIds?: string[] }> = [];
+const mockTemplates: { current: Array<{ id: string }> } = { current: [{ id: 'template-1' }] };
+
 jest.mock('../../lib/supabase', () => {
+  const listingRow = {
+    id: 'listing-1',
+    headline: 'AC service — DHA',
+    price_pkr: 3500,
+    status: 'active',
+    worker_id: 'worker-1',
+    template_id: 'template-1',
+    created_at: new Date().toISOString(),
+  };
   const buildChain = (table: string) => {
     if (table === 'worker_service_listings') {
+      const ordered = (templateIds?: string[]) => ({
+        order: () => ({
+          limit: () => {
+            mockListingCalls.push({ templateIds });
+            return Promise.resolve({ data: templateIds && templateIds.length === 0 ? [] : [listingRow], error: null });
+          },
+        }),
+      });
+      return {
+        select: () => ({
+          eq: () => ({ ...ordered(), in: (_col: string, ids: string[]) => ordered(ids) }),
+        }),
+        insert: () => Promise.resolve({ data: null, error: null }),
+      };
+    }
+    if (table === 'service_templates') {
       return {
         select: () => ({
           eq: () => ({
-            order: () => ({
-              limit: () => Promise.resolve({
-                data: [{
-                  id: 'listing-1',
-                  headline: 'AC service — DHA',
-                  price_pkr: 3500,
-                  status: 'active',
-                  worker_id: 'worker-1',
-                  template_id: 'template-1',
-                  created_at: new Date().toISOString(),
-                }],
-                error: null,
-              }),
-            }),
+            limit: () => Promise.resolve({ data: [], error: null }),
+            eq: () => Promise.resolve({ data: mockTemplates.current, error: null }),
           }),
         }),
-        insert: () => Promise.resolve({ data: null, error: null }),
       };
     }
     return {
@@ -121,6 +139,9 @@ const wrap = (node: React.ReactElement) =>
 
 beforeEach(() => {
   mockNavigate.mockReset();
+  mockRouteParams.current = undefined;
+  mockListingCalls.length = 0;
+  mockTemplates.current = [{ id: 'template-1' }];
   mockAuth.current = { role: null, session: null };
 });
 
@@ -144,5 +165,40 @@ describe('ServicesScreen', () => {
       fireEvent.press(await findByText('Sign in / Create account'));
     });
     await waitFor(() => expect(mockNavigate).toHaveBeenCalledWith('Auth'));
+  });
+
+  it('shows category pills and filters listings through the template category', async () => {
+    const { findByText, getByText } = wrap(<ServicesScreen />);
+    await findByText('AC service — DHA');
+    mockListingCalls.length = 0;
+    fireEvent.press(getByText('AC Technician'));
+    await waitFor(() => expect(mockListingCalls.length).toBeGreaterThan(0));
+    expect(mockListingCalls[mockListingCalls.length - 1]).toEqual({ templateIds: ['template-1'] });
+  });
+
+  it('opens already filtered when a category is passed in', async () => {
+    mockRouteParams.current = { category: 'plumber' };
+    const { findByText } = wrap(<ServicesScreen />);
+    await findByText('AC service — DHA');
+    expect(mockListingCalls.some((c) => c.templateIds?.[0] === 'template-1')).toBe(true);
+  });
+
+  it('shows all listings again when All is chosen', async () => {
+    mockRouteParams.current = { category: 'plumber' };
+    const { findByText, getByText } = wrap(<ServicesScreen />);
+    await findByText('AC service — DHA');
+    mockListingCalls.length = 0;
+    fireEvent.press(getByText('All'));
+    await waitFor(() => expect(mockListingCalls.length).toBeGreaterThan(0));
+    expect(mockListingCalls[mockListingCalls.length - 1]).toEqual({ templateIds: undefined });
+  });
+
+  it('offers to find nearby workers when a category has no listings', async () => {
+    mockTemplates.current = [];
+    const { findByText, getByText } = wrap(<ServicesScreen />);
+    await findByText('AC service — DHA');
+    fireEvent.press(getByText('Welder'));
+    fireEvent.press(await findByText('Find nearby workers instead'));
+    expect(mockNavigate).toHaveBeenCalledWith('Nearby', { category: 'welder' });
   });
 });

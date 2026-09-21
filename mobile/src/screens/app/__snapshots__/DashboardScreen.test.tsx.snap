@@ -63,10 +63,10 @@ exports[`DashboardScreen matches snapshot 1`] = `
                 "alignItems": "center",
                 "backgroundColor": "#DCFCE7",
                 "borderRadius": 999,
-                "height": 48,
+                "height": 64,
                 "justifyContent": "center",
                 "marginRight": 12,
-                "width": 48,
+                "width": 64,
               }
             }
           >
@@ -79,8 +79,8 @@ exports[`DashboardScreen matches snapshot 1`] = `
               }
               style={
                 {
-                  "height": 32,
-                  "width": 32,
+                  "height": 44,
+                  "width": 44,
                 }
               }
             />
@@ -99,9 +99,9 @@ exports[`DashboardScreen matches snapshot 1`] = `
                   [
                     {
                       "fontFamily": "SpaceGrotesk_700Bold",
-                      "fontSize": 24,
-                      "letterSpacing": -0.3,
-                      "lineHeight": 30,
+                      "fontSize": 30,
+                      "letterSpacing": -0.5,
+                      "lineHeight": 36,
                     },
                     {
                       "color": "#0B0F19",
@@ -119,8 +119,8 @@ exports[`DashboardScreen matches snapshot 1`] = `
                   [
                     {
                       "fontFamily": "NotoNastaliqUrdu_600SemiBold",
-                      "fontSize": 15,
-                      "lineHeight": 22,
+                      "fontSize": 18,
+                      "lineHeight": 26,
                     },
                     {
                       "marginTop": 2,
@@ -192,11 +192,16 @@ exports[`DashboardScreen matches snapshot 1`] = `
       </View>
       <View
         style={
-          {
-            "flexDirection": "row",
-            "gap": 8,
-            "marginBottom": 16,
-          }
+          [
+            {
+              "flexDirection": "row",
+              "gap": 8,
+              "marginBottom": 16,
+            },
+            {
+              "flexDirection": "column",
+            },
+          ]
         }
       >
         <View
@@ -241,9 +246,9 @@ exports[`DashboardScreen matches snapshot 1`] = `
                 "justifyContent": "center",
               },
               {
-                "minHeight": 48,
-                "paddingHorizontal": 16,
-                "paddingVertical": 8,
+                "minHeight": 56,
+                "paddingHorizontal": 20,
+                "paddingVertical": 12,
               },
               {
                 "backgroundColor": "#15803D",
@@ -277,7 +282,7 @@ exports[`DashboardScreen matches snapshot 1`] = `
               <Text
                 color="#FFFFFF"
                 name="briefcase"
-                size={18}
+                size={20}
               >
                 [Feather:briefcase]
               </Text>
@@ -295,7 +300,7 @@ exports[`DashboardScreen matches snapshot 1`] = `
                   [
                     {
                       "fontFamily": "Manrope_600SemiBold",
-                      "fontSize": 15,
+                      "fontSize": 16,
                       "lineHeight": 20,
                     },
                     {
@@ -306,6 +311,24 @@ exports[`DashboardScreen matches snapshot 1`] = `
                 }
               >
                 Register as Professional
+              </Text>
+              <Text
+                style={
+                  [
+                    {
+                      "fontFamily": "NotoNastaliqUrdu_400Regular",
+                      "fontSize": 13,
+                      "lineHeight": 16,
+                      "marginTop": 2,
+                    },
+                    {
+                      "color": "#FFFFFF",
+                      "textAlign": "center",
+                    },
+                  ]
+                }
+              >
+                ہنر مند کے طور پر رجسٹر ہوں
               </Text>
             </View>
           </View>
@@ -352,9 +375,9 @@ exports[`DashboardScreen matches snapshot 1`] = `
                 "justifyContent": "center",
               },
               {
-                "minHeight": 48,
-                "paddingHorizontal": 16,
-                "paddingVertical": 8,
+                "minHeight": 56,
+                "paddingHorizontal": 20,
+                "paddingVertical": 12,
               },
               {
                 "backgroundColor": "#FFFFFF",
@@ -388,7 +411,7 @@ exports[`DashboardScreen matches snapshot 1`] = `
               <Text
                 color="#0B0F19"
                 name="user"
-                size={18}
+                size={20}
               >
                 [Feather:user]
               </Text>
@@ -406,7 +429,7 @@ exports[`DashboardScreen matches snapshot 1`] = `
                   [
                     {
                       "fontFamily": "Manrope_600SemiBold",
-                      "fontSize": 15,
+                      "fontSize": 16,
                       "lineHeight": 20,
                     },
                     {
@@ -417,6 +440,24 @@ exports[`DashboardScreen matches snapshot 1`] = `
                 }
               >
                 Register as Customer
+              </Text>
+              <Text
+                style={
+                  [
+                    {
+                      "fontFamily": "NotoNastaliqUrdu_400Regular",
+                      "fontSize": 13,
+                      "lineHeight": 16,
+                      "marginTop": 2,
+                    },
+                    {
+                      "color": "#0B0F19",
+                      "textAlign": "center",
+                    },
+                  ]
+                }
+              >
+                گاہک کے طور پر رجسٹر ہوں
               </Text>
             </View>
           </View>
@@ -444,11 +485,20 @@ exports[`DashboardScreen matches snapshot 1`] = `
         <View
           style={
             {
+              "alignItems": "flex-start",
+              "flexDirection": "row",
+              "justifyContent": "space-between",
               "marginBottom": 12,
             }
           }
         >
-          <View>
+          <View
+            style={
+              {
+                "flexShrink": 1,
+              }
+            }
+          >
             <Text
               allowFontScaling={true}
               style={
@@ -492,6 +542,64 @@ exports[`DashboardScreen matches snapshot 1`] = `
               مقبول زمرے
             </Text>
           </View>
+          <View
+            accessibilityLabel="See all categories"
+            accessibilityRole="link"
+            accessibilityState={
+              {
+                "busy": undefined,
+                "checked": undefined,
+                "disabled": undefined,
+                "expanded": undefined,
+                "selected": undefined,
+              }
+            }
+            accessibilityValue={
+              {
+                "max": undefined,
+                "min": undefined,
+                "now": undefined,
+                "text": undefined,
+              }
+            }
+            accessible={true}
+            collapsable={false}
+            focusable={true}
+            hitSlop={8}
+            onBlur={[Function]}
+            onClick={[Function]}
+            onFocus={[Function]}
+            onResponderGrant={[Function]}
+            onResponderMove={[Function]}
+            onResponderRelease={[Function]}
+            onResponderTerminate={[Function]}
+            onResponderTerminationRequest={[Function]}
+            onStartShouldSetResponder={[Function]}
+          >
+            <View>
+              <Text
+                allowFontScaling={true}
+                style={
+                  [
+                    {
+                      "fontFamily": "Manrope_500Medium",
+                      "fontSize": 13,
+                      "lineHeight": 18,
+                    },
+                    {
+                      "color": "#384151",
+                      "textAlign": "left",
+                    },
+                    {
+                      "color": "#15803D",
+                    },
+                  ]
+                }
+              >
+                See all →
+              </Text>
+            </View>
+          </View>
         </View>
         <View
           style={
@@ -503,10 +611,40 @@ exports[`DashboardScreen matches snapshot 1`] = `
           }
         >
           <View
+            accessibilityRole="button"
+            accessibilityState={
+              {
+                "busy": undefined,
+                "checked": undefined,
+                "disabled": undefined,
+                "expanded": undefined,
+                "selected": undefined,
+              }
+            }
+            accessibilityValue={
+              {
+                "max": undefined,
+                "min": undefined,
+                "now": undefined,
+                "text": undefined,
+              }
+            }
+            accessible={true}
+            collapsable={false}
+            focusable={true}
+            onBlur={[Function]}
+            onClick={[Function]}
+            onFocus={[Function]}
+            onResponderGrant={[Function]}
+            onResponderMove={[Function]}
+            onResponderRelease={[Function]}
+            onResponderTerminate={[Function]}
+            onResponderTerminationRequest={[Function]}
+            onStartShouldSetResponder={[Function]}
             style={
               {
                 "alignItems": "center",
-                "backgroundColor": "#EAF6EE",
+                "backgroundColor": "#FFFFFF",
                 "borderColor": "#DCEFE1",
                 "borderRadius": 14,
                 "borderWidth": 1,
@@ -520,12 +658,10 @@ exports[`DashboardScreen matches snapshot 1`] = `
               style={
                 {
                   "alignItems": "center",
-                  "backgroundColor": "#DCFCE7",
-                  "borderRadius": 999,
-                  "height": 44,
+                  "height": 56,
                   "justifyContent": "center",
                   "marginBottom": 8,
-                  "width": 44,
+                  "width": 56,
                 }
               }
             >
@@ -538,8 +674,8 @@ exports[`DashboardScreen matches snapshot 1`] = `
                 }
                 style={
                   {
-                    "height": 28,
-                    "width": 28,
+                    "height": 52,
+                    "width": 52,
                   }
                 }
               />
@@ -596,10 +732,40 @@ exports[`DashboardScreen matches snapshot 1`] = `
             </View>
           </View>
           <View
+            accessibilityRole="button"
+            accessibilityState={
+              {
+                "busy": undefined,
+                "checked": undefined,
+                "disabled": undefined,
+                "expanded": undefined,
+                "selected": undefined,
+              }
+            }
+            accessibilityValue={
+              {
+                "max": undefined,
+                "min": undefined,
+                "now": undefined,
+                "text": undefined,
+              }
+            }
+            accessible={true}
+            collapsable={false}
+            focusable={true}
+            onBlur={[Function]}
+            onClick={[Function]}
+            onFocus={[Function]}
+            onResponderGrant={[Function]}
+            onResponderMove={[Function]}
+            onResponderRelease={[Function]}
+            onResponderTerminate={[Function]}
+            onResponderTerminationRequest={[Function]}
+            onStartShouldSetResponder={[Function]}
             style={
               {
                 "alignItems": "center",
-                "backgroundColor": "#EAF6EE",
+                "backgroundColor": "#FFFFFF",
                 "borderColor": "#DCEFE1",
                 "borderRadius": 14,
                 "borderWidth": 1,
@@ -613,12 +779,10 @@ exports[`DashboardScreen matches snapshot 1`] = `
               style={
                 {
                   "alignItems": "center",
-                  "backgroundColor": "#DCFCE7",
-                  "borderRadius": 999,
-                  "height": 44,
+                  "height": 56,
                   "justifyContent": "center",
                   "marginBottom": 8,
-                  "width": 44,
+                  "width": 56,
                 }
               }
             >
@@ -631,8 +795,8 @@ exports[`DashboardScreen matches snapshot 1`] = `
                 }
                 style={
                   {
-                    "height": 28,
-                    "width": 28,
+                    "height": 52,
+                    "width": 52,
                   }
                 }
               />
@@ -689,10 +853,40 @@ exports[`DashboardScreen matches snapshot 1`] = `
             </View>
           </View>
           <View
+            accessibilityRole="button"
+            accessibilityState={
+              {
+                "busy": undefined,
+                "checked": undefined,
+                "disabled": undefined,
+                "expanded": undefined,
+                "selected": undefined,
+              }
+            }
+            accessibilityValue={
+              {
+                "max": undefined,
+                "min": undefined,
+                "now": undefined,
+                "text": undefined,
+              }
+            }
+            accessible={true}
+            collapsable={false}
+            focusable={true}
+            onBlur={[Function]}
+            onClick={[Function]}
+            onFocus={[Function]}
+            onResponderGrant={[Function]}
+            onResponderMove={[Function]}
+            onResponderRelease={[Function]}
+            onResponderTerminate={[Function]}
+            onResponderTerminationRequest={[Function]}
+            onStartShouldSetResponder={[Function]}
             style={
               {
                 "alignItems": "center",
-                "backgroundColor": "#EAF6EE",
+                "backgroundColor": "#FFFFFF",
                 "borderColor": "#DCEFE1",
                 "borderRadius": 14,
                 "borderWidth": 1,
@@ -706,12 +900,10 @@ exports[`DashboardScreen matches snapshot 1`] = `
               style={
                 {
                   "alignItems": "center",
-                  "backgroundColor": "#DCFCE7",
-                  "borderRadius": 999,
-                  "height": 44,
+                  "height": 56,
                   "justifyContent": "center",
                   "marginBottom": 8,
-                  "width": 44,
+                  "width": 56,
                 }
               }
             >
@@ -724,8 +916,8 @@ exports[`DashboardScreen matches snapshot 1`] = `
                 }
                 style={
                   {
-                    "height": 28,
-                    "width": 28,
+                    "height": 52,
+                    "width": 52,
                   }
                 }
               />
@@ -782,10 +974,40 @@ exports[`DashboardScreen matches snapshot 1`] = `
             </View>
           </View>
           <View
+            accessibilityRole="button"
+            accessibilityState={
+              {
+                "busy": undefined,
+                "checked": undefined,
+                "disabled": undefined,
+                "expanded": undefined,
+                "selected": undefined,
+              }
+            }
+            accessibilityValue={
+              {
+                "max": undefined,
+                "min": undefined,
+                "now": undefined,
+                "text": undefined,
+              }
+            }
+            accessible={true}
+            collapsable={false}
+            focusable={true}
+            onBlur={[Function]}
+            onClick={[Function]}
+            onFocus={[Function]}
+            onResponderGrant={[Function]}
+            onResponderMove={[Function]}
+            onResponderRelease={[Function]}
+            onResponderTerminate={[Function]}
+            onResponderTerminationRequest={[Function]}
+            onStartShouldSetResponder={[Function]}
             style={
               {
                 "alignItems": "center",
-                "backgroundColor": "#EAF6EE",
+                "backgroundColor": "#FFFFFF",
                 "borderColor": "#DCEFE1",
                 "borderRadius": 14,
                 "borderWidth": 1,
@@ -799,12 +1021,10 @@ exports[`DashboardScreen matches snapshot 1`] = `
               style={
                 {
                   "alignItems": "center",
-                  "backgroundColor": "#DCFCE7",
-                  "borderRadius": 999,
-                  "height": 44,
+                  "height": 56,
                   "justifyContent": "center",
                   "marginBottom": 8,
-                  "width": 44,
+                  "width": 56,
                 }
               }
             >
@@ -817,8 +1037,8 @@ exports[`DashboardScreen matches snapshot 1`] = `
                 }
                 style={
                   {
-                    "height": 28,
-                    "width": 28,
+                    "height": 52,
+                    "width": 52,
                   }
                 }
               />
@@ -875,10 +1095,40 @@ exports[`DashboardScreen matches snapshot 1`] = `
             </View>
           </View>
           <View
+            accessibilityRole="button"
+            accessibilityState={
+              {
+                "busy": undefined,
+                "checked": undefined,
+                "disabled": undefined,
+                "expanded": undefined,
+                "selected": undefined,
+              }
+            }
+            accessibilityValue={
+              {
+                "max": undefined,
+                "min": undefined,
+                "now": undefined,
+                "text": undefined,
+              }
+            }
+            accessible={true}
+            collapsable={false}
+            focusable={true}
+            onBlur={[Function]}
+            onClick={[Function]}
+            onFocus={[Function]}
+            onResponderGrant={[Function]}
+            onResponderMove={[Function]}
+            onResponderRelease={[Function]}
+            onResponderTerminate={[Function]}
+            onResponderTerminationRequest={[Function]}
+            onStartShouldSetResponder={[Function]}
             style={
               {
                 "alignItems": "center",
-                "backgroundColor": "#EAF6EE",
+                "backgroundColor": "#FFFFFF",
                 "borderColor": "#DCEFE1",
                 "borderRadius": 14,
                 "borderWidth": 1,
@@ -892,12 +1142,10 @@ exports[`DashboardScreen matches snapshot 1`] = `
               style={
                 {
                   "alignItems": "center",
-                  "backgroundColor": "#DCFCE7",
-                  "borderRadius": 999,
-                  "height": 44,
+                  "height": 56,
                   "justifyContent": "center",
                   "marginBottom": 8,
-                  "width": 44,
+                  "width": 56,
                 }
               }
             >
@@ -910,8 +1158,8 @@ exports[`DashboardScreen matches snapshot 1`] = `
                 }
                 style={
                   {
-                    "height": 28,
-                    "width": 28,
+                    "height": 52,
+                    "width": 52,
                   }
                 }
               />
@@ -968,10 +1216,40 @@ exports[`DashboardScreen matches snapshot 1`] = `
             </View>
           </View>
           <View
+            accessibilityRole="button"
+            accessibilityState={
+              {
+                "busy": undefined,
+                "checked": undefined,
+                "disabled": undefined,
+                "expanded": undefined,
+                "selected": undefined,
+              }
+            }
+            accessibilityValue={
+              {
+                "max": undefined,
+                "min": undefined,
+                "now": undefined,
+                "text": undefined,
+              }
+            }
+            accessible={true}
+            collapsable={false}
+            focusable={true}
+            onBlur={[Function]}
+            onClick={[Function]}
+            onFocus={[Function]}
+            onResponderGrant={[Function]}
+            onResponderMove={[Function]}
+            onResponderRelease={[Function]}
+            onResponderTerminate={[Function]}
+            onResponderTerminationRequest={[Function]}
+            onStartShouldSetResponder={[Function]}
             style={
               {
                 "alignItems": "center",
-                "backgroundColor": "#EAF6EE",
+                "backgroundColor": "#FFFFFF",
                 "borderColor": "#DCEFE1",
                 "borderRadius": 14,
                 "borderWidth": 1,
@@ -985,12 +1263,10 @@ exports[`DashboardScreen matches snapshot 1`] = `
               style={
                 {
                   "alignItems": "center",
-                  "backgroundColor": "#DCFCE7",
-                  "borderRadius": 999,
-                  "height": 44,
+                  "height": 56,
                   "justifyContent": "center",
                   "marginBottom": 8,
-                  "width": 44,
+                  "width": 56,
                 }
               }
             >
@@ -1003,8 +1279,8 @@ exports[`DashboardScreen matches snapshot 1`] = `
                 }
                 style={
                   {
-                    "height": 28,
-                    "width": 28,
+                    "height": 52,
+                    "width": 52,
                   }
                 }
               />

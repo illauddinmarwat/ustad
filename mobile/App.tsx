@@ -13,7 +13,9 @@ import {
   SpaceGrotesk_700Bold,
 } from '@expo-google-fonts/space-grotesk';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
-import { DefaultTheme, NavigationContainer, type Theme } from '@react-navigation/native';
+import { DefaultTheme, NavigationContainer, useNavigation, type Theme } from '@react-navigation/native';
+import * as Notifications from 'expo-notifications';
+import { useEffect } from 'react';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { useFonts } from 'expo-font';
 import { StatusBar } from 'expo-status-bar';
@@ -37,6 +39,15 @@ import JobDetailScreen from './src/screens/app/JobDetailScreen';
 import JobTrackingScreen from './src/screens/app/JobTrackingScreen';
 import ListingDetailScreen from './src/screens/app/ListingDetailScreen';
 import NearbyUstadScreen from './src/screens/app/NearbyUstadScreen';
+import { badgeValue, notificationTarget } from './src/lib/notificationHelpers';
+import { configureForegroundNotifications, registerForPush } from './src/lib/notifications';
+import { useUnreadNotifications } from './src/lib/useUnreadNotifications';
+import BoardJobScreen from './src/screens/app/BoardJobScreen';
+import JobBoardScreen from './src/screens/app/JobBoardScreen';
+import NotificationsScreen from './src/screens/app/NotificationsScreen';
+import PostedJobScreen from './src/screens/app/PostedJobScreen';
+import PostJobScreen from './src/screens/app/PostJobScreen';
+import RequestWorkerScreen from './src/screens/app/RequestWorkerScreen';
 import ServicesScreen from './src/screens/app/ServicesScreen';
 import WorkerOnboardingScreen from './src/screens/app/WorkerOnboardingScreen';
 import AuthScreen from './src/screens/auth/AuthScreen';
@@ -113,6 +124,8 @@ function AdminTabs() {
 
 function WorkerTabs() {
   const tabScreenOptions = useTabScreenOptions();
+  const { session } = useAuth();
+  const { count: unread } = useUnreadNotifications(session?.user.id);
   return (
     <Tab.Navigator screenOptions={tabScreenOptions}>
       <Tab.Screen
@@ -137,6 +150,7 @@ function WorkerTabs() {
         options={{
           tabBarLabel: ({ focused }) => <TabBarLabel id="tabs.applications" focused={focused} />,
           tabBarIcon: tabIcon('inbox'),
+          tabBarBadge: badgeValue(unread),
         }}
       />
       <Tab.Screen
@@ -153,6 +167,8 @@ function WorkerTabs() {
 
 function CustomerTabs() {
   const tabScreenOptions = useTabScreenOptions();
+  const { session } = useAuth();
+  const { count: unread } = useUnreadNotifications(session?.user.id);
   return (
     <Tab.Navigator screenOptions={tabScreenOptions}>
       <Tab.Screen
@@ -208,6 +224,32 @@ const stackScreenOptions = {
   contentStyle: { backgroundColor: colors.bg },
 } as const;
 
+configureForegroundNotifications();
+
+/** Registers this device for push while signed in, and opens the right screen when a push is tapped. */
+function PushRegistration() {
+  const { session } = useAuth();
+  const navigation = useNavigation<any>();
+  const uid = session?.user.id;
+
+  useEffect(() => {
+    if (uid) void registerForPush();
+  }, [uid]);
+
+  useEffect(() => {
+    const sub = Notifications.addNotificationResponseReceivedListener((response) => {
+      const data = response.notification.request.content.data as { kind?: string; job_id?: string | null } | undefined;
+      const target = notificationTarget(data?.kind ?? '', data?.job_id);
+      if (target.screen === 'JobDetail') navigation.navigate('JobDetail', target.params);
+      else if (target.screen === 'Account') navigation.navigate('Tabs', { screen: 'Account' });
+      else navigation.navigate('Tabs', { screen: 'Applications' });
+    });
+    return () => sub.remove();
+  }, [navigation]);
+
+  return null;
+}
+
 function RootNavigator() {
   const { loading } = useAuth();
   if (loading) {
@@ -218,6 +260,8 @@ function RootNavigator() {
     );
   }
   return (
+    <>
+    <PushRegistration />
     <Stack.Navigator screenOptions={stackScreenOptions}>
       <Stack.Screen name="Tabs" component={AppTabs} options={{ title: en('nav.app'), headerShown: false }} />
       <Stack.Screen name="Auth" component={AuthScreen} options={{ title: en('nav.signIn') }} />
@@ -243,6 +287,12 @@ function RootNavigator() {
         }}
       />
       <Stack.Screen name="ListingDetail" component={ListingDetailScreen} options={{ title: en('nav.service') }} />
+      <Stack.Screen name="PostJob" component={PostJobScreen} options={{ title: en('nav.postJob') }} />
+      <Stack.Screen name="PostedJob" component={PostedJobScreen} options={{ title: en('nav.postedJob') }} />
+      <Stack.Screen name="JobBoard" component={JobBoardScreen} options={{ title: en('nav.jobBoard') }} />
+      <Stack.Screen name="BoardJob" component={BoardJobScreen} options={{ title: en('nav.boardJob') }} />
+      <Stack.Screen name="Notifications" component={NotificationsScreen} options={{ title: en('nav.notifications') }} />
+      <Stack.Screen name="RequestWorker" component={RequestWorkerScreen} options={{ title: en('nav.requestWorker') }} />
       <Stack.Screen
         name="WorkerOnboarding"
         component={WorkerOnboardingScreen}
@@ -252,6 +302,7 @@ function RootNavigator() {
       <Stack.Screen name="FaqChat" component={FaqChatScreen} options={{ title: en('nav.faqChat') }} />
       <Stack.Screen name="CommunityTips" component={CommunityTipsScreen} options={{ title: en('nav.communityTips') }} />
     </Stack.Navigator>
+    </>
   );
 }
 

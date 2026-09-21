@@ -9,12 +9,16 @@
  */
 import { strings, type StringId } from './strings';
 
+// One shared object: the lookups never change, and a new object/function on every
+// render would make anything that lists `t` in a hook dependency array re-run forever.
+const api = {
+  t: (id: StringId) => strings[id],
+  en: (id: StringId) => strings[id].en,
+  ur: (id: StringId) => strings[id].ur,
+} as const;
+
 export function useT() {
-  return {
-    t: (id: StringId) => strings[id],
-    en: (id: StringId) => strings[id].en,
-    ur: (id: StringId) => strings[id].ur,
-  } as const;
+  return api;
 }
 
 /** Non-hook variant for places we can't call a hook (e.g. navigator options). */

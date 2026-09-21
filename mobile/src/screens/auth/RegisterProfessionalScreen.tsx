@@ -1,5 +1,3 @@
-import { useNavigation } from '@react-navigation/native';
-import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import * as ImagePicker from 'expo-image-picker';
 import { useState } from 'react';
 import { Image, KeyboardAvoidingView, Platform, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
@@ -15,7 +13,6 @@ import type { StringId } from '../../i18n/strings';
 import { en, useT } from '../../i18n/useT';
 import { preprocessForOcr } from '../../lib/ocr/preprocess';
 import { SKILL_CATEGORIES } from '../../lib/skillCategories';
-import type { RootStackParamList } from '../../navigation/types';
 import { supabase } from '../../lib/supabase';
 import { colors, radius, spacing } from '../../theme/tokens';
 import { typography } from '../../theme/typography';
@@ -23,7 +20,6 @@ import { typography } from '../../theme/typography';
 type RateUnit = 'day' | 'hour';
 
 export default function RegisterProfessionalScreen() {
-  const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
   const insets = useSafeAreaInsets();
   const { t } = useT();
 
@@ -44,7 +40,7 @@ export default function RegisterProfessionalScreen() {
   const [cnicBackUri, setCnicBackUri] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [notice, setNotice] = useState<'checkEmail' | null>(null);
+  const [notice, setNotice] = useState<'checkEmail' | 'pendingApproval' | null>(null);
 
   const canSubmit = !!(
     email.trim() &&
@@ -156,8 +152,8 @@ export default function RegisterProfessionalScreen() {
       if (!data.session) {
         setNotice('checkEmail');
         setPassword('');
-      } else if (navigation.canGoBack()) {
-        navigation.goBack();
+      } else {
+        setNotice('pendingApproval');
       }
     } catch (e) {
       setError(e instanceof Error ? e.message : en('auth.error.failed'));
@@ -326,6 +322,11 @@ export default function RegisterProfessionalScreen() {
           {notice === 'checkEmail' && (
             <View style={styles.notice}>
               <Banner id="auth.signup.checkEmail" tone="info" />
+            </View>
+          )}
+          {notice === 'pendingApproval' && (
+            <View style={styles.notice}>
+              <Banner id="register.professional.pendingApproval" tone="success" />
             </View>
           )}
 

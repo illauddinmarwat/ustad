@@ -12,6 +12,9 @@ const anonKey =
   process.env.EXPO_PUBLIC_SUPABASE_ANON_KEY ??
   '';
 
+import { useFixtureMode } from '../config/env';
+import { FIXTURE_RPC } from './fixtures';
+
 export { isSupabaseConfigured, useFixtureMode } from '../config/env';
 
 export const supabase = createClient(url || 'https://placeholder.supabase.co', anonKey || 'placeholder', {
@@ -22,3 +25,12 @@ export const supabase = createClient(url || 'https://placeholder.supabase.co', a
     detectSessionInUrl: false,
   },
 });
+
+// Fixture mode: answer the RPCs we have sample data for without touching the network.
+if (useFixtureMode) {
+  const realRpc = supabase.rpc.bind(supabase);
+  (supabase as unknown as { rpc: unknown }).rpc = (fn: string, ...args: unknown[]) =>
+    fn in FIXTURE_RPC
+      ? Promise.resolve({ data: FIXTURE_RPC[fn], error: null })
+      : (realRpc as (f: string, ...a: unknown[]) => unknown)(fn, ...args);
+}

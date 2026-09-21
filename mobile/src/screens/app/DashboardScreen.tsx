@@ -1,7 +1,8 @@
 import type { BottomTabNavigationProp } from '@react-navigation/bottom-tabs';
 import { CompositeNavigationProp, useNavigation } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
-import { Image, ScrollView, StyleSheet, View } from 'react-native';
+import { useEffect, useState } from 'react';
+import { Image, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { BiText } from '../../components/ui/BiText';
@@ -11,6 +12,9 @@ import { Icon } from '../../components/ui/Icon';
 import { useAuth } from '../../context/AuthContext';
 import type { StringId } from '../../i18n/strings';
 import { SKILL_CATEGORIES } from '../../lib/skillCategories';
+import { GuestJobsCard } from '../../components/GuestJobsCard';
+import { fetchJobPostingEnabled } from '../../lib/jobPosting';
+import { useUnreadNotifications } from '../../lib/useUnreadNotifications';
 import type { RootStackParamList, TabParamList } from '../../navigation/types';
 import { colors, radius, spacing } from '../../theme/tokens';
 import { typography } from '../../theme/typography';
@@ -24,7 +28,12 @@ export default function DashboardScreen() {
   const navigation = useNavigation<DashboardNavigation>();
   const { role, session } = useAuth();
   const insets = useSafeAreaInsets();
+  const { count: unread } = useUnreadNotifications(session?.user.id);
   const isCustomerLike = (role ?? 'customer') === 'customer';
+  const [postingEnabled, setPostingEnabled] = useState(false);
+  useEffect(() => {
+    fetchJobPostingEnabled().then(setPostingEnabled);
+  }, []);
   const modeId: StringId = session?.user.id ? ((`role.${role ?? 'customer'}`) as StringId) : 'role.guest';
 
   return (
@@ -35,6 +44,22 @@ export default function DashboardScreen() {
       ]}
     >
       <Card padding="lg" style={styles.brandCard}>
+        {session ? (
+          <Pressable
+            onPress={() => navigation.navigate('Notifications')}
+            accessibilityRole="button"
+            accessibilityLabel="Notifications"
+            hitSlop={10}
+            style={styles.bell}
+          >
+            <Icon name="bell" size={22} color={colors.primaryDeep} />
+            {unread > 0 ? (
+              <View style={styles.bellBadge}>
+                <Text style={styles.bellBadgeText}>{Math.min(unread, 99)}</Text>
+              </View>
+            ) : null}
+          </Pressable>
+        ) : null}
         <View style={styles.brandRow}>
           <View style={styles.brandMark}>
             <Image
@@ -44,20 +69,20 @@ export default function DashboardScreen() {
             />
           </View>
           <View style={styles.brandTextCol}>
-            <BiText id="common.appName" variant="displayMd" tone="strong" />
+            <BiText id="common.appName" variant="displayLg" tone="strong" />
             <BiText id="dashboard.brand.tagline" variant="bodySm" tone="muted" style={styles.tagline} />
           </View>
         </View>
       </Card>
 
-      <View style={styles.ctaRow}>
+      <View style={[styles.ctaRow, !session && styles.ctaStack]}>
         {!session ? (
           <>
             <Button
               labelId="register.choice.professional"
               onPress={() => navigation.navigate('RegisterProfessional')}
               iconLeft="briefcase"
-              hideUrdu
+              size="lg"
               style={styles.ctaButton}
             />
             <Button
@@ -65,7 +90,7 @@ export default function DashboardScreen() {
               onPress={() => navigation.navigate('RegisterCustomer')}
               variant="secondary"
               iconLeft="user"
-              hideUrdu
+              size="lg"
               style={styles.ctaButton}
             />
           </>
@@ -104,18 +129,53 @@ export default function DashboardScreen() {
         )}
       </View>
 
+      {postingEnabled && (isCustomerLike || !session) ? (
+        <Button
+          labelId="post.cta"
+          onPress={() => navigation.navigate('PostJob')}
+          variant="secondary"
+          iconLeft="plus-circle"
+          fullWidth
+          style={styles.postCta}
+        />
+      ) : null}
+      {postingEnabled && session && role === 'worker' ? (
+        <Button
+          labelId="board.cta"
+          onPress={() => navigation.navigate('JobBoard')}
+          variant="secondary"
+          iconLeft="briefcase"
+          fullWidth
+          style={styles.postCta}
+        />
+      ) : null}
+      {postingEnabled ? <GuestJobsCard /> : null}
+
       <Card padding="lg">
         <View style={styles.categoriesHead}>
-          <BiText id="dashboard.categories.title" variant="title" tone="strong" />
+          <BiText id="dashboard.categories.title" variant="title" tone="strong" style={styles.categoriesTitle} />
+          <Pressable
+            onPress={() => navigation.navigate('Services')}
+            accessibilityRole="link"
+            accessibilityLabel="See all categories"
+            hitSlop={8}
+          >
+            <BiText id="dashboard.categories.seeAll" hideUrdu variant="label" tone="body" enStyle={styles.seeAll} />
+          </Pressable>
         </View>
         <View style={styles.categoryGrid}>
           {SKILL_CATEGORIES.map((c) => (
-            <View key={c.key} style={styles.categoryCard}>
+            <Pressable
+              key={c.key}
+              style={styles.categoryCard}
+              accessibilityRole="button"
+              onPress={() => navigation.navigate('Nearby', { category: c.key })}
+            >
               <View style={styles.categoryIcon}>
                 <Image source={c.icon} style={styles.categoryIconImage} resizeMode="contain" />
               </View>
               <BiText id={c.labelId} variant="label" tone="strong" align="center" style={styles.categoryLabel} />
-            </View>
+            </Pressable>
           ))}
         </View>
       </Card>
@@ -135,21 +195,44 @@ const styles = StyleSheet.create({
   root: { padding: spacing.lg, backgroundColor: colors.bg, flexGrow: 1 },
   brandCard: { alignItems: 'center' },
   brandRow: { flexDirection: 'row', alignItems: 'center' },
+  bell: { position: 'absolute', top: spacing.md, right: spacing.md, zIndex: 2, padding: 4 },
+  bellBadge: {
+    position: 'absolute',
+    top: -2,
+    right: -4,
+    minWidth: 16,
+    height: 16,
+    borderRadius: 8,
+    backgroundColor: colors.danger,
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingHorizontal: 3,
+  },
+  bellBadgeText: { color: '#fff', fontSize: 10, fontWeight: '700' },
   brandMark: {
-    width: 48,
-    height: 48,
+    width: 64,
+    height: 64,
     borderRadius: radius.pill,
     backgroundColor: colors.primarySoft,
     alignItems: 'center',
     justifyContent: 'center',
     marginRight: spacing.md,
   },
-  brandMarkImage: { width: 32, height: 32 },
+  brandMarkImage: { width: 44, height: 44 },
   brandTextCol: { flexShrink: 1 },
   tagline: { marginTop: 2 },
   ctaRow: { flexDirection: 'row', gap: spacing.sm, marginBottom: spacing.lg },
+  ctaStack: { flexDirection: 'column' },
   ctaButton: { flex: 1 },
-  categoriesHead: { marginBottom: spacing.md },
+  postCta: { marginBottom: spacing.lg },
+  categoriesHead: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    justifyContent: 'space-between',
+    marginBottom: spacing.md,
+  },
+  categoriesTitle: { flexShrink: 1 },
+  seeAll: { color: colors.primary },
   categoryGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: spacing.sm },
   categoryCard: {
     width: '31%',
@@ -157,20 +240,18 @@ const styles = StyleSheet.create({
     paddingVertical: spacing.md,
     paddingHorizontal: spacing.xs,
     borderRadius: radius.md,
-    backgroundColor: colors.surfaceAlt,
+    backgroundColor: colors.surface,
     borderWidth: 1,
     borderColor: colors.border,
   },
   categoryIcon: {
-    width: 44,
-    height: 44,
-    borderRadius: radius.pill,
-    backgroundColor: colors.primarySoft,
+    width: 56,
+    height: 56,
     alignItems: 'center',
     justifyContent: 'center',
     marginBottom: spacing.sm,
   },
-  categoryIconImage: { width: 28, height: 28 },
+  categoryIconImage: { width: 52, height: 52 },
   categoryLabel: { alignSelf: 'stretch' },
   trustLine: { marginTop: spacing.lg, paddingHorizontal: spacing.md },
   modeRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', marginTop: spacing.md, gap: 4 },

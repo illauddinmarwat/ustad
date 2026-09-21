@@ -13,6 +13,7 @@ import { Card } from '../../components/ui/Card';
 import { Chip } from '../../components/ui/Chip';
 import { EmptyState } from '../../components/ui/EmptyState';
 import { Icon, type IconProps } from '../../components/ui/Icon';
+import { CommissionCard } from '../../components/CommissionCard';
 import { useLiveDatabase } from '../../config/env';
 import { useAuth } from '../../context/AuthContext';
 import type { StringId } from '../../i18n/strings';
@@ -184,6 +185,8 @@ export default function AccountScreen() {
           </View>
         </Card>
       )}
+
+      {role === 'worker' && session?.user.id ? <CommissionCard /> : null}
 
       {role === 'worker' && (
         <Card padding="lg">

@@ -17,6 +17,8 @@ import { useAuth } from '../../context/AuthContext';
 import type { StringId } from '../../i18n/strings';
 import { useT } from '../../i18n/useT';
 import { trackEvent } from '../../lib/analytics';
+import { JobContactSection } from '../../components/JobContactSection';
+import { JobPaymentSection } from '../../components/JobPaymentSection';
 import { ensureAuthenticated } from '../../lib/authGuards';
 import { fetchPhase4Flags } from '../../lib/phase4Flags';
 import { clampSatisfaction, satisfactionLabel } from '../../lib/quality';
@@ -54,6 +56,9 @@ const STATUS_TONE: Record<string, 'primary' | 'accent' | 'warning' | 'danger' | 
   completed: 'accent',
   cancelled: 'danger',
   pending_customer_confirm: 'warning',
+  payment_pending: 'warning',
+  disputed: 'danger',
+  closed: 'accent',
 };
 
 export default function JobDetailScreen({ route, navigation }: Props) {
@@ -67,7 +72,7 @@ export default function JobDetailScreen({ route, navigation }: Props) {
   const [msgBody, setMsgBody] = useState('');
   const [rating, setRating] = useState(5);
   const [reviewComment, setReviewComment] = useState('');
-  const [paymentAmount, setPaymentAmount] = useState('3000');
+  const [acceptedAmount, setAcceptedAmount] = useState<number | null>(null);
   const [banner, setBanner] = useState<BannerState>(null);
   const [phase4RealtimeEnabled, setPhase4RealtimeEnabled] = useState(false);
   const [phase4QualityEnabled, setPhase4QualityEnabled] = useState(false);
@@ -114,6 +119,13 @@ export default function JobDetailScreen({ route, navigation }: Props) {
     ]);
     setMessages((m.data ?? []) as MessageRow[]);
     setExistingReview((r.data as ReviewRow | null) ?? null);
+    const { data: aq } = await supabase
+      .from('quotes')
+      .select('amount_pkr')
+      .eq('job_id', jobId)
+      .eq('status', 'accepted')
+      .maybeSingle();
+    setAcceptedAmount(aq ? Number((aq as { amount_pkr: number }).amount_pkr) : null);
 
     const flags = await fetchPhase4Flags();
     setPhase4RealtimeEnabled(flags.realtimeEnabled);
@@ -340,25 +352,6 @@ export default function JobDetailScreen({ route, navigation }: Props) {
     }
   };
 
-  const markPaid = async () => {
-    const amount = Number(paymentAmount);
-    if (!Number.isFinite(amount) || amount < 0) {
-      bannerId('jobDetail.payment.invalid', 'warning');
-      return;
-    }
-    const { error } = await supabase.rpc('mark_job_paid', {
-      p_job_id: jobId,
-      p_amount: amount,
-      p_method: 'manual',
-      p_note: 'Marked paid from app',
-    });
-    if (error) bannerText(error.message, 'danger');
-    else {
-      bannerId('jobDetail.payment.toast', 'success');
-      await trackEvent('payment_marked_paid', uid ?? null, { job_id: jobId, amount_pkr: amount });
-    }
-  };
-
   const reportUser = async () => {
     if (!job) return;
     const target = job.customer_id === uid ? job.worker_id : job.customer_id;
@@ -406,16 +399,17 @@ export default function JobDetailScreen({ route, navigation }: Props) {
   const isWorker = role === 'worker' && job.worker_id === uid;
   const showConfirm = isCustomer && job.status === 'pending_customer_confirm' && job.origin === 'service_listing';
   const showComplete = (isCustomer || isWorker) && job.status === 'assigned';
-  const showReview = isCustomer && job.status === 'completed' && job.worker_id && !existingReview;
-  const showQuality = phase4QualityEnabled && job.status === 'completed' && (isCustomer || isWorker);
+  const afterWork = ['completed', 'payment_pending', 'disputed', 'closed'].includes(job.status);
+  const showReview = isCustomer && afterWork && job.worker_id && !existingReview;
+  const showQuality = phase4QualityEnabled && afterWork && (isCustomer || isWorker);
   const realtimeVisible = phase4RealtimeEnabled && (isCustomer || isWorker) && !!job.worker_id;
   const timerSeconds = computeTimerSeconds(realtimeState, nowTs);
   const timerText = formatDuration(timerSeconds);
   const timeline = [
-    { labelId: 'jobDetail.timeline.assigned' as StringId, done: ['assigned', 'completed'].includes(job.status) },
-    { labelId: 'jobDetail.timeline.enRoute' as StringId, done: !!realtimeState?.is_en_route || !!realtimeState?.started_work_at || job.status === 'completed' },
-    { labelId: 'jobDetail.timeline.inProgress' as StringId, done: !!realtimeState?.started_work_at || job.status === 'completed' },
-    { labelId: 'jobDetail.timeline.complete' as StringId, done: job.status === 'completed' },
+    { labelId: 'jobDetail.timeline.assigned' as StringId, done: ['assigned', 'completed', 'payment_pending', 'disputed', 'closed'].includes(job.status) },
+    { labelId: 'jobDetail.timeline.enRoute' as StringId, done: !!realtimeState?.is_en_route || !!realtimeState?.started_work_at || afterWork },
+    { labelId: 'jobDetail.timeline.inProgress' as StringId, done: !!realtimeState?.started_work_at || afterWork },
+    { labelId: 'jobDetail.timeline.complete' as StringId, done: afterWork },
   ];
 
   return (
@@ -512,24 +506,16 @@ export default function JobDetailScreen({ route, navigation }: Props) {
         </Card>
       )}
 
-      {(isCustomer || isWorker) && (
-        <Card padding="lg">
-          <BiText id="jobDetail.payment.title" variant="title" tone="strong" style={styles.cardTitle} />
-          <BiText id="jobDetail.payment.subtitle" variant="bodySm" tone="muted" style={styles.cardSubtitle} />
-          <View style={styles.field}>
-            <Text style={styles.fieldLabel}>{t('jobDetail.payment.amount').en}</Text>
-            <TextInput
-              value={paymentAmount}
-              onChangeText={setPaymentAmount}
-              keyboardType="numeric"
-              placeholder={t('jobDetail.payment.amount').en}
-              placeholderTextColor={colors.textMuted}
-              style={styles.input}
-            />
-          </View>
-          <Button labelId="jobDetail.payment.cta" onPress={markPaid} variant="success" iconLeft="dollar-sign" fullWidth />
-        </Card>
-      )}
+      <JobContactSection jobId={jobId} status={job.status} isCustomer={isCustomer} isWorker={isWorker} />
+
+      <JobPaymentSection
+        jobId={jobId}
+        status={job.status}
+        isCustomer={isCustomer}
+        isWorker={isWorker}
+        suggestedAmount={acceptedAmount}
+        onChanged={load}
+      />
 
       {existingReview && isCustomer && (
         <Card padding="lg">

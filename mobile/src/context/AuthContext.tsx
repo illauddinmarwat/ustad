@@ -4,13 +4,17 @@ import React, { createContext, useContext, useEffect, useMemo, useState } from '
 import { useFixtureMode } from '../config/env';
 import { FIXTURE_CUSTOMER_ID, FIXTURE_WORKER_ID } from '../dev/fixtures';
 import { supabase } from '../lib/supabase';
+import { unregisterPush } from '../lib/notifications';
 
 export type SignUpResult = { requiresConfirmation: boolean };
+
+type WorkerApprovalStatus = 'pending' | 'approved' | 'rejected';
 
 type AuthCtx = {
   session: Session | null;
   loading: boolean;
   role: 'customer' | 'worker' | 'admin' | null;
+  workerApprovalStatus: WorkerApprovalStatus | null;
   signIn: (email: string, password: string) => Promise<void>;
   signUp: (email: string, password: string) => Promise<SignUpResult>;
   signOut: () => Promise<void>;
@@ -43,11 +47,29 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [loading, setLoading] = useState(() => !useFixtureMode);
   const [previewRole, setPreviewRole] = useState<'customer' | 'worker'>('customer');
   const [role, setRoleState] = useState<'customer' | 'worker' | 'admin' | null>(null);
+  const [workerApprovalStatus, setWorkerApprovalStatus] = useState<WorkerApprovalStatus | null>(null);
+
+  const applyRoleForUser = async (userId: string) => {
+    const { data } = await supabase.from('profiles').select('role').eq('id', userId).maybeSingle();
+    const resolvedRole = (data?.role as 'customer' | 'worker' | 'admin') ?? 'customer';
+    setRoleState(resolvedRole);
+    if (resolvedRole === 'worker') {
+      const { data: wp } = await supabase
+        .from('worker_profiles')
+        .select('approval_status')
+        .eq('user_id', userId)
+        .maybeSingle();
+      setWorkerApprovalStatus((wp?.approval_status as WorkerApprovalStatus) ?? null);
+    } else {
+      setWorkerApprovalStatus(null);
+    }
+  };
 
   useEffect(() => {
     if (useFixtureMode) {
       setSession(buildFixtureSession(previewRole));
       setRoleState(previewRole);
+      setWorkerApprovalStatus(previewRole === 'worker' ? 'approved' : null);
       setLoading(false);
       return;
     }
@@ -60,12 +82,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         try {
           setSession(s);
           if (s?.user?.id) {
-            const { data } = await supabase.from('profiles').select('role').eq('id', s.user.id).maybeSingle();
-            if (!cancelled) {
-              setRoleState((data?.role as 'customer' | 'worker' | 'admin') ?? 'customer');
-            }
+            await applyRoleForUser(s.user.id);
           } else if (!cancelled) {
             setRoleState(null);
+            setWorkerApprovalStatus(null);
           }
         } finally {
           if (!cancelled) setLoading(false);
@@ -79,10 +99,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       setSession(s);
       if (!s?.user?.id) {
         setRoleState(null);
+        setWorkerApprovalStatus(null);
         return;
       }
-      const { data } = await supabase.from('profiles').select('role').eq('id', s.user.id).maybeSingle();
-      setRoleState((data?.role as 'customer' | 'worker' | 'admin') ?? 'customer');
+      await applyRoleForUser(s.user.id);
     });
 
     return () => {
@@ -95,6 +115,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     if (useFixtureMode) {
       setSession(buildFixtureSession(previewRole));
       setRoleState(previewRole);
+      setWorkerApprovalStatus(previewRole === 'worker' ? 'approved' : null);
     }
   }, [previewRole, useFixtureMode]);
 
@@ -116,6 +137,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       return;
     }
     let signOutError: unknown = null;
+    // Must run while still signed in: removing the token needs the user's session.
+    await unregisterPush();
     try {
       // `scope: 'local'` always clears local storage even if the server-side
       // `/logout` call fails (revoked JWT, network blip, etc.). We never want
@@ -129,6 +152,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     // of whether `onAuthStateChange` fires.
     setSession(null);
     setRoleState(null);
+    setWorkerApprovalStatus(null);
     if (signOutError) throw signOutError;
   };
 
@@ -137,6 +161,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     const { error } = await supabase.from('profiles').update({ role: r }).eq('id', session.user.id);
     if (error) throw error;
     setRoleState(r);
+    if (r === 'worker') await applyRoleForUser(session.user.id);
+    else setWorkerApprovalStatus(null);
   };
 
   const value = useMemo<AuthCtx>(
@@ -144,12 +170,13 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       session,
       loading,
       role,
+      workerApprovalStatus,
       signIn,
       signUp,
       signOut,
       setRole,
     }),
-    [session, loading, role]
+    [session, loading, role, workerApprovalStatus]
   );
 
   return <Ctx.Provider value={value}>{children}</Ctx.Provider>;

@@ -66,19 +66,21 @@ export default function JobTrackingScreen({ route }: Props) {
   const loadWorker = useCallback(async () => {
     const { data: job } = await supabase.from('jobs').select('worker_id').eq('id', jobId).maybeSingle();
     if (!job?.worker_id) return;
-    const [{ data: profile }, { data: wp }] = await Promise.all([
-      supabase.from('profiles').select('id,display_name,phone').eq('id', job.worker_id).maybeSingle(),
+    const [{ data: profile }, { data: wp }, { data: contacts }] = await Promise.all([
+      supabase.from('profiles').select('id,display_name').eq('id', job.worker_id).maybeSingle(),
       supabase
         .from('worker_profiles')
         .select('photo_url,avg_rating,review_count,categories')
         .eq('user_id', job.worker_id)
         .maybeSingle(),
+      supabase.rpc('get_job_contacts', { p_job_id: jobId }),
     ]);
+    const contactRow = (Array.isArray(contacts) ? contacts[0] : contacts) as { worker_phone?: string | null } | null;
     if (profile) {
       setWorker({
         user_id: profile.id,
         display_name: profile.display_name,
-        phone: profile.phone,
+        phone: contactRow?.worker_phone ?? null,
         photo_url: wp?.photo_url ?? null,
         avg_rating: wp?.avg_rating ?? null,
         review_count: wp?.review_count ?? null,

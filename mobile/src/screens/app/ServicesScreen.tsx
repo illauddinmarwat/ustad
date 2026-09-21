@@ -1,6 +1,6 @@
 import type { BottomTabNavigationProp } from '@react-navigation/bottom-tabs';
 import type { CompositeNavigationProp } from '@react-navigation/native';
-import { useNavigation } from '@react-navigation/native';
+import { useNavigation, useRoute, type RouteProp } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { useEffect, useMemo, useState } from 'react';
 import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
@@ -17,16 +17,19 @@ import { Input } from '../../components/ui/Input';
 import { ScreenHeader } from '../../components/ui/ScreenHeader';
 import { useAuth } from '../../context/AuthContext';
 import type { StringId } from '../../i18n/strings';
+import { useT } from '../../i18n/useT';
 import { trackEvent } from '../../lib/analytics';
 import { ensureAuthenticated, ensureRole } from '../../lib/authGuards';
 import { boostChipLabel } from '../../lib/boosts';
 import { trackCampaignTouch } from '../../lib/campaignAttribution';
 import { buildDiscoverySubtitle, resolveDiscoveryCityCode, shouldUseCityAwareDiscovery } from '../../lib/cityDiscovery';
 import { assignCohort, RANKING_EXPERIMENT } from '../../lib/experiments';
+import { templateCategoryFor } from '../../lib/categoryMap';
 import { fetchPhase3Flags } from '../../lib/featureFlags';
 import { fetchPhase4Flags } from '../../lib/phase4Flags';
 import { fetchPhase5Flags } from '../../lib/phase5Flags';
 import { applyRanking, type RankableListing, type ScoredListing } from '../../lib/ranking';
+import { SKILL_CATEGORIES } from '../../lib/skillCategories';
 import { trackRateLimitObservation } from '../../lib/scaleHardening';
 import { supabase } from '../../lib/supabase';
 import type { RootStackParamList, TabParamList } from '../../navigation/types';
@@ -72,7 +75,9 @@ type Msg = { kind: 'id'; id: StringId } | { kind: 'text'; text: string };
 
 export default function ServicesScreen() {
   const navigation = useNavigation<ServicesNav>();
-  const { role, session } = useAuth();
+  const route = useRoute<RouteProp<TabParamList, 'Services'>>();
+  const { t } = useT();
+  const { role, session, workerApprovalStatus } = useAuth();
   const insets = useSafeAreaInsets();
   const [listings, setListings] = useState<Array<ScoredListing<Listing>>>([]);
   const [templates, setTemplates] = useState<Template[]>([]);
@@ -84,6 +89,12 @@ export default function ServicesScreen() {
   const [cityCode, setCityCode] = useState('karachi');
   const [cityAwareDiscovery, setCityAwareDiscovery] = useState(false);
   const [campaignsEnabled, setCampaignsEnabled] = useState(false);
+  const [category, setCategory] = useState<string | null>(route.params?.category ?? null);
+  const templateCategory = templateCategoryFor(category);
+
+  useEffect(() => {
+    setCategory(route.params?.category ?? null);
+  }, [route.params?.category]);
 
   const userId = session?.user.id ?? null;
 
@@ -101,21 +112,27 @@ export default function ServicesScreen() {
   };
 
   const loadFallback = async (): Promise<Array<RankableListing<Listing>>> => {
-    const { data, error } = await supabase
-      .from('worker_service_listings')
-      .select('*')
-      .eq('status', 'active')
-      .order('created_at', { ascending: false })
-      .limit(30);
+    let query = supabase.from('worker_service_listings').select('*').eq('status', 'active');
+    if (templateCategory) {
+      const { data: tpl } = await supabase
+        .from('service_templates')
+        .select('id')
+        .eq('active', true)
+        .eq('category', templateCategory);
+      const ids = ((tpl ?? []) as Array<{ id: string }>).map((t) => t.id);
+      if (ids.length === 0) return [];
+      query = query.in('template_id', ids);
+    }
+    const { data, error } = await query.order('created_at', { ascending: false }).limit(30);
     if (error) throw new Error(error.message);
     const rows = (data ?? []) as Listing[];
     return rows.map((row) => ({ ...row, signals: { rating: 0 } }));
   };
 
   const loadRanked = async (): Promise<Array<RankableListing<Listing>>> => {
-    let res = await supabase.rpc('rank_listings_v2', { p_category: null, p_limit: 30 });
+    let res = await supabase.rpc('rank_listings_v2', { p_category: templateCategory, p_limit: 30 });
     if (res.error || !Array.isArray(res.data)) {
-      res = await supabase.rpc('rank_listings', { p_category: null, p_limit: 30 });
+      res = await supabase.rpc('rank_listings', { p_category: templateCategory, p_limit: 30 });
     }
     if (res.error || !Array.isArray(res.data)) {
       return loadFallback();
@@ -142,7 +159,7 @@ export default function ServicesScreen() {
   };
 
   const loadRankedWithBoosts = async (): Promise<Array<RankableListing<Listing>>> => {
-    const res = await supabase.rpc('rank_listings_with_boosts', { p_category: null, p_limit: 30 });
+    const res = await supabase.rpc('rank_listings_with_boosts', { p_category: templateCategory, p_limit: 30 });
     if (res.error || !Array.isArray(res.data)) return loadRanked();
     return (res.data as RankedListingRow[]).map((row) => ({
       id: row.id,
@@ -171,7 +188,7 @@ export default function ServicesScreen() {
   ): Promise<Array<RankableListing<Listing>>> => {
     const res = await supabase.rpc('phase5_discover_listings', {
       p_city_code: resolvedCityCode,
-      p_category: null,
+      p_category: templateCategory,
       p_limit: 30,
       p_include_boosts: useBoosts,
     });
@@ -263,7 +280,7 @@ export default function ServicesScreen() {
       setMsgText(detail || 'Failed to load services');
     });
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  }, [category]);
 
   const cohort = useMemo(() => assignCohort(userId, RANKING_EXPERIMENT).label, [userId]);
 
@@ -321,6 +338,10 @@ export default function ServicesScreen() {
         setMessage: () => setMsgId('services.gate.publishRole'),
       })
     ) {
+      return;
+    }
+    if (workerApprovalStatus !== 'approved') {
+      setMsgId('services.approval.pendingBanner');
       return;
     }
     if (!templates[0]) return;
@@ -384,9 +405,23 @@ export default function ServicesScreen() {
     >
       <ScreenHeader titleId="services.title" subtitleId="services.subtitle" />
 
+      <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.filterRow}>
+        <CategoryPill label="All" active={category === null} onPress={() => setCategory(null)} />
+        {SKILL_CATEGORIES.map((c) => (
+          <CategoryPill key={c.key} label={t(c.labelId).en} active={category === c.key} onPress={() => setCategory(c.key)} />
+        ))}
+      </ScrollView>
+
       {role === 'worker' && (
         <Card padding="lg">
           <BiText id="services.publish.title" variant="title" tone="strong" style={styles.cardTitle} />
+          {workerApprovalStatus !== 'approved' && (
+            <Banner
+              id={workerApprovalStatus === 'pending' || workerApprovalStatus === null ? 'services.approval.pendingBanner' : undefined}
+              text={workerApprovalStatus === 'rejected' ? 'Your registration was rejected. Contact support to appeal.' : undefined}
+              tone={workerApprovalStatus === 'rejected' ? 'danger' : 'warning'}
+            />
+          )}
           <Input
             labelId="services.publish.headline"
             value={headline}
@@ -400,7 +435,13 @@ export default function ServicesScreen() {
             keyboardType="numeric"
             iconLeft="dollar-sign"
           />
-          <Button labelId="services.publish.cta" onPress={publishListing} iconLeft="upload" fullWidth />
+          <Button
+            labelId="services.publish.cta"
+            onPress={publishListing}
+            iconLeft="upload"
+            fullWidth
+            disabled={workerApprovalStatus !== 'approved'}
+          />
         </Card>
       )}
 
@@ -420,6 +461,14 @@ export default function ServicesScreen() {
         {listings.length === 0 ? (
           <View style={styles.empty}>
             <BiText id="services.list.empty" variant="body" tone="muted" align="center" />
+            <Button
+              labelId="services.findNearby"
+              onPress={() => navigation.navigate('Nearby', category ? { category } : undefined)}
+              variant="secondary"
+              iconLeft="map-pin"
+              fullWidth
+              style={styles.emptyCta}
+            />
           </View>
         ) : (
           listings.map((l, idx) => (
@@ -463,12 +512,34 @@ export default function ServicesScreen() {
   );
 }
 
+function CategoryPill({ label, active, onPress }: { label: string; active: boolean; onPress: () => void }) {
+  return (
+    <Pressable onPress={onPress} accessibilityRole="button" style={[styles.catPill, active && styles.catPillActive]}>
+      <Text style={[typography.label, active ? styles.catPillTextActive : styles.catPillText]}>{label}</Text>
+    </Pressable>
+  );
+}
+
 const styles = StyleSheet.create({
   root: { padding: spacing.lg, backgroundColor: colors.bg, flexGrow: 1 },
   cardTitle: { marginBottom: spacing.md },
   listingsHead: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 4 },
   discoverySubtitle: { ...typography.caption, color: colors.textMuted, marginBottom: spacing.md },
   empty: { paddingVertical: spacing.lg, alignItems: 'center' },
+  emptyCta: { marginTop: spacing.md },
+  filterRow: { marginBottom: spacing.md },
+  catPill: {
+    paddingHorizontal: spacing.md,
+    paddingVertical: spacing.sm,
+    borderRadius: radius.pill,
+    borderWidth: 1,
+    borderColor: colors.border,
+    backgroundColor: colors.surface,
+    marginRight: spacing.sm,
+  },
+  catPillActive: { backgroundColor: colors.primary, borderColor: colors.primary },
+  catPillText: { color: colors.textBody },
+  catPillTextActive: { color: colors.primaryInk },
   listingItem: {
     flexDirection: 'row',
     alignItems: 'center',

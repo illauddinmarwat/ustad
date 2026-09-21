@@ -4,7 +4,7 @@ import { colors } from '../theme/tokens';
 
 type Insets = { bottom: number };
 
-const BASE_HEIGHT = 64;
+const BASE_HEIGHT = 84;
 const BASE_PADDING_BOTTOM = 6;
 const PADDING_TOP = 6;
 
