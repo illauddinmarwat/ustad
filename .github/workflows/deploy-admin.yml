@@ -1,0 +1,59 @@
+name: Deploy admin panel
+
+# Builds the admin panel as static files and uploads them over FTPS to the hosting account.
+# Runs on a push to master that changes web-admin, or by hand from the Actions tab.
+# Needs these repository secrets (Settings -> Secrets and variables -> Actions):
+#   FTP_SERVER, FTP_USERNAME, FTP_PASSWORD, FTP_DIR,
+#   NEXT_PUBLIC_SUPABASE_URL, NEXT_PUBLIC_SUPABASE_ANON_KEY
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [ master ]
+    paths:
+      - 'web-admin/**'
+      - '.github/workflows/deploy-admin.yml'
+
+concurrency:
+  group: deploy-admin
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: web-admin
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+          cache-dependency-path: web-admin/package-lock.json
+
+      - name: Install dependencies
+        run: npm ci
+
+      # `next build` also type-checks. The two public values are baked into the files at build time.
+      - name: Build static site
+        run: npm run build
+        env:
+          NEXT_PUBLIC_SUPABASE_URL: ${{ secrets.NEXT_PUBLIC_SUPABASE_URL }}
+          NEXT_PUBLIC_SUPABASE_ANON_KEY: ${{ secrets.NEXT_PUBLIC_SUPABASE_ANON_KEY }}
+
+      # Uploads only what changed since the last deploy and removes files it uploaded earlier
+      # that are no longer in the build. It does not touch other files in the folder, but it will
+      # overwrite files with the same name (index.html, .htaccess), so the folder must be
+      # dedicated to the admin panel.
+      - name: Upload over FTPS
+        uses: SamKirkland/FTP-Deploy-Action@v4.3.5
+        with:
+          server: ${{ secrets.FTP_SERVER }}
+          username: ${{ secrets.FTP_USERNAME }}
+          password: ${{ secrets.FTP_PASSWORD }}
+          protocol: ftps
+          port: 21
+          local-dir: web-admin/out/
+          server-dir: ${{ secrets.FTP_DIR }}
