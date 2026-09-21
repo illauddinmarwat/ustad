@@ -4,8 +4,8 @@ ErrorDocument 404 /404.html
 Options -Indexes
 DirectoryIndex index.html
 
-# Once HTTPS (free SSL) is switched on for this subdomain, remove the leading # on the next 3 lines
-# so every visit is forced onto HTTPS. Do not enable them before SSL works, or the site becomes unreachable.
-# RewriteEngine On
-# RewriteCond %{HTTPS} off
-# RewriteRule ^ https://%{HTTP_HOST}%{REQUEST_URI} [L,R=301]
+# Send every visit to HTTPS. This needs a working SSL certificate on the domain; if the certificate
+# ever lapses, comment these three lines out again or the site becomes unreachable.
+RewriteEngine On
+RewriteCond %{HTTPS} off
+RewriteRule ^ https://%{HTTP_HOST}%{REQUEST_URI} [L,R=301]

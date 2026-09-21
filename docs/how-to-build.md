@@ -29,7 +29,7 @@ Set `NEXT_PUBLIC_SUPABASE_URL` and `NEXT_PUBLIC_SUPABASE_ANON_KEY` (in `web-admi
 1. In the hosting control panel, create a subdomain such as `admin.yourdomain.com`. It gets its own folder (for example `public_html/admin`). Until you have your own domain, use a subdomain of a domain you already have on that hosting.
 2. On your computer run `npm run build` inside `web-admin`.
 3. Upload the **contents** of `web-admin/out/` (not the `out` folder itself) into the subdomain's folder, using the File Manager or FTP. Include the hidden `.htaccess` file; it makes the site show its own 404 page and never list folders.
-4. Turn on the free SSL certificate (AutoSSL / Let's Encrypt) for the subdomain so logins use HTTPS. After it works, remove the `#` on the three redirect lines at the bottom of `.htaccess` to force HTTPS.
+4. Turn on the free SSL certificate (AutoSSL / Let's Encrypt) for the subdomain so logins use HTTPS. The `.htaccess` in the build already forces HTTPS, so the certificate must work before you deploy.
 5. Open `https://admin.yourdomain.com` and sign in with an admin account.
 
 To update the site later: rebuild and upload `out/` again, replacing the old files. When you buy your own domain, add it in the hosting panel (or point its DNS at the hosting) and rebuild only if the Supabase values change; the site itself does not depend on its address.
