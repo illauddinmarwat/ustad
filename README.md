@@ -26,7 +26,7 @@ Phased engineering notes and checklists live under [`docs/implementation/`](docs
 |------|----------------|
 | Mobile | **Expo (SDK 54)** + **React Native** + **TypeScript** in [`mobile/`](mobile/) |
 | Backend | **Supabase** — SQL migrations in [`supabase/migrations/`](supabase/migrations/), notes in [`supabase/README.md`](supabase/README.md) |
-| Docs | Product + MVP + runbooks in [`docs/`](docs/) |
+| Docs | Product + MVP + runbooks in [`docs/`](docs/); app overview in [`docs/mind-map.md`](docs/mind-map.md); [run](docs/how-to-run.md), [build](docs/how-to-build.md), [admin panel](docs/admin-panel.md), [API reference](docs/api-reference.md) |
 
 Useful scripts from `mobile/` (after `npm install`):
 

@@ -1,0 +1,131 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><title>Ustad Mind Maps</title>
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<style>
+body{margin:0;font-family:system-ui;background:#f6faf6;color:#123}
+h1{margin:16px;font-size:20px;color:#1b6b3a}
+.tabs{display:flex;gap:8px;padding:0 16px}
+.tabs button{padding:8px 16px;border:1px solid #1b6b3a;background:#fff;color:#1b6b3a;border-radius:20px;cursor:pointer;font-size:14px}
+.tabs button.on{background:#1b6b3a;color:#fff}
+.pane{display:none;padding:16px}.pane.on{display:block}
+.pane .mermaid{font-size:18px}
+</style></head>
+<body><h1>Ustad — Mind Maps</h1>
+<div class="tabs">
+<button class="on" data-t="u">For Users</button>
+<button data-t="a">For Admins</button>
+<button data-t="d">For Developers</button></div>
+
+<div class="pane on" id="u"><pre class="mermaid">
+mindmap
+  root((Ustad<br/>for Users))
+    Customer
+      Sign up
+      Browse services and priced listings
+      Filter services by category
+      Open a listing and see details
+      Or find a worker nearby
+      Tap a category to filter nearby workers
+      Jump between services and nearby workers
+      Post a job without an account
+      Compare quotes and ask questions
+      Sign in to accept a quote
+      Send a request to one worker
+      Add a budget or wait for a quote
+      See worker profile and price
+      Book the worker
+      Get notified when a worker replies
+      Share your number after the worker accepts
+      Track worker on map
+      Pay cash and mark paid
+      Rate and review
+    Worker
+      Sign up with CNIC
+      Wait for approval
+      Show your skills and rates
+      Publish a service listing
+      Get job requests
+      Browse the job board
+      Send free quotes and reply to questions
+      Get notified of new requests
+      Accept, decline or quote a request
+      Set yourself available or busy
+      Accept and do the job
+      See customer number after accepting
+      Confirm cash received and job closes
+      Get paid and rated
+      See what you owe Ustad
+      Pay commission by its due date
+    Everyone
+      English and Urdu
+      Browse without an account
+      Help and FAQ
+      Notification bell in the app
+      One inbox for everything
+      Filter by pending, active, done
+      Tips from community
+</pre></div>
+
+<div class="pane" id="a"><pre class="mermaid">
+mindmap
+  root((Ustad<br/>for Admins))
+    Approvals
+      Check worker CNIC
+      Approve or reject workers
+    Payments
+      Verify payments
+      Track worker dues and overdue
+      Record or waive commission
+      Watch job activity feed
+      Resolve payment disputes
+      Flag problems
+    Commission
+      See what Ustad earns
+      Per job and per worker
+    Reports
+      Jobs and users
+      Growth trends
+    Moderation
+      Close bad posted jobs
+    Settings
+      Commission rate
+      Due and deactivation days
+      Services offered
+      Cities
+</pre></div>
+
+<div class="pane" id="d"><pre class="mermaid">
+mindmap
+  root((Ustad<br/>for Developers))
+    mobile/
+      Expo + React Native
+      screens, components, theme
+      lib: business logic
+      Jest and Detox tests
+    web-admin/
+      Next.js + Tailwind
+      dashboard pages
+    supabase/
+      Postgres with RLS
+      migrations phases 1-11
+      pgTAP tests
+    Ops
+      GitHub Actions CI
+      auto-deploy migrations on master
+      EAS builds
+    docs/
+      blueprint and MVP
+      setup guides
+      implementation runbooks
+</pre></div>
+
+<script type="module">
+import mermaid from "https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.esm.min.mjs";
+mermaid.initialize({startOnLoad:false,mindmap:{padding:20}});
+const render=async id=>{const el=document.querySelector('#'+id+' .mermaid');
+ if(!el.dataset.done){el.dataset.done=1;await mermaid.run({nodes:[el]});}};
+document.querySelectorAll('.tabs button').forEach(b=>b.onclick=()=>{
+ document.querySelectorAll('.tabs button,.pane').forEach(x=>x.classList.remove('on'));
+ b.classList.add('on');document.getElementById(b.dataset.t).classList.add('on');render(b.dataset.t);});
+render('u');
+</script></body></html>
