@@ -13,6 +13,7 @@ const METHOD_LABEL: Record<PaymentRow['method'], string> = {
   jazzcash: 'JazzCash',
   easypaisa: 'Easypaisa',
   bank: 'Bank transfer',
+  cash: 'Cash',
 };
 
 export default function PaymentsPage() {
