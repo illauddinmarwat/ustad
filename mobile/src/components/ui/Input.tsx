@@ -120,10 +120,6 @@ const styles = StyleSheet.create({
   },
   fieldFocused: {
     borderColor: colors.primary,
-    shadowColor: colors.primary,
-    shadowOpacity: 0.08,
-    shadowRadius: 6,
-    shadowOffset: { width: 0, height: 0 },
   },
   fieldError: {
     borderColor: colors.danger,
