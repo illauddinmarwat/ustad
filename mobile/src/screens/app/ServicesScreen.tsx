@@ -527,7 +527,7 @@ const styles = StyleSheet.create({
   discoverySubtitle: { ...typography.caption, color: colors.textMuted, marginBottom: spacing.md },
   empty: { paddingVertical: spacing.lg, alignItems: 'center' },
   emptyCta: { marginTop: spacing.md },
-  filterRow: { marginBottom: spacing.md },
+  filterRow: { marginBottom: spacing.md, flexGrow: 0 },
   catPill: {
     paddingHorizontal: spacing.md,
     paddingVertical: spacing.sm,

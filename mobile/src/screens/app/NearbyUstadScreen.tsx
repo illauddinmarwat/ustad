@@ -345,7 +345,7 @@ const styles = StyleSheet.create({
   },
   searchInput: { marginBottom: 0 },
   root: { padding: spacing.lg, flexGrow: 1 },
-  filterRow: { marginBottom: spacing.md },
+  filterRow: { marginBottom: spacing.md, flexGrow: 0 },
   catPill: {
     flexDirection: 'row',
     alignItems: 'center',

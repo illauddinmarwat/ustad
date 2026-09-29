@@ -132,8 +132,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const signOut = async () => {
     if (useFixtureMode) {
-      setPreviewRole('customer');
-      setSession(buildFixtureSession('customer'));
+      setSession(null);
+      setRoleState(null);
+      setWorkerApprovalStatus(null);
       return;
     }
     let signOutError: unknown = null;

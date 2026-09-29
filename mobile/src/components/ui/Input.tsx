@@ -89,7 +89,10 @@ export function Input({
           {...rest}
         />
       </View>
-      {placeholderEntry && !hideUrduHint ? (
+      {placeholderEntry &&
+      !hideUrduHint &&
+      /[؀-ۿ]/.test(placeholderEntry.ur) &&
+      placeholderEntry.ur !== labelEntry?.ur ? (
         <Text style={[urduTypography.caption, styles.urduPlaceholder]}>{placeholderEntry.ur}</Text>
       ) : null}
       {error ? <Text style={styles.errorText}>{error}</Text> : null}

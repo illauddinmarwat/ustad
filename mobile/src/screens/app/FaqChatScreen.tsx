@@ -3,7 +3,7 @@ import {
   FlatList,
   KeyboardAvoidingView,
   Linking,
-  Platform,
+ 
   Pressable,
   StyleSheet,
   Text,
@@ -101,7 +101,7 @@ export default function FaqChatScreen() {
   return (
     <KeyboardAvoidingView
       style={styles.flex}
-      behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+      behavior="padding"
       keyboardVerticalOffset={80}
     >
       <FlatList
