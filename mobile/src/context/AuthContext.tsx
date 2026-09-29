@@ -5,6 +5,7 @@ import { useFixtureMode } from '../config/env';
 import { FIXTURE_CUSTOMER_ID, FIXTURE_WORKER_ID } from '../dev/fixtures';
 import { supabase } from '../lib/supabase';
 import { unregisterPush } from '../lib/notifications';
+import { flushPendingUploads } from '../lib/workerUploads';
 
 export type SignUpResult = { requiresConfirmation: boolean };
 
@@ -50,7 +51,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [role, setRoleState] = useState<'customer' | 'worker' | 'admin' | null>(null);
   const [workerApprovalStatus, setWorkerApprovalStatus] = useState<WorkerApprovalStatus | null>(null);
 
-  const applyRoleForUser = async (userId: string) => {
+  const applyRoleForUser = async (userId: string, email?: string) => {
     const { data } = await supabase.from('profiles').select('role').eq('id', userId).maybeSingle();
     const resolvedRole = (data?.role as 'customer' | 'worker' | 'admin') ?? 'customer';
     let approval: WorkerApprovalStatus | null = null;
@@ -65,12 +66,13 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     // Set together so a worker never renders with a stale/unknown approval status.
     setWorkerApprovalStatus(approval);
     setRoleState(resolvedRole);
+    if (resolvedRole === 'worker') void flushPendingUploads(userId, email);
   };
 
   const refreshApproval = async () => {
     if (useFixtureMode) return;
     const uid = session?.user?.id;
-    if (uid) await applyRoleForUser(uid);
+    if (uid) await applyRoleForUser(uid, session?.user?.email);
   };
 
   useEffect(() => {
@@ -90,7 +92,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         try {
           setSession(s);
           if (s?.user?.id) {
-            await applyRoleForUser(s.user.id);
+            await applyRoleForUser(s.user.id, s.user.email);
           } else if (!cancelled) {
             setRoleState(null);
             setWorkerApprovalStatus(null);
@@ -110,7 +112,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         setWorkerApprovalStatus(null);
         return;
       }
-      await applyRoleForUser(s.user.id);
+      await applyRoleForUser(s.user.id, s.user.email);
     });
 
     return () => {

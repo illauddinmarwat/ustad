@@ -17,6 +17,7 @@ import { en, useT } from '../../i18n/useT';
 import { pickImage, type ImageSource } from '../../lib/pickImage';
 import { useSkillCategories } from '../../lib/skillCategories';
 import { supabase } from '../../lib/supabase';
+import { stashPendingUploads, uploadWorkerFiles } from '../../lib/workerUploads';
 import { colors, radius, spacing } from '../../theme/tokens';
 import { typography } from '../../theme/typography';
 
@@ -95,20 +96,6 @@ export default function RegisterProfessionalScreen() {
     else setCnicBackUri(result.uri);
   };
 
-  const uploadImage = async (userId: string, bucket: string, path: string, uri: string): Promise<string | null> => {
-    try {
-      const response = await fetch(uri);
-      const blob = await response.blob();
-      const { error: uploadError } = await supabase.storage
-        .from(bucket)
-        .upload(`${userId}/${path}.jpg`, blob, { upsert: true, contentType: 'image/jpeg' });
-      if (uploadError) return null;
-      return `${userId}/${path}.jpg`;
-    } catch {
-      return null;
-    }
-  };
-
   const submit = async () => {
     if (!privacyAccepted) {
       setError(en('register.error.privacy'));
@@ -148,23 +135,11 @@ export default function RegisterProfessionalScreen() {
 
       if (data.session && data.user) {
         setStep('uploading');
-        const userId = data.user.id;
-        const [photoPath, cnicFrontPath, cnicBackPath] = await Promise.all([
-          photoUri ? uploadImage(userId, 'worker-photos', 'profile', photoUri) : null,
-          cnicFrontUri ? uploadImage(userId, 'worker-documents', 'cnic-front', cnicFrontUri) : null,
-          cnicBackUri ? uploadImage(userId, 'worker-documents', 'cnic-back', cnicBackUri) : null,
-        ]);
-        setStep('finishing');
-        const profileUpdate: Record<string, string> = {};
-        if (photoPath) profileUpdate.photo_url = supabase.storage.from('worker-photos').getPublicUrl(photoPath).data.publicUrl;
-        if (cnicFrontPath) profileUpdate.cnic_front_url = cnicFrontPath;
-        if (cnicBackPath) profileUpdate.cnic_back_url = cnicBackPath;
-        if (Object.keys(profileUpdate).length > 0) {
-          await supabase.from('worker_profiles').update(profileUpdate).eq('user_id', userId);
-        }
+        await uploadWorkerFiles(data.user.id, { photo: photoUri, cnicFront: cnicFrontUri, cnicBack: cnicBackUri });
       }
 
       if (!data.session) {
+        await stashPendingUploads(email, { photo: photoUri, cnicFront: cnicFrontUri, cnicBack: cnicBackUri });
         setNotice('checkEmail');
         setPassword('');
       } else {
