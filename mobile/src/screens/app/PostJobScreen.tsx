@@ -19,7 +19,7 @@ import {
   validatePostJob,
   type PostJobErrors,
 } from '../../lib/jobPosting';
-import { SKILL_CATEGORIES } from '../../lib/skillCategories';
+import { useSkillCategories } from '../../lib/skillCategories';
 import { supabase } from '../../lib/supabase';
 import type { RootStackParamList } from '../../navigation/types';
 import { colors, radius, spacing } from '../../theme/tokens';
@@ -31,6 +31,7 @@ export default function PostJobScreen() {
   const navigation = useNavigation<Nav>();
   const { session, role } = useAuth();
   const { t } = useT();
+  const categories = useSkillCategories();
   const insets = useSafeAreaInsets();
 
   const [enabled, setEnabled] = useState<boolean | null>(null);
@@ -107,7 +108,7 @@ export default function PostJobScreen() {
       <Card padding="lg">
         <BiText id="post.field.category" variant="label" tone="body" style={styles.label} />
         <View style={styles.pills}>
-          {SKILL_CATEGORIES.map((c) => (
+          {categories.map((c) => (
             <Pressable
               key={c.key}
               onPress={() => setCategory(c.key)}
@@ -116,7 +117,7 @@ export default function PostJobScreen() {
               style={[styles.pill, category === c.key && styles.pillOn]}
             >
               <Text style={[typography.label, category === c.key ? styles.pillTextOn : styles.pillText]}>
-                {t(c.labelId).en}
+                {c.en}
               </Text>
             </Pressable>
           ))}

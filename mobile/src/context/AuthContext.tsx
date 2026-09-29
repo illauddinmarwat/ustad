@@ -18,6 +18,7 @@ type AuthCtx = {
   signIn: (email: string, password: string) => Promise<void>;
   signUp: (email: string, password: string) => Promise<SignUpResult>;
   signOut: () => Promise<void>;
+  refreshApproval: () => Promise<void>;
   setRole: (r: 'customer' | 'worker') => Promise<void>;
 };
 
@@ -52,17 +53,24 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const applyRoleForUser = async (userId: string) => {
     const { data } = await supabase.from('profiles').select('role').eq('id', userId).maybeSingle();
     const resolvedRole = (data?.role as 'customer' | 'worker' | 'admin') ?? 'customer';
-    setRoleState(resolvedRole);
+    let approval: WorkerApprovalStatus | null = null;
     if (resolvedRole === 'worker') {
       const { data: wp } = await supabase
         .from('worker_profiles')
         .select('approval_status')
         .eq('user_id', userId)
         .maybeSingle();
-      setWorkerApprovalStatus((wp?.approval_status as WorkerApprovalStatus) ?? null);
-    } else {
-      setWorkerApprovalStatus(null);
+      approval = (wp?.approval_status as WorkerApprovalStatus) ?? null;
     }
+    // Set together so a worker never renders with a stale/unknown approval status.
+    setWorkerApprovalStatus(approval);
+    setRoleState(resolvedRole);
+  };
+
+  const refreshApproval = async () => {
+    if (useFixtureMode) return;
+    const uid = session?.user?.id;
+    if (uid) await applyRoleForUser(uid);
   };
 
   useEffect(() => {
@@ -175,6 +183,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       signIn,
       signUp,
       signOut,
+      refreshApproval,
       setRole,
     }),
     [session, loading, role, workerApprovalStatus]

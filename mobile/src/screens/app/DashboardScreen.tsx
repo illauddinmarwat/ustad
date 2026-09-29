@@ -11,13 +11,13 @@ import { Card } from '../../components/ui/Card';
 import { Icon } from '../../components/ui/Icon';
 import { useAuth } from '../../context/AuthContext';
 import type { StringId } from '../../i18n/strings';
-import { SKILL_CATEGORIES } from '../../lib/skillCategories';
+import { useSkillCategories } from '../../lib/skillCategories';
 import { GuestJobsCard } from '../../components/GuestJobsCard';
 import { fetchJobPostingEnabled } from '../../lib/jobPosting';
 import { useUnreadNotifications } from '../../lib/useUnreadNotifications';
 import type { RootStackParamList, TabParamList } from '../../navigation/types';
 import { colors, radius, spacing } from '../../theme/tokens';
-import { typography } from '../../theme/typography';
+import { typography, urduTypography } from '../../theme/typography';
 
 type DashboardNavigation = CompositeNavigationProp<
   BottomTabNavigationProp<TabParamList>,
@@ -28,6 +28,7 @@ export default function DashboardScreen() {
   const navigation = useNavigation<DashboardNavigation>();
   const { role, session } = useAuth();
   const insets = useSafeAreaInsets();
+  const categories = useSkillCategories();
   const { count: unread } = useUnreadNotifications(session?.user.id);
   const isCustomerLike = (role ?? 'customer') === 'customer';
   const [postingEnabled, setPostingEnabled] = useState(false);
@@ -164,7 +165,7 @@ export default function DashboardScreen() {
           </Pressable>
         </View>
         <View style={styles.categoryGrid}>
-          {SKILL_CATEGORIES.map((c) => (
+          {categories.slice(0, 6).map((c) => (
             <Pressable
               key={c.key}
               style={styles.categoryCard}
@@ -174,7 +175,8 @@ export default function DashboardScreen() {
               <View style={styles.categoryIcon}>
                 <Image source={c.icon} style={styles.categoryIconImage} resizeMode="contain" />
               </View>
-              <BiText id={c.labelId} variant="label" tone="strong" align="center" style={styles.categoryLabel} />
+              <Text style={[typography.label, styles.categoryLabelEn]}>{c.en}</Text>
+              {c.ur ? <Text style={[urduTypography.caption, styles.categoryLabelUr]}>{c.ur}</Text> : null}
             </Pressable>
           ))}
         </View>
@@ -252,7 +254,8 @@ const styles = StyleSheet.create({
     marginBottom: spacing.sm,
   },
   categoryIconImage: { width: 52, height: 52 },
-  categoryLabel: { alignSelf: 'stretch' },
+  categoryLabelEn: { color: colors.textStrong, textAlign: 'center' },
+  categoryLabelUr: { color: colors.textMuted, textAlign: 'center', marginTop: 2 },
   trustLine: { marginTop: spacing.lg, paddingHorizontal: spacing.md },
   modeRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', marginTop: spacing.md, gap: 4 },
   modeText: { marginRight: 4 },

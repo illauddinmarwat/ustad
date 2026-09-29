@@ -69,6 +69,13 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
     'expo-font',
     'expo-notifications',
     [
+      'expo-image-picker',
+      {
+        photosPermission: 'Ustad needs your photos so you can upload your profile picture and CNIC.',
+        cameraPermission: 'Ustad needs the camera so you can take a picture of your CNIC and profile.',
+      },
+    ],
+    [
       'expo-location',
       {
         locationWhenInUsePermission:

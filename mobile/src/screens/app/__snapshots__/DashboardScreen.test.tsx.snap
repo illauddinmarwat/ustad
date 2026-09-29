@@ -205,7 +205,7 @@ exports[`DashboardScreen matches snapshot 1`] = `
         }
       >
         <View
-          accessibilityLabel="Register as Professional"
+          accessibilityLabel="Register as Ustad"
           accessibilityRole="button"
           accessibilityState={
             {
@@ -310,7 +310,7 @@ exports[`DashboardScreen matches snapshot 1`] = `
                   ]
                 }
               >
-                Register as Professional
+                Register as Ustad
               </Text>
               <Text
                 style={
@@ -328,7 +328,7 @@ exports[`DashboardScreen matches snapshot 1`] = `
                   ]
                 }
               >
-                ہنر مند کے طور پر رجسٹر ہوں
+                استاد کے طور پر رجسٹر ہوں
               </Text>
             </View>
           </View>
@@ -680,56 +680,41 @@ exports[`DashboardScreen matches snapshot 1`] = `
                 }
               />
             </View>
-            <View
+            <Text
               style={
-                {
-                  "alignSelf": "stretch",
-                }
+                [
+                  {
+                    "fontFamily": "Manrope_500Medium",
+                    "fontSize": 13,
+                    "lineHeight": 18,
+                  },
+                  {
+                    "color": "#0B0F19",
+                    "textAlign": "center",
+                  },
+                ]
               }
             >
-              <Text
-                allowFontScaling={true}
-                style={
-                  [
-                    {
-                      "fontFamily": "Manrope_500Medium",
-                      "fontSize": 13,
-                      "lineHeight": 18,
-                    },
-                    {
-                      "color": "#0B0F19",
-                      "textAlign": "center",
-                    },
-                    undefined,
-                  ]
-                }
-              >
-                Electrician
-              </Text>
-              <Text
-                allowFontScaling={true}
-                style={
-                  [
-                    {
-                      "fontFamily": "NotoNastaliqUrdu_400Regular",
-                      "fontSize": 10,
-                      "lineHeight": 14,
-                    },
-                    {
-                      "marginTop": 2,
-                      "writingDirection": "rtl",
-                    },
-                    {
-                      "color": "#384151",
-                      "textAlign": "center",
-                    },
-                    undefined,
-                  ]
-                }
-              >
-                الیکٹریشن
-              </Text>
-            </View>
+              Electrician
+            </Text>
+            <Text
+              style={
+                [
+                  {
+                    "fontFamily": "NotoNastaliqUrdu_400Regular",
+                    "fontSize": 10,
+                    "lineHeight": 14,
+                  },
+                  {
+                    "color": "#6B7280",
+                    "marginTop": 2,
+                    "textAlign": "center",
+                  },
+                ]
+              }
+            >
+              الیکٹریشن
+            </Text>
           </View>
           <View
             accessibilityRole="button"
@@ -801,56 +786,41 @@ exports[`DashboardScreen matches snapshot 1`] = `
                 }
               />
             </View>
-            <View
+            <Text
               style={
-                {
-                  "alignSelf": "stretch",
-                }
+                [
+                  {
+                    "fontFamily": "Manrope_500Medium",
+                    "fontSize": 13,
+                    "lineHeight": 18,
+                  },
+                  {
+                    "color": "#0B0F19",
+                    "textAlign": "center",
+                  },
+                ]
               }
             >
-              <Text
-                allowFontScaling={true}
-                style={
-                  [
-                    {
-                      "fontFamily": "Manrope_500Medium",
-                      "fontSize": 13,
-                      "lineHeight": 18,
-                    },
-                    {
-                      "color": "#0B0F19",
-                      "textAlign": "center",
-                    },
-                    undefined,
-                  ]
-                }
-              >
-                Plumber
-              </Text>
-              <Text
-                allowFontScaling={true}
-                style={
-                  [
-                    {
-                      "fontFamily": "NotoNastaliqUrdu_400Regular",
-                      "fontSize": 10,
-                      "lineHeight": 14,
-                    },
-                    {
-                      "marginTop": 2,
-                      "writingDirection": "rtl",
-                    },
-                    {
-                      "color": "#384151",
-                      "textAlign": "center",
-                    },
-                    undefined,
-                  ]
-                }
-              >
-                پلمبر
-              </Text>
-            </View>
+              Plumber
+            </Text>
+            <Text
+              style={
+                [
+                  {
+                    "fontFamily": "NotoNastaliqUrdu_400Regular",
+                    "fontSize": 10,
+                    "lineHeight": 14,
+                  },
+                  {
+                    "color": "#6B7280",
+                    "marginTop": 2,
+                    "textAlign": "center",
+                  },
+                ]
+              }
+            >
+              پلمبر
+            </Text>
           </View>
           <View
             accessibilityRole="button"
@@ -922,56 +892,41 @@ exports[`DashboardScreen matches snapshot 1`] = `
                 }
               />
             </View>
-            <View
+            <Text
               style={
-                {
-                  "alignSelf": "stretch",
-                }
+                [
+                  {
+                    "fontFamily": "Manrope_500Medium",
+                    "fontSize": 13,
+                    "lineHeight": 18,
+                  },
+                  {
+                    "color": "#0B0F19",
+                    "textAlign": "center",
+                  },
+                ]
               }
             >
-              <Text
-                allowFontScaling={true}
-                style={
-                  [
-                    {
-                      "fontFamily": "Manrope_500Medium",
-                      "fontSize": 13,
-                      "lineHeight": 18,
-                    },
-                    {
-                      "color": "#0B0F19",
-                      "textAlign": "center",
-                    },
-                    undefined,
-                  ]
-                }
-              >
-                Carpenter
-              </Text>
-              <Text
-                allowFontScaling={true}
-                style={
-                  [
-                    {
-                      "fontFamily": "NotoNastaliqUrdu_400Regular",
-                      "fontSize": 10,
-                      "lineHeight": 14,
-                    },
-                    {
-                      "marginTop": 2,
-                      "writingDirection": "rtl",
-                    },
-                    {
-                      "color": "#384151",
-                      "textAlign": "center",
-                    },
-                    undefined,
-                  ]
-                }
-              >
-                بڑھئی
-              </Text>
-            </View>
+              Carpenter
+            </Text>
+            <Text
+              style={
+                [
+                  {
+                    "fontFamily": "NotoNastaliqUrdu_400Regular",
+                    "fontSize": 10,
+                    "lineHeight": 14,
+                  },
+                  {
+                    "color": "#6B7280",
+                    "marginTop": 2,
+                    "textAlign": "center",
+                  },
+                ]
+              }
+            >
+              بڑھئی
+            </Text>
           </View>
           <View
             accessibilityRole="button"
@@ -1043,56 +998,41 @@ exports[`DashboardScreen matches snapshot 1`] = `
                 }
               />
             </View>
-            <View
+            <Text
               style={
-                {
-                  "alignSelf": "stretch",
-                }
+                [
+                  {
+                    "fontFamily": "Manrope_500Medium",
+                    "fontSize": 13,
+                    "lineHeight": 18,
+                  },
+                  {
+                    "color": "#0B0F19",
+                    "textAlign": "center",
+                  },
+                ]
               }
             >
-              <Text
-                allowFontScaling={true}
-                style={
-                  [
-                    {
-                      "fontFamily": "Manrope_500Medium",
-                      "fontSize": 13,
-                      "lineHeight": 18,
-                    },
-                    {
-                      "color": "#0B0F19",
-                      "textAlign": "center",
-                    },
-                    undefined,
-                  ]
-                }
-              >
-                Painter
-              </Text>
-              <Text
-                allowFontScaling={true}
-                style={
-                  [
-                    {
-                      "fontFamily": "NotoNastaliqUrdu_400Regular",
-                      "fontSize": 10,
-                      "lineHeight": 14,
-                    },
-                    {
-                      "marginTop": 2,
-                      "writingDirection": "rtl",
-                    },
-                    {
-                      "color": "#384151",
-                      "textAlign": "center",
-                    },
-                    undefined,
-                  ]
-                }
-              >
-                پینٹر
-              </Text>
-            </View>
+              Painter
+            </Text>
+            <Text
+              style={
+                [
+                  {
+                    "fontFamily": "NotoNastaliqUrdu_400Regular",
+                    "fontSize": 10,
+                    "lineHeight": 14,
+                  },
+                  {
+                    "color": "#6B7280",
+                    "marginTop": 2,
+                    "textAlign": "center",
+                  },
+                ]
+              }
+            >
+              پینٹر
+            </Text>
           </View>
           <View
             accessibilityRole="button"
@@ -1164,56 +1104,41 @@ exports[`DashboardScreen matches snapshot 1`] = `
                 }
               />
             </View>
-            <View
+            <Text
               style={
-                {
-                  "alignSelf": "stretch",
-                }
+                [
+                  {
+                    "fontFamily": "Manrope_500Medium",
+                    "fontSize": 13,
+                    "lineHeight": 18,
+                  },
+                  {
+                    "color": "#0B0F19",
+                    "textAlign": "center",
+                  },
+                ]
               }
             >
-              <Text
-                allowFontScaling={true}
-                style={
-                  [
-                    {
-                      "fontFamily": "Manrope_500Medium",
-                      "fontSize": 13,
-                      "lineHeight": 18,
-                    },
-                    {
-                      "color": "#0B0F19",
-                      "textAlign": "center",
-                    },
-                    undefined,
-                  ]
-                }
-              >
-                AC Technician
-              </Text>
-              <Text
-                allowFontScaling={true}
-                style={
-                  [
-                    {
-                      "fontFamily": "NotoNastaliqUrdu_400Regular",
-                      "fontSize": 10,
-                      "lineHeight": 14,
-                    },
-                    {
-                      "marginTop": 2,
-                      "writingDirection": "rtl",
-                    },
-                    {
-                      "color": "#384151",
-                      "textAlign": "center",
-                    },
-                    undefined,
-                  ]
-                }
-              >
-                اے سی ٹیکنیشن
-              </Text>
-            </View>
+              AC Technician
+            </Text>
+            <Text
+              style={
+                [
+                  {
+                    "fontFamily": "NotoNastaliqUrdu_400Regular",
+                    "fontSize": 10,
+                    "lineHeight": 14,
+                  },
+                  {
+                    "color": "#6B7280",
+                    "marginTop": 2,
+                    "textAlign": "center",
+                  },
+                ]
+              }
+            >
+              اے سی ٹیکنیشن
+            </Text>
           </View>
           <View
             accessibilityRole="button"
@@ -1285,56 +1210,41 @@ exports[`DashboardScreen matches snapshot 1`] = `
                 }
               />
             </View>
-            <View
+            <Text
               style={
-                {
-                  "alignSelf": "stretch",
-                }
+                [
+                  {
+                    "fontFamily": "Manrope_500Medium",
+                    "fontSize": 13,
+                    "lineHeight": 18,
+                  },
+                  {
+                    "color": "#0B0F19",
+                    "textAlign": "center",
+                  },
+                ]
               }
             >
-              <Text
-                allowFontScaling={true}
-                style={
-                  [
-                    {
-                      "fontFamily": "Manrope_500Medium",
-                      "fontSize": 13,
-                      "lineHeight": 18,
-                    },
-                    {
-                      "color": "#0B0F19",
-                      "textAlign": "center",
-                    },
-                    undefined,
-                  ]
-                }
-              >
-                Welder
-              </Text>
-              <Text
-                allowFontScaling={true}
-                style={
-                  [
-                    {
-                      "fontFamily": "NotoNastaliqUrdu_400Regular",
-                      "fontSize": 10,
-                      "lineHeight": 14,
-                    },
-                    {
-                      "marginTop": 2,
-                      "writingDirection": "rtl",
-                    },
-                    {
-                      "color": "#384151",
-                      "textAlign": "center",
-                    },
-                    undefined,
-                  ]
-                }
-              >
-                ویلڈر
-              </Text>
-            </View>
+              Welder
+            </Text>
+            <Text
+              style={
+                [
+                  {
+                    "fontFamily": "NotoNastaliqUrdu_400Regular",
+                    "fontSize": 10,
+                    "lineHeight": 14,
+                  },
+                  {
+                    "color": "#6B7280",
+                    "marginTop": 2,
+                    "textAlign": "center",
+                  },
+                ]
+              }
+            >
+              ویلڈر
+            </Text>
           </View>
         </View>
       </View>

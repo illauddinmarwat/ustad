@@ -29,7 +29,7 @@ import { fetchPhase3Flags } from '../../lib/featureFlags';
 import { fetchPhase4Flags } from '../../lib/phase4Flags';
 import { fetchPhase5Flags } from '../../lib/phase5Flags';
 import { applyRanking, type RankableListing, type ScoredListing } from '../../lib/ranking';
-import { SKILL_CATEGORIES } from '../../lib/skillCategories';
+import { useSkillCategories } from '../../lib/skillCategories';
 import { trackRateLimitObservation } from '../../lib/scaleHardening';
 import { supabase } from '../../lib/supabase';
 import type { RootStackParamList, TabParamList } from '../../navigation/types';
@@ -77,6 +77,7 @@ export default function ServicesScreen() {
   const navigation = useNavigation<ServicesNav>();
   const route = useRoute<RouteProp<TabParamList, 'Services'>>();
   const { t } = useT();
+  const categories = useSkillCategories();
   const { role, session, workerApprovalStatus } = useAuth();
   const insets = useSafeAreaInsets();
   const [listings, setListings] = useState<Array<ScoredListing<Listing>>>([]);
@@ -407,8 +408,8 @@ export default function ServicesScreen() {
 
       <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.filterRow}>
         <CategoryPill label="All" active={category === null} onPress={() => setCategory(null)} />
-        {SKILL_CATEGORIES.map((c) => (
-          <CategoryPill key={c.key} label={t(c.labelId).en} active={category === c.key} onPress={() => setCategory(c.key)} />
+        {categories.map((c) => (
+          <CategoryPill key={c.key} label={c.en} active={category === c.key} onPress={() => setCategory(c.key)} />
         ))}
       </ScrollView>
 

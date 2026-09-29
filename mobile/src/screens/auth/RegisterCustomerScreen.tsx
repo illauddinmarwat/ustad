@@ -4,6 +4,7 @@ import { useState } from 'react';
 import { KeyboardAvoidingView, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
+import { useCityAreaFields } from '../../components/CityAreaFields';
 import { Banner } from '../../components/ui/Banner';
 import { BiText } from '../../components/ui/BiText';
 import { Button } from '../../components/ui/Button';
@@ -26,14 +27,13 @@ export default function RegisterCustomerScreen() {
   const [password, setPassword] = useState('');
   const [fullName, setFullName] = useState('');
   const [mobile, setMobile] = useState('');
-  const [city, setCity] = useState('');
-  const [address, setAddress] = useState('');
+  const place = useCityAreaFields();
   const [language, setLanguage] = useState<Language>('ur');
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [notice, setNotice] = useState<'checkEmail' | null>(null);
 
-  const canSubmit = !!(email.trim() && password && fullName.trim() && mobile.trim() && city.trim());
+  const canSubmit = !!(email.trim() && password && fullName.trim() && mobile.trim() && place.complete);
 
   const submit = async () => {
     if (!canSubmit) {
@@ -52,8 +52,9 @@ export default function RegisterCustomerScreen() {
             role: 'customer',
             display_name: fullName.trim(),
             phone: mobile.trim(),
-            city: city.trim(),
-            address: address.trim() || null,
+            city: place.cityName,
+            area: place.areaName,
+            address: place.addressDetails || null,
             preferred_language: language,
           },
         },
@@ -115,11 +116,7 @@ export default function RegisterCustomerScreen() {
             keyboardType="phone-pad"
           />
 
-          <BiText id="register.customer.city" variant="label" tone="muted" style={styles.sectionLabel} />
-          <Input value={city} onChangeText={setCity} placeholderId="register.customer.cityPh" iconLeft="map-pin" />
-
-          <BiText id="register.customer.address" variant="label" tone="muted" style={styles.sectionLabel} />
-          <Input value={address} onChangeText={setAddress} placeholderId="register.customer.addressPh" iconLeft="home" />
+          {place.fields}
 
           <BiText id="register.customer.language" variant="label" tone="muted" style={styles.sectionLabel} />
           <View style={styles.langRow}>

@@ -14,7 +14,7 @@ import { Chip } from '../../components/ui/Chip';
 import { EmptyState } from '../../components/ui/EmptyState';
 import { Icon } from '../../components/ui/Icon';
 import { useT } from '../../i18n/useT';
-import { SKILL_CATEGORIES } from '../../lib/skillCategories';
+import { skillNameFor } from '../../lib/skillCategories';
 import { distanceKm, estimateEtaMinutes, type LatLng } from '../../lib/realtime';
 import { supabase } from '../../lib/supabase';
 import type { RootStackParamList } from '../../navigation/types';
@@ -135,9 +135,7 @@ export default function JobTrackingScreen({ route }: Props) {
     Linking.openURL(`tel:${worker.phone}`).catch(() => {});
   };
 
-  const skillLabel = worker?.categories?.[0]
-    ? SKILL_CATEGORIES.find((c) => c.key === worker.categories?.[0])?.labelId
-    : null;
+  const skillLabel = skillNameFor(worker?.categories?.[0])?.en ?? null;
 
   const region = myCoords
     ? { latitude: myCoords.lat, longitude: myCoords.lng, latitudeDelta: 0.05, longitudeDelta: 0.05 }
@@ -199,7 +197,7 @@ export default function JobTrackingScreen({ route }: Props) {
               <View style={styles.profileBody}>
                 <Text style={styles.name} numberOfLines={1}>
                   {worker?.display_name ?? 'Ustad'}
-                  {skillLabel ? ` · ${t(skillLabel).en}` : ''}
+                  {skillLabel ? ` · ${skillLabel}` : ''}
                 </Text>
                 {worker?.avg_rating != null && (
                   <View style={styles.ratingRow}>

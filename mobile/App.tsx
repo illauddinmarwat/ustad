@@ -23,6 +23,7 @@ import { ActivityIndicator, View } from 'react-native';
 import { SafeAreaProvider, useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { Icon } from './src/components/ui/Icon';
+import { PendingApprovalGate } from './src/components/PendingApprovalGate';
 import { TabBarLabel } from './src/components/ui/TabBarLabel';
 import { AuthProvider, useAuth } from './src/context/AuthContext';
 import { en } from './src/i18n/useT';
@@ -262,6 +263,7 @@ function RootNavigator() {
   return (
     <>
     <PushRegistration />
+    <PendingApprovalGate />
     <Stack.Navigator screenOptions={stackScreenOptions}>
       <Stack.Screen name="Tabs" component={AppTabs} options={{ title: en('nav.app'), headerShown: false }} />
       <Stack.Screen name="Auth" component={AuthScreen} options={{ title: en('nav.signIn') }} />

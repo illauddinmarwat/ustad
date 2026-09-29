@@ -20,7 +20,7 @@ import { ScreenHeader } from '../../components/ui/ScreenHeader';
 import { useT } from '../../i18n/useT';
 import { fetchDirectRequestFlags } from '../../lib/directRequests';
 import { fetchJobPostingEnabled } from '../../lib/jobPosting';
-import { SKILL_CATEGORIES } from '../../lib/skillCategories';
+import { skillNameFor, useSkillCategories } from '../../lib/skillCategories';
 import { supabase } from '../../lib/supabase';
 import type { RootStackParamList, TabParamList } from '../../navigation/types';
 import { colors, radius, spacing } from '../../theme/tokens';
@@ -56,6 +56,7 @@ export default function NearbyUstadScreen() {
   const route = useRoute<RouteProp<TabParamList, 'Nearby'>>();
   const insets = useSafeAreaInsets();
   const { t } = useT();
+  const categories = useSkillCategories();
 
   const [locState, setLocState] = useState<LocState>('idle');
   const [coords, setCoords] = useState<Coords | null>(null);
@@ -160,10 +161,10 @@ export default function NearbyUstadScreen() {
       >
         <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.filterRow}>
           <CategoryPill label={t('nearby.filterAll').en} active={category === null} onPress={() => setCategory(null)} />
-          {SKILL_CATEGORIES.map((cat) => (
+          {categories.map((cat) => (
             <CategoryPill
               key={cat.key}
-              label={t(cat.labelId).en}
+              label={cat.en}
               active={category === cat.key}
               onPress={() => setCategory(cat.key)}
             />
@@ -261,10 +262,7 @@ function WorkerCard({
   directEnabled: boolean;
 }) {
   const { t } = useT();
-  const skillLabel = worker.categories?.[0]
-    ? SKILL_CATEGORIES.find((c) => c.key === worker.categories?.[0])?.labelId
-    : null;
-  const skillText = skillLabel ? t(skillLabel).en : null;
+  const skillText = skillNameFor(worker.categories?.[0])?.en ?? null;
   const rateUnitLabel = worker.rate_unit === 'hour' ? t('nearby.card.perHour').en : t('nearby.card.perDay').en;
 
   return (

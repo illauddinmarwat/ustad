@@ -407,25 +407,6 @@ exports[`AuthScreen matches snapshot 1`] = `
                 value=""
               />
             </View>
-            <Text
-              style={
-                [
-                  {
-                    "fontFamily": "NotoNastaliqUrdu_400Regular",
-                    "fontSize": 10,
-                    "lineHeight": 14,
-                  },
-                  {
-                    "color": "#6B7280",
-                    "marginTop": 4,
-                    "textAlign": "right",
-                    "writingDirection": "rtl",
-                  },
-                ]
-              }
-            >
-              ای میل
-            </Text>
           </View>
           <View
             style={
@@ -539,25 +520,6 @@ exports[`AuthScreen matches snapshot 1`] = `
                 value=""
               />
             </View>
-            <Text
-              style={
-                [
-                  {
-                    "fontFamily": "NotoNastaliqUrdu_400Regular",
-                    "fontSize": 10,
-                    "lineHeight": 14,
-                  },
-                  {
-                    "color": "#6B7280",
-                    "marginTop": 4,
-                    "textAlign": "right",
-                    "writingDirection": "rtl",
-                  },
-                ]
-              }
-            >
-              پاس ورڈ
-            </Text>
           </View>
           <View
             accessibilityLabel="Sign in"

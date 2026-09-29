@@ -62,7 +62,7 @@ export const strings = {
   'nav.communityTips': { en: 'Community tips', ur: 'کمیونٹی مشورے' },
   'nav.registerChoice': { en: 'Join Ustad', ur: 'استاد میں شامل ہوں' },
   'nav.registerCustomer': { en: 'Register as Customer', ur: 'گاہک کے طور پر رجسٹر ہوں' },
-  'nav.registerProfessional': { en: 'Register as Professional', ur: 'ہنر مند کے طور پر رجسٹر ہوں' },
+  'nav.registerProfessional': { en: 'Register as Ustad', ur: 'استاد کے طور پر رجسٹر ہوں' },
   'nav.jobTracking': { en: 'Live Tracking', ur: 'لائیو ٹریکنگ' },
 
   // --------------------------- AUTH SCREEN ---------------------------
@@ -84,7 +84,7 @@ export const strings = {
     en: 'How would you like to register?',
     ur: 'آپ کس طور پر رجسٹر ہونا چاہتے ہیں؟',
   },
-  'register.choice.professional': { en: 'Register as Professional', ur: 'ہنر مند کے طور پر رجسٹر ہوں' },
+  'register.choice.professional': { en: 'Register as Ustad', ur: 'استاد کے طور پر رجسٹر ہوں' },
   'register.choice.professionalSub': { en: 'Join as a skilled worker', ur: 'ہنر مند کارکن کے طور پر شامل ہوں' },
   'register.choice.customer': { en: 'Register as Customer', ur: 'گاہک کے طور پر رجسٹر ہوں' },
   'register.choice.customerSub': { en: 'Hire skilled professionals', ur: 'ہنر مند پیشہ ور افراد کی خدمات حاصل کریں' },
@@ -108,7 +108,7 @@ export const strings = {
   'register.customer.creating': { en: 'Creating…', ur: 'بن رہا ہے…' },
 
   // --------------------------- REGISTER: PROFESSIONAL ---------------------------
-  'register.professional.title': { en: 'Register as Professional', ur: 'ہنر مند کے طور پر رجسٹر ہوں' },
+  'register.professional.title': { en: 'Register as Ustad', ur: 'استاد کے طور پر رجسٹر ہوں' },
   'register.professional.subtitle': {
     en: 'Join as a professional and start receiving job requests',
     ur: 'ہنر مند کے طور پر شامل ہوں اور کام کی درخواستیں وصول کرنا شروع کریں',
@@ -167,6 +167,50 @@ export const strings = {
   'register.accountSection': { en: 'Account', ur: 'اکاؤنٹ' },
   'register.termsNotice': { en: "By submitting, you agree to Ustad's Terms & Privacy Policy", ur: 'جمع کروانے سے آپ استاد کی شرائط اور پرائیویسی پالیسی سے اتفاق کرتے ہیں' },
   'register.error.required': { en: 'Please fill in all required fields', ur: 'براہ کرم تمام لازمی خانے پُر کریں' },
+
+  // --------------------------- PICKERS / IMAGES / PRIVACY / APPROVAL GATE ---------------------------
+  'pick.city': { en: 'City', ur: 'شہر' },
+  'pick.cityPh': { en: 'Select city', ur: 'شہر منتخب کریں' },
+  'pick.area': { en: 'Area', ur: 'علاقہ' },
+  'pick.areaPh': { en: 'Select area', ur: 'علاقہ منتخب کریں' },
+  'pick.areaOther': { en: 'Other area…', ur: 'دوسرا علاقہ…' },
+  'pick.otherAreaPh': { en: 'Type your area', ur: 'اپنا علاقہ لکھیں' },
+  'pick.addressDetails': { en: 'Address details (optional)', ur: 'پتے کی تفصیل (اختیاری)' },
+  'pick.addressDetailsPh': { en: 'Street, house no., landmark', ur: 'گلی، مکان نمبر، قریبی نشانی' },
+  'pick.search': { en: 'Search', ur: 'تلاش' },
+  'pick.loadFailed': { en: 'Could not load the list. Tap to retry.', ur: 'فہرست لوڈ نہیں ہو سکی۔ دوبارہ کوشش کے لیے ٹیپ کریں۔' },
+  'pick.empty': { en: 'Nothing found', ur: 'کچھ نہیں ملا' },
+  'pick.close': { en: 'Close', ur: 'بند کریں' },
+  'image.takePhoto': { en: 'Take photo', ur: 'تصویر کھینچیں' },
+  'image.chooseGallery': { en: 'Choose from gallery', ur: 'گیلری سے منتخب کریں' },
+  'image.cancel': { en: 'Cancel', ur: 'منسوخ' },
+  'image.permissionDenied': { en: 'Permission was denied. Enable it in Settings to continue.', ur: 'اجازت نہیں ملی۔ جاری رکھنے کے لیے سیٹنگز میں اجازت دیں۔' },
+  'register.professional.hoursFrom': { en: 'From', ur: 'سے' },
+  'register.professional.hoursTo': { en: 'To', ur: 'تک' },
+  'register.professional.hoursError': { en: 'End time must be after start time', ur: 'ختم ہونے کا وقت شروع کے وقت کے بعد ہونا چاہیے' },
+  'register.step.creating': { en: 'Creating your account…', ur: 'آپ کا اکاؤنٹ بن رہا ہے…' },
+  'register.step.uploading': { en: 'Uploading your photos…', ur: 'آپ کی تصاویر اپ لوڈ ہو رہی ہیں…' },
+  'register.step.finishing': { en: 'Almost done…', ur: 'تقریباً مکمل…' },
+  'register.error.privacy': { en: 'Please accept the Privacy Policy to continue', ur: 'جاری رکھنے کے لیے پرائیویسی پالیسی قبول کریں' },
+  'privacy.checkbox': { en: 'I agree to the Privacy Policy', ur: 'میں پرائیویسی پالیسی سے متفق ہوں' },
+  'privacy.title': { en: 'Privacy Policy', ur: 'پرائیویسی پالیسی' },
+  'privacy.body': {
+    en: 'Your information (name, phone, CNIC and photos) is collected only to register you and verify your identity on Ustad.\n\nIt is used only for the purposes of this app: connecting customers with professionals, approving your registration and keeping the platform safe.\n\nYour CNIC images are stored privately and are visible only to Ustad admins for verification.\n\nWe never sell your data or share it with third parties for advertising. You can ask us to delete your account and data at any time.',
+    ur: 'آپ کی معلومات (نام، فون، شناختی کارڈ اور تصاویر) صرف آپ کو رجسٹر کرنے اور استاد پر آپ کی شناخت کی تصدیق کے لیے لی جاتی ہیں۔\n\nیہ صرف اس ایپ کے مقاصد کے لیے استعمال ہوتی ہیں: گاہکوں کو ہنر مندوں سے ملانا، آپ کی رجسٹریشن کی منظوری اور پلیٹ فارم کو محفوظ رکھنا۔\n\nآپ کے شناختی کارڈ کی تصاویر نجی طور پر محفوظ ہیں اور صرف تصدیق کے لیے استاد ایڈمن کو نظر آتی ہیں۔\n\nہم آپ کا ڈیٹا کبھی فروخت نہیں کرتے اور نہ اشتہارات کے لیے کسی تیسرے فریق کو دیتے ہیں۔ آپ کسی بھی وقت اپنا اکاؤنٹ اور ڈیٹا حذف کرنے کی درخواست کر سکتے ہیں۔',
+  },
+  'privacy.agree': { en: 'I Agree', ur: 'میں متفق ہوں' },
+  'approval.gate.title': { en: 'Your registration is in progress', ur: 'آپ کی رجسٹریشن جاری ہے' },
+  'approval.gate.body': {
+    en: 'You can log in once your data is checked.',
+    ur: 'آپ کا ڈیٹا چیک ہونے کے بعد آپ لاگ ان کر سکیں گے۔',
+  },
+  'approval.gate.rejectedTitle': { en: 'Registration not approved', ur: 'رجسٹریشن منظور نہیں ہوئی' },
+  'approval.gate.rejectedBody': {
+    en: 'Your registration was not approved. Please contact support to appeal.',
+    ur: 'آپ کی رجسٹریشن منظور نہیں ہوئی۔ اپیل کے لیے سپورٹ سے رابطہ کریں۔',
+  },
+  'approval.gate.refresh': { en: 'Check status', ur: 'صورتحال دیکھیں' },
+  'approval.gate.signOut': { en: 'Sign out', ur: 'لاگ آؤٹ' },
 
   // --------------------------- DASHBOARD ---------------------------
   'dashboard.brand.tagline': { en: 'Your skill, your livelihood', ur: 'آپ کا ہنر، آپ کا روزگار' },

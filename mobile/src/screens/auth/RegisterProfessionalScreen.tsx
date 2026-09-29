@@ -1,46 +1,65 @@
-import * as ImagePicker from 'expo-image-picker';
 import { useState } from 'react';
 import { Image, KeyboardAvoidingView, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
+import { useCityAreaFields } from '../../components/CityAreaFields';
+import { PrivacyPolicyModal } from '../../components/PrivacyPolicyModal';
 import { Banner } from '../../components/ui/Banner';
 import { BiText } from '../../components/ui/BiText';
 import { Button } from '../../components/ui/Button';
 import { Card } from '../../components/ui/Card';
 import { Icon } from '../../components/ui/Icon';
+import { ImageSourceSheet } from '../../components/ui/ImageSourceSheet';
 import { Input } from '../../components/ui/Input';
+import { formatMinutes, TimeField } from '../../components/ui/TimeField';
 import type { StringId } from '../../i18n/strings';
 import { en, useT } from '../../i18n/useT';
-import { preprocessForOcr } from '../../lib/ocr/preprocess';
-import { SKILL_CATEGORIES } from '../../lib/skillCategories';
+import { pickImage, type ImageSource } from '../../lib/pickImage';
+import { useSkillCategories } from '../../lib/skillCategories';
 import { supabase } from '../../lib/supabase';
 import { colors, radius, spacing } from '../../theme/tokens';
 import { typography } from '../../theme/typography';
 
 type RateUnit = 'day' | 'hour';
+type ImageTarget = 'photo' | 'cnicFront' | 'cnicBack';
+type Step = 'creating' | 'uploading' | 'finishing';
+
+const STEP_LABEL: Record<Step, StringId> = {
+  creating: 'register.step.creating',
+  uploading: 'register.step.uploading',
+  finishing: 'register.step.finishing',
+};
 
 export default function RegisterProfessionalScreen() {
   const insets = useSafeAreaInsets();
   const { t } = useT();
+  const categories = useSkillCategories();
+  const place = useCityAreaFields();
 
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [fullName, setFullName] = useState('');
   const [mobile, setMobile] = useState('');
   const [cnic, setCnic] = useState('');
-  const [city, setCity] = useState('');
   const [skillKey, setSkillKey] = useState<string | null>(null);
   const [experience, setExperience] = useState('');
   const [rate, setRate] = useState('');
   const [rateUnit, setRateUnit] = useState<RateUnit>('day');
-  const [workingHours, setWorkingHours] = useState('');
+  const [fromMin, setFromMin] = useState(9 * 60);
+  const [toMin, setToMin] = useState(18 * 60);
   const [bio, setBio] = useState('');
   const [photoUri, setPhotoUri] = useState<string | null>(null);
   const [cnicFrontUri, setCnicFrontUri] = useState<string | null>(null);
   const [cnicBackUri, setCnicBackUri] = useState<string | null>(null);
+  const [sheetTarget, setSheetTarget] = useState<ImageTarget | null>(null);
+  const [privacyAccepted, setPrivacyAccepted] = useState(false);
+  const [privacyOpen, setPrivacyOpen] = useState(false);
   const [busy, setBusy] = useState(false);
+  const [step, setStep] = useState<Step | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [notice, setNotice] = useState<'checkEmail' | 'pendingApproval' | null>(null);
+
+  const hoursValid = toMin > fromMin;
 
   const canSubmit = !!(
     email.trim() &&
@@ -48,72 +67,61 @@ export default function RegisterProfessionalScreen() {
     fullName.trim() &&
     mobile.trim() &&
     cnic.trim() &&
-    city.trim() &&
+    place.complete &&
     skillKey &&
     experience.trim() &&
     rate.trim() &&
-    workingHours.trim() &&
+    hoursValid &&
     photoUri &&
     cnicFrontUri &&
     cnicBackUri &&
-    bio.trim()
+    bio.trim() &&
+    privacyAccepted
   );
 
-  const pickPhoto = async () => {
-    const permission = await ImagePicker.requestMediaLibraryPermissionsAsync();
-    if (!permission.granted) return;
-    const result = await ImagePicker.launchImageLibraryAsync({ mediaTypes: ['images'], quality: 0.7 });
-    if (result.canceled) return;
-    setPhotoUri(result.assets[0].uri);
-  };
-
-  const pickCnicImage = async (side: 'front' | 'back') => {
-    const permission = await ImagePicker.requestMediaLibraryPermissionsAsync();
-    if (!permission.granted) return;
-    const result = await ImagePicker.launchImageLibraryAsync({ mediaTypes: ['images'], quality: 0.7 });
-    if (result.canceled) return;
-    const asset = result.assets[0];
-    let compressedUri = asset.uri;
-    try {
-      const compressed = await preprocessForOcr({ uri: asset.uri, width: asset.width, height: asset.height });
-      compressedUri = compressed.uri;
-    } catch {
-      // fall back to the original pick if compression fails
+  const onPickSource = async (source: ImageSource) => {
+    const target = sheetTarget;
+    setSheetTarget(null);
+    if (!target) return;
+    const result = await pickImage(source);
+    if (result.status === 'denied') {
+      setError(en('image.permissionDenied'));
+      return;
     }
-    if (side === 'front') setCnicFrontUri(compressedUri);
-    else setCnicBackUri(compressedUri);
+    if (result.status !== 'ok') return;
+    setError(null);
+    if (target === 'photo') setPhotoUri(result.uri);
+    else if (target === 'cnicFront') setCnicFrontUri(result.uri);
+    else setCnicBackUri(result.uri);
   };
 
   const uploadImage = async (userId: string, bucket: string, path: string, uri: string): Promise<string | null> => {
     try {
-      const ext = uri.split('.').pop()?.toLowerCase() ?? 'jpg';
       const response = await fetch(uri);
       const blob = await response.blob();
       const { error: uploadError } = await supabase.storage
         .from(bucket)
-        .upload(`${userId}/${path}.${ext}`, blob, { upsert: true, contentType: `image/${ext === 'jpg' ? 'jpeg' : ext}` });
+        .upload(`${userId}/${path}.jpg`, blob, { upsert: true, contentType: 'image/jpeg' });
       if (uploadError) return null;
-      return `${userId}/${path}.${ext}`;
+      return `${userId}/${path}.jpg`;
     } catch {
       return null;
     }
   };
 
-  const uploadPhoto = async (userId: string): Promise<string | null> => {
-    if (!photoUri) return null;
-    const path = await uploadImage(userId, 'worker-photos', 'profile', photoUri);
-    if (!path) return null;
-    return supabase.storage.from('worker-photos').getPublicUrl(path).data.publicUrl;
-  };
-
   const submit = async () => {
+    if (!privacyAccepted) {
+      setError(en('register.error.privacy'));
+      return;
+    }
     if (!canSubmit) {
-      setError(en('register.error.required'));
+      setError(en(hoursValid ? 'register.error.required' : 'register.professional.hoursError'));
       return;
     }
     setBusy(true);
     setError(null);
     setNotice(null);
+    setStep('creating');
     try {
       const { data, error: signUpError } = await supabase.auth.signUp({
         email: email.trim(),
@@ -123,13 +131,15 @@ export default function RegisterProfessionalScreen() {
             role: 'worker',
             display_name: fullName.trim(),
             phone: mobile.trim(),
-            city: city.trim(),
+            city: place.cityName,
+            area: place.areaName,
+            address: place.addressDetails || null,
             cnic_number: cnic.trim(),
             skill_category: skillKey,
             years_experience: experience.trim(),
             rate_pkr: rate.trim(),
             rate_unit: rateUnit,
-            working_hours: workingHours.trim(),
+            working_hours: `${formatMinutes(fromMin)} – ${formatMinutes(toMin)}`,
             bio: bio.trim(),
           },
         },
@@ -137,15 +147,20 @@ export default function RegisterProfessionalScreen() {
       if (signUpError) throw signUpError;
 
       if (data.session && data.user) {
-        const photoUrl = await uploadPhoto(data.user.id);
-        const cnicFrontPath = cnicFrontUri ? await uploadImage(data.user.id, 'worker-documents', 'cnic-front', cnicFrontUri) : null;
-        const cnicBackPath = cnicBackUri ? await uploadImage(data.user.id, 'worker-documents', 'cnic-back', cnicBackUri) : null;
+        setStep('uploading');
+        const userId = data.user.id;
+        const [photoPath, cnicFrontPath, cnicBackPath] = await Promise.all([
+          photoUri ? uploadImage(userId, 'worker-photos', 'profile', photoUri) : null,
+          cnicFrontUri ? uploadImage(userId, 'worker-documents', 'cnic-front', cnicFrontUri) : null,
+          cnicBackUri ? uploadImage(userId, 'worker-documents', 'cnic-back', cnicBackUri) : null,
+        ]);
+        setStep('finishing');
         const profileUpdate: Record<string, string> = {};
-        if (photoUrl) profileUpdate.photo_url = photoUrl;
+        if (photoPath) profileUpdate.photo_url = supabase.storage.from('worker-photos').getPublicUrl(photoPath).data.publicUrl;
         if (cnicFrontPath) profileUpdate.cnic_front_url = cnicFrontPath;
         if (cnicBackPath) profileUpdate.cnic_back_url = cnicBackPath;
         if (Object.keys(profileUpdate).length > 0) {
-          await supabase.from('worker_profiles').update(profileUpdate).eq('user_id', data.user.id);
+          await supabase.from('worker_profiles').update(profileUpdate).eq('user_id', userId);
         }
       }
 
@@ -159,6 +174,7 @@ export default function RegisterProfessionalScreen() {
       setError(e instanceof Error ? e.message : en('auth.error.failed'));
     } finally {
       setBusy(false);
+      setStep(null);
     }
   };
 
@@ -219,27 +235,21 @@ export default function RegisterProfessionalScreen() {
             <CnicUploadBox
               labelId="register.professional.cnicFront"
               uri={cnicFrontUri}
-              onPress={() => pickCnicImage('front')}
+              onPress={() => setSheetTarget('cnicFront')}
             />
             <CnicUploadBox
               labelId="register.professional.cnicBack"
               uri={cnicBackUri}
-              onPress={() => pickCnicImage('back')}
+              onPress={() => setSheetTarget('cnicBack')}
             />
           </View>
-          <Input
-            value={city}
-            onChangeText={setCity}
-            labelId="register.professional.city"
-            placeholderId="register.professional.cityPh"
-            iconLeft="map-pin"
-          />
+
+          {place.fields}
 
           <BiText id="register.professional.skillCategory" variant="label" tone="muted" style={styles.sectionLabel} />
           <View style={styles.skillGrid}>
-            {SKILL_CATEGORIES.map((cat) => {
+            {categories.map((cat) => {
               const active = skillKey === cat.key;
-              const label = t(cat.labelId);
               return (
                 <Pressable
                   key={cat.key}
@@ -248,9 +258,7 @@ export default function RegisterProfessionalScreen() {
                   style={[styles.skillChip, active && styles.skillChipActive]}
                 >
                   <Image source={cat.icon} style={styles.skillChipIcon} resizeMode="contain" />
-                  <Text style={[typography.label, styles.skillChipEn, active && styles.skillChipEnActive]}>
-                    {label.en}
-                  </Text>
+                  <Text style={[typography.label, styles.skillChipEn, active && styles.skillChipEnActive]}>{cat.en}</Text>
                 </Pressable>
               );
             })}
@@ -281,16 +289,15 @@ export default function RegisterProfessionalScreen() {
             <RateUnitPill labelId="register.professional.rateUnitHour" active={rateUnit === 'hour'} onPress={() => setRateUnit('hour')} />
           </View>
 
-          <Input
-            value={workingHours}
-            onChangeText={setWorkingHours}
-            labelId="register.professional.workingHours"
-            placeholderId="register.professional.workingHoursPh"
-            iconLeft="clock"
-          />
+          <BiText id="register.professional.workingHours" variant="label" tone="muted" style={styles.sectionLabel} />
+          <View style={styles.hoursRow}>
+            <TimeField label={t('register.professional.hoursFrom').en} value={fromMin} onChange={setFromMin} />
+            <TimeField label={t('register.professional.hoursTo').en} value={toMin} onChange={setToMin} />
+          </View>
+          {!hoursValid ? <Text style={styles.hoursError}>{t('register.professional.hoursError').en}</Text> : null}
 
           <BiText id="register.professional.photo" variant="label" tone="muted" style={styles.sectionLabel} />
-          <Pressable onPress={pickPhoto} accessibilityRole="button" style={styles.photoBox}>
+          <Pressable onPress={() => setSheetTarget('photo')} accessibilityRole="button" style={styles.photoBox}>
             {photoUri ? (
               <Image source={{ uri: photoUri }} style={styles.photoPreview} resizeMode="cover" />
             ) : (
@@ -313,12 +320,25 @@ export default function RegisterProfessionalScreen() {
             style={styles.bioInput}
           />
 
+          <Pressable
+            onPress={() => (privacyAccepted ? setPrivacyAccepted(false) : setPrivacyOpen(true))}
+            accessibilityRole="checkbox"
+            accessibilityState={{ checked: privacyAccepted }}
+            style={styles.privacyRow}
+          >
+            <View style={[styles.checkbox, privacyAccepted && styles.checkboxOn]}>
+              {privacyAccepted ? <Icon name="check" size={14} color={colors.primaryInk} /> : null}
+            </View>
+            <Text style={[typography.bodySm, styles.privacyText]}>{t('privacy.checkbox').en}</Text>
+          </Pressable>
+
           {!!error && (
             <View style={styles.errorBox}>
               <Icon name="alert-triangle" size={16} color={colors.danger} />
               <Text style={styles.errorText}>{error}</Text>
             </View>
           )}
+          {busy && step ? <Text style={styles.stepText}>{t(STEP_LABEL[step]).en}</Text> : null}
           {notice === 'checkEmail' && (
             <View style={styles.notice}>
               <Banner id="auth.signup.checkEmail" tone="info" />
@@ -345,6 +365,16 @@ export default function RegisterProfessionalScreen() {
 
         <BiText id="register.termsNotice" variant="caption" tone="muted" align="center" style={styles.termsNotice} />
       </ScrollView>
+
+      <ImageSourceSheet visible={sheetTarget !== null} onPick={onPickSource} onClose={() => setSheetTarget(null)} />
+      <PrivacyPolicyModal
+        visible={privacyOpen}
+        onAgree={() => {
+          setPrivacyAccepted(true);
+          setPrivacyOpen(false);
+        }}
+        onClose={() => setPrivacyOpen(false)}
+      />
     </KeyboardAvoidingView>
   );
 }
@@ -421,6 +451,8 @@ const styles = StyleSheet.create({
   },
   unitPillActive: { backgroundColor: colors.primary, borderColor: colors.primary },
   unitPillLabelActive: { color: colors.primaryInk },
+  hoursRow: { flexDirection: 'row', gap: spacing.sm, marginBottom: spacing.sm },
+  hoursError: { ...typography.caption, color: colors.danger, marginBottom: spacing.sm },
   photoBox: {
     borderWidth: 1,
     borderStyle: 'dashed',
@@ -454,6 +486,20 @@ const styles = StyleSheet.create({
   cnicUploadText: { color: colors.primaryDeep, marginTop: 4, textAlign: 'center' },
   cnicHintText: { color: colors.textMuted, marginTop: 2 },
   bioInput: { minHeight: 88, textAlignVertical: 'top', paddingTop: spacing.sm },
+  privacyRow: { flexDirection: 'row', alignItems: 'center', gap: spacing.sm, marginVertical: spacing.sm },
+  checkbox: {
+    width: 22,
+    height: 22,
+    borderRadius: 6,
+    borderWidth: 1.5,
+    borderColor: colors.border,
+    backgroundColor: colors.surface,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  checkboxOn: { backgroundColor: colors.primary, borderColor: colors.primary },
+  privacyText: { flex: 1, color: colors.textBody },
+  stepText: { ...typography.bodySm, color: colors.textMuted, marginBottom: spacing.xs, textAlign: 'center' },
   errorBox: {
     flexDirection: 'row',
     alignItems: 'center',

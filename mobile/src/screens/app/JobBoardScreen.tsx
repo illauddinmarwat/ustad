@@ -14,7 +14,7 @@ import { ScreenHeader } from '../../components/ui/ScreenHeader';
 import { useAuth } from '../../context/AuthContext';
 import { useT } from '../../i18n/useT';
 import { expiresIn, fetchJobPostingEnabled, formatBudget } from '../../lib/jobPosting';
-import { SKILL_CATEGORIES } from '../../lib/skillCategories';
+import { useSkillCategories } from '../../lib/skillCategories';
 import { supabase } from '../../lib/supabase';
 import type { RootStackParamList } from '../../navigation/types';
 import { colors, radius, spacing } from '../../theme/tokens';
@@ -42,6 +42,7 @@ export default function JobBoardScreen() {
   const navigation = useNavigation<Nav>();
   const { session, role } = useAuth();
   const { t } = useT();
+  const categories = useSkillCategories();
   const insets = useSafeAreaInsets();
   const [enabled, setEnabled] = useState<boolean | null>(null);
   const [category, setCategory] = useState<string | null>(null);
@@ -78,8 +79,8 @@ export default function JobBoardScreen() {
 
       <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.filters}>
         <Pill label={t('nearby.filterAll').en} active={category === null} onPress={() => setCategory(null)} />
-        {SKILL_CATEGORIES.map((c) => (
-          <Pill key={c.key} label={t(c.labelId).en} active={category === c.key} onPress={() => setCategory(c.key)} />
+        {categories.map((c) => (
+          <Pill key={c.key} label={c.en} active={category === c.key} onPress={() => setCategory(c.key)} />
         ))}
       </ScrollView>
 

@@ -4,6 +4,8 @@ import { SafeAreaProvider } from 'react-native-safe-area-context';
 
 import DashboardScreen from './DashboardScreen';
 
+jest.mock('../../lib/supabase', () => ({ supabase: {} }));
+
 const mockNavigate = jest.fn();
 
 const mockAuth: { current: { role: 'customer' | 'worker' | null; session: { user: { id: string } } | null } } = {
@@ -65,10 +67,10 @@ describe('DashboardScreen', () => {
     expect(tree).toMatchSnapshot();
   });
 
-  it('routes the guest "Register as Professional" CTA to the professional registration form', () => {
+  it('routes the guest "Register as Ustad" CTA to the professional registration form', () => {
     mockAuth.current = { role: null, session: null };
     const { getByText } = wrap(<DashboardScreen />);
-    fireEvent.press(getByText('Register as Professional'));
+    fireEvent.press(getByText('Register as Ustad'));
     expect(mockNavigate).toHaveBeenCalledWith('RegisterProfessional');
   });
 

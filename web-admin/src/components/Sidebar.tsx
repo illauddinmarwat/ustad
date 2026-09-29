@@ -13,6 +13,8 @@ const NAV = [
   { href: '/moderation', label: 'Posted jobs', icon: '🛡️' },
   { href: '/commissions', label: 'Commissions', icon: '📊' },
   { href: '/reports', label: 'Reports', icon: '📈' },
+  { href: '/categories', label: 'Skill Categories', icon: '🛠️' },
+  { href: '/cities', label: 'Cities & Areas', icon: '📍' },
   { href: '/settings', label: 'Settings', icon: '⚙️' },
 ];
 

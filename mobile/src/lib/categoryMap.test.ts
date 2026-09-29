@@ -1,9 +1,11 @@
+jest.mock('./supabase', () => ({ supabase: {} }));
+
 import { SKILL_TO_TEMPLATE_CATEGORY, skillForTemplateCategory, templateCategoryFor } from './categoryMap';
-import { SKILL_CATEGORIES } from './skillCategories';
+import { DEFAULT_SKILL_CATEGORIES } from './skillCategories';
 
 describe('categoryMap', () => {
   it('maps every skill category to a template category', () => {
-    for (const c of SKILL_CATEGORIES) {
+    for (const c of DEFAULT_SKILL_CATEGORIES) {
       expect(templateCategoryFor(c.key)).toBeTruthy();
     }
   });
