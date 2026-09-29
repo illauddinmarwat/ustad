@@ -28,6 +28,7 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
     resizeMode: 'contain',
     backgroundColor: '#F4FBF6',
   },
+  web: { favicon: './assets/favicon.png' },
   ios: { supportsTablet: true, bundleIdentifier: 'com.ustad.mobile' },
   android: {
     adaptiveIcon: {
