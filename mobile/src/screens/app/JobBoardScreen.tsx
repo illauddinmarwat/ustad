@@ -38,12 +38,12 @@ export type BoardJob = {
   my_quote_pkr: number | null;
 };
 
-export default function JobBoardScreen() {
+/** The open-jobs list with category filters; shared by the standalone board and the Ustad Jobs tab. */
+export function JobBoardList() {
   const navigation = useNavigation<Nav>();
   const { session, role } = useAuth();
   const { t } = useT();
   const categories = useSkillCategories();
-  const insets = useSafeAreaInsets();
   const [enabled, setEnabled] = useState<boolean | null>(null);
   const [category, setCategory] = useState<string | null>(null);
   const [jobs, setJobs] = useState<BoardJob[]>([]);
@@ -71,9 +71,7 @@ export default function JobBoardScreen() {
   }, [load, session?.user.id, role, enabled]);
 
   return (
-    <ScrollView contentContainerStyle={[styles.root, { paddingBottom: insets.bottom + spacing.xl }]}>
-      <ScreenHeader titleId="board.title" subtitleId="board.subtitle" />
-
+    <>
       {enabled === false && <Banner id="post.disabled" tone="warning" />}
       {error ? <Banner text={error} tone="warning" /> : null}
 
@@ -121,6 +119,16 @@ export default function JobBoardScreen() {
       })}
 
       {!session?.user.id || role !== 'worker' ? <BiText id="board.workersOnly" variant="caption" tone="muted" align="center" /> : null}
+    </>
+  );
+}
+
+export default function JobBoardScreen() {
+  const insets = useSafeAreaInsets();
+  return (
+    <ScrollView contentContainerStyle={[styles.root, { paddingBottom: insets.bottom + spacing.xl }]}>
+      <ScreenHeader titleId="board.title" subtitleId="board.subtitle" />
+      <JobBoardList />
     </ScrollView>
   );
 }

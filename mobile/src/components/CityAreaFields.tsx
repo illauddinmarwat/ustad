@@ -28,15 +28,17 @@ export type CityAreaState = {
 };
 
 /** City → Area pickers (admin-managed lists) plus an optional address-details line. */
-export function useCityAreaFields(): CityAreaState {
+export type CityAreaInitial = { cityName: string | null; areaName: string | null; addressDetails: string | null; location: PinnedLocation | null };
+
+export function useCityAreaFields(initial?: CityAreaInitial): CityAreaState {
   const { t } = useT();
   const cities = useCities();
   const [cityId, setCityId] = useState<string | null>(null);
   const [area, setArea] = useState<string | null>(null);
   const [otherArea, setOtherArea] = useState('');
-  const [addressDetails, setAddressDetails] = useState('');
+  const [addressDetails, setAddressDetails] = useState(initial?.addressDetails ?? '');
   const areas = useAreas(cityId);
-  const [location, setLocation] = useState<PinnedLocation | null>(null);
+  const [location, setLocation] = useState<PinnedLocation | null>(initial?.location ?? null);
   const [pickerOpen, setPickerOpen] = useState(false);
   const [looking, setLooking] = useState(false);
   const [lookupFailed, setLookupFailed] = useState(false);
@@ -55,6 +57,18 @@ export function useCityAreaFields(): CityAreaState {
     }
     setPendingArea(null);
   }, [pendingArea, areas.items, areas.loading, cityId]);
+
+  // Pre-select the saved city (and, once its areas load, the saved area) when editing an existing application.
+  const [initialApplied, setInitialApplied] = useState(!initial?.cityName);
+  useEffect(() => {
+    if (initialApplied || cities.loading || !initial?.cityName) return;
+    const hit = cities.items.find((c) => c.name.toLowerCase() === initial.cityName!.toLowerCase());
+    if (hit) {
+      setCityId(hit.id);
+      if (initial.areaName) setPendingArea(initial.areaName);
+    }
+    setInitialApplied(true);
+  }, [initialApplied, cities.loading, cities.items, initial]);
 
   const onPinned = async (loc: PinnedLocation) => {
     setPickerOpen(false);

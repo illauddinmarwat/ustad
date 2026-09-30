@@ -13,6 +13,7 @@ const OPS_NUMBERS: Array<{ key: string; label: string; hint: string; fallback: n
   { key: 'commission_warn_days', label: 'Warn after (days overdue)', hint: 'Send the deactivation warning this many days after the due date.', fallback: 7 },
   { key: 'commission_deactivate_days', label: 'Deactivate after (days overdue)', hint: 'Suspend the worker this many days after the due date until they settle.', fallback: 14 },
   { key: 'direct_request_timeout_hours', label: 'Direct request timeout (hours)', hint: 'How long a worker has to answer before the request opens up.', fallback: 2 },
+  { key: 'nearby_radius_km', label: 'Nearby radius (km)', hint: 'Customers only see Ustads within this distance (straight line) of them.', fallback: 100 },
   { key: 'payment_confirm_days', label: 'Payment receipt window (days)', hint: 'After a customer marks a job paid, the worker has this long to confirm before it becomes a dispute.', fallback: 3 },
 ];
 
@@ -24,6 +25,7 @@ export default function SettingsPage() {
   const [savedKey, setSavedKey] = useState<string | null>(null);
   const [ops, setOps] = useState<Record<string, number>>({});
   const [helpline, setHelpline] = useState('');
+  const [respectHours, setRespectHours] = useState(true);
   const [audit, setAudit] = useState<SettingAuditRow[]>([]);
   const [error, setError] = useState<string | null>(null);
 
@@ -47,6 +49,8 @@ export default function SettingsPage() {
       setOps(next);
       const hl = await supabase.rpc('get_app_setting', { p_key: 'helpline_number' });
       if (typeof hl.data === 'string') setHelpline(hl.data);
+      const rh = await supabase.rpc('get_app_setting', { p_key: 'nearby_respect_working_hours' });
+      if (typeof rh.data === 'boolean') setRespectHours(rh.data);
       const au = await supabase.rpc('admin_list_setting_audit', { p_limit: 20 });
       if (!au.error) setAudit((au.data ?? []) as SettingAuditRow[]);
       setLoading(false);
@@ -156,6 +160,19 @@ export default function SettingsPage() {
                 <SaveButton onClick={() => save(o.key, ops[o.key] ?? o.fallback)} saved={savedKey === o.key} />
               </div>
             ))}
+            <div className="rounded-lg border border-border p-3">
+              <label className="flex items-center justify-between text-xs font-medium text-ink-muted">
+                Hide Ustads outside their working hours
+                <input
+                  type="checkbox"
+                  checked={respectHours}
+                  onChange={(e) => setRespectHours(e.target.checked)}
+                  className="h-5 w-5 accent-primary"
+                />
+              </label>
+              <p className="mt-1 text-xs text-ink-muted">Nearby only lists Ustads whose stated hours include the current time (Pakistan time).</p>
+              <SaveButton onClick={() => save('nearby_respect_working_hours', respectHours)} saved={savedKey === 'nearby_respect_working_hours'} />
+            </div>
             <div className="rounded-lg border border-border p-3">
               <label className="mb-1 block text-xs font-medium text-ink-muted">Helpline number</label>
               <input

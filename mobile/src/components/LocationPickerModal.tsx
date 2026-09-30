@@ -137,7 +137,7 @@ export function LocationPickerModal({ visible, initial, onConfirm, onClose }: Pr
               <WebView
                 ref={webRef}
                 originWhitelist={['*']}
-                source={{ html }}
+                source={{ html, baseUrl: 'https://ustad.app' }}
                 onMessage={onMessage}
                 javaScriptEnabled
                 domStorageEnabled

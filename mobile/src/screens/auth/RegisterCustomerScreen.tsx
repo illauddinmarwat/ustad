@@ -32,6 +32,7 @@ export default function RegisterCustomerScreen() {
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [notice, setNotice] = useState<'checkEmail' | null>(null);
+  const [done, setDone] = useState(false);
 
   const canSubmit = !!(email.trim() && password && fullName.trim() && mobile.trim() && place.complete);
 
@@ -63,8 +64,11 @@ export default function RegisterCustomerScreen() {
       if (!data.session) {
         setNotice('checkEmail');
         setPassword('');
-      } else if (navigation.canGoBack()) {
-        navigation.goBack();
+      } else {
+        // No approval step for customers: show the banner, then go to the app.
+        setDone(true);
+        setPassword('');
+        setTimeout(() => navigation.reset({ index: 0, routes: [{ name: 'Tabs' }] }), 2000);
       }
     } catch (e) {
       setError(e instanceof Error ? e.message : en('auth.error.failed'));
@@ -130,6 +134,11 @@ export default function RegisterCustomerScreen() {
               <Text style={styles.errorText}>{error}</Text>
             </View>
           )}
+          {done && (
+            <View style={styles.notice}>
+              <Banner id="register.customer.success" tone="success" />
+            </View>
+          )}
           {notice === 'checkEmail' && (
             <View style={styles.notice}>
               <Banner id="auth.signup.checkEmail" tone="info" />
@@ -140,7 +149,7 @@ export default function RegisterCustomerScreen() {
             labelId={busy ? 'register.customer.creating' : 'register.customer.submit'}
             onPress={submit}
             loading={busy}
-            disabled={busy || !canSubmit}
+            disabled={busy || done || !canSubmit}
             size="lg"
             fullWidth
             iconRight="arrow-right"

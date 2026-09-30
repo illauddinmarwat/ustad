@@ -16,6 +16,8 @@ type AuthCtx = {
   loading: boolean;
   role: 'customer' | 'worker' | 'admin' | null;
   workerApprovalStatus: WorkerApprovalStatus | null;
+  /** The admin's remark when the registration was rejected. */
+  rejectionReason: string | null;
   signIn: (email: string, password: string) => Promise<void>;
   signUp: (email: string, password: string) => Promise<SignUpResult>;
   signOut: () => Promise<void>;
@@ -55,21 +57,25 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [role, setRoleState] = useState<'customer' | 'worker' | 'admin' | null>(null);
   const [workerApprovalStatus, setWorkerApprovalStatus] = useState<WorkerApprovalStatus | null>(null);
   const [registering, setRegistering] = useState(false);
+  const [rejectionReason, setRejectionReason] = useState<string | null>(null);
 
   const applyRoleForUser = async (userId: string, email?: string): Promise<WorkerApprovalStatus | null> => {
     const { data } = await supabase.from('profiles').select('role').eq('id', userId).maybeSingle();
     const resolvedRole = (data?.role as 'customer' | 'worker' | 'admin') ?? 'customer';
     let approval: WorkerApprovalStatus | null = null;
+    let reason: string | null = null;
     if (resolvedRole === 'worker') {
       const { data: wp } = await supabase
         .from('worker_profiles')
-        .select('approval_status')
+        .select('approval_status, rejection_reason')
         .eq('user_id', userId)
         .maybeSingle();
       approval = (wp?.approval_status as WorkerApprovalStatus) ?? null;
+      reason = approval === 'rejected' ? ((wp?.rejection_reason as string | null) ?? null) : null;
     }
     // Set together so a worker never renders with a stale/unknown approval status.
     setWorkerApprovalStatus(approval);
+    setRejectionReason(reason);
     setRoleState(resolvedRole);
     if (resolvedRole === 'worker') void flushPendingUploads(userId, email);
     return approval;
@@ -111,14 +117,18 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         if (!cancelled) setLoading(false);
       });
 
-    const { data: sub } = supabase.auth.onAuthStateChange(async (_event, s) => {
+    // Callback must not await supabase calls: signUp/signIn wait for it while holding the auth lock,
+    // so a query here deadlocks them and the screen stays on its spinner. Defer the work instead.
+    const { data: sub } = supabase.auth.onAuthStateChange((_event, s) => {
       setSession(s);
       if (!s?.user?.id) {
         setRoleState(null);
         setWorkerApprovalStatus(null);
         return;
       }
-      await applyRoleForUser(s.user.id, s.user.email);
+      setTimeout(() => {
+        void applyRoleForUser(s.user.id, s.user.email);
+      }, 0);
     });
 
     return () => {
@@ -174,6 +184,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   };
 
   const setRole = async (r: 'customer' | 'worker') => {
+    if (useFixtureMode) {
+      setPreviewRole(r);
+      return;
+    }
     if (!session?.user?.id) return;
     const { error } = await supabase.from('profiles').update({ role: r }).eq('id', session.user.id);
     if (error) throw error;
@@ -188,6 +202,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       loading,
       role,
       workerApprovalStatus,
+      rejectionReason,
       signIn,
       signUp,
       signOut,
@@ -196,7 +211,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       setRegistering,
       setRole,
     }),
-    [session, loading, role, workerApprovalStatus, registering]
+    [session, loading, role, workerApprovalStatus, rejectionReason, registering]
   );
 
   return <Ctx.Provider value={value}>{children}</Ctx.Provider>;

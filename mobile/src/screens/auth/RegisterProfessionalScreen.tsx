@@ -36,31 +36,92 @@ const STEP_LABEL: Record<Step, StringId> = {
   finishing: 'register.step.finishing',
 };
 
+/** A rejected Ustad's saved application, used to pre-fill the form when they apply again. */
+export type ReapplyData = {
+  userId: string;
+  displayName: string;
+  phone: string;
+  city: string | null;
+  area: string | null;
+  address: string | null;
+  cnic: string;
+  skillCategory: string | null;
+  yearsExperience: number | null;
+  ratePkr: number | null;
+  rateUnit: RateUnit | null;
+  workingHours: string | null;
+  bio: string;
+  photoUrl: string | null;
+  cnicFrontUrl: string | null;
+  cnicBackUrl: string | null;
+  lat: number | null;
+  lng: number | null;
+};
+
+function parseTime(text: string): number | null {
+  const m = /(\d{1,2}):(\d{2})\s*(AM|PM)/i.exec(text);
+  if (!m) return null;
+  return ((Number(m[1]) % 12) + (m[3].toUpperCase() === 'PM' ? 12 : 0)) * 60 + Number(m[2]);
+}
+
+function parseHours(text: string | null): { from: number; to: number } {
+  const parts = (text ?? '').split(/[–-]/);
+  const from = parseTime(parts[0] ?? '');
+  const to = parseTime(parts[1] ?? '');
+  return from !== null && to !== null ? { from, to } : { from: 9 * 60, to: 18 * 60 };
+}
+
 export default function RegisterProfessionalScreen() {
+  const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
+  return (
+    <ProfessionalRegistrationForm
+      onRegistered={() => navigation.reset({ index: 1, routes: [{ name: 'Tabs' }, { name: 'Auth' }] })}
+    />
+  );
+}
+
+type FormProps = {
+  /** Called when the "application received" popup is closed (new sign-ups only). */
+  onRegistered?: () => void;
+  /** Present when a rejected Ustad is correcting their saved application. */
+  reapply?: { data: ReapplyData; onSubmitted: () => void };
+};
+
+export function ProfessionalRegistrationForm({ onRegistered, reapply }: FormProps) {
   const insets = useSafeAreaInsets();
   const { t } = useT();
-  const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
   const { setRegistering, signOut } = useAuth();
   const categories = useSkillCategories();
-  const place = useCityAreaFields();
+  const init = reapply?.data;
+  const initHours = parseHours(init?.workingHours ?? null);
+  const place = useCityAreaFields(
+    init
+      ? {
+          cityName: init.city,
+          areaName: init.area,
+          addressDetails: init.address,
+          location: init.lat !== null && init.lng !== null ? { lat: init.lat, lng: init.lng } : null,
+        }
+      : undefined
+  );
 
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
-  const [fullName, setFullName] = useState('');
-  const [mobile, setMobile] = useState('');
-  const [cnic, setCnic] = useState('');
-  const [skillKey, setSkillKey] = useState<string | null>(null);
-  const [experience, setExperience] = useState('');
-  const [rate, setRate] = useState('');
-  const [rateUnit, setRateUnit] = useState<RateUnit>('day');
-  const [fromMin, setFromMin] = useState(9 * 60);
-  const [toMin, setToMin] = useState(18 * 60);
-  const [bio, setBio] = useState('');
-  const [photoUri, setPhotoUri] = useState<string | null>(null);
-  const [cnicFrontUri, setCnicFrontUri] = useState<string | null>(null);
-  const [cnicBackUri, setCnicBackUri] = useState<string | null>(null);
+  const [fullName, setFullName] = useState(init?.displayName ?? '');
+  const [mobile, setMobile] = useState(init?.phone ?? '');
+  const [cnic, setCnic] = useState(init?.cnic ?? '');
+  const [skillKey, setSkillKey] = useState<string | null>(init?.skillCategory ?? null);
+  const [experience, setExperience] = useState(init?.yearsExperience != null ? String(init.yearsExperience) : '');
+  const [rate, setRate] = useState(init?.ratePkr != null ? String(init.ratePkr) : '');
+  const [rateUnit, setRateUnit] = useState<RateUnit>(init?.rateUnit ?? 'day');
+  const [fromMin, setFromMin] = useState(initHours.from);
+  const [toMin, setToMin] = useState(initHours.to);
+  const [bio, setBio] = useState(init?.bio ?? '');
+  const [photoUri, setPhotoUri] = useState<string | null>(init?.photoUrl ?? null);
+  const [cnicFrontUri, setCnicFrontUri] = useState<string | null>(init?.cnicFrontUrl ?? null);
+  const [cnicBackUri, setCnicBackUri] = useState<string | null>(init?.cnicBackUrl ?? null);
   const [sheetTarget, setSheetTarget] = useState<ImageTarget | null>(null);
-  const [privacyAccepted, setPrivacyAccepted] = useState(false);
+  const [privacyAccepted, setPrivacyAccepted] = useState(!!reapply);
   const [privacyOpen, setPrivacyOpen] = useState(false);
   const [busy, setBusy] = useState(false);
   const [step, setStep] = useState<Step | null>(null);
@@ -72,8 +133,8 @@ export default function RegisterProfessionalScreen() {
   const hoursValid = toMin > fromMin;
 
   const missing: StringId[] = [];
-  if (!email.trim()) missing.push('register.missing.email');
-  if (!password) missing.push('register.missing.password');
+  if (!reapply && !email.trim()) missing.push('register.missing.email');
+  if (!reapply && !password) missing.push('register.missing.password');
   if (!fullName.trim()) missing.push('register.missing.name');
   if (!mobile.trim()) missing.push('register.missing.mobile');
   if (!cnic.trim()) missing.push('register.missing.cnic');
@@ -114,10 +175,53 @@ export default function RegisterProfessionalScreen() {
 
   const closeDone = () => {
     setDone(false);
-    navigation.reset({ index: 1, routes: [{ name: 'Tabs' }, { name: 'Auth' }] });
+    onRegistered?.();
+  };
+
+  const submitReapply = async () => {
+    if (!reapply) return;
+    if (!canSubmit) {
+      setError(en(hoursValid ? 'register.error.required' : 'register.professional.hoursError'));
+      return;
+    }
+    const { data } = reapply;
+    setBusy(true);
+    setError(null);
+    try {
+      // Only images the Ustad replaced (a new local file rather than the saved link) are uploaded.
+      const replaced = (uri: string | null, saved: string | null) => (uri && uri !== saved ? uri : null);
+      const uploaded = await uploadWorkerFiles(data.userId, {
+        photo: replaced(photoUri, data.photoUrl),
+        cnicFront: replaced(cnicFrontUri, data.cnicFrontUrl),
+        cnicBack: replaced(cnicBackUri, data.cnicBackUrl),
+      });
+      if (!uploaded) throw new Error(en('approval.reapply.failed'));
+      const { error: rpcError } = await supabase.rpc('worker_resubmit_application', {
+        p_display_name: fullName.trim(),
+        p_phone: mobile.trim(),
+        p_city: place.cityName,
+        p_area: place.areaName,
+        p_address: place.addressDetails || null,
+        p_cnic: cnic.trim(),
+        p_skill_category: skillKey,
+        p_years_experience: Number(experience.trim()),
+        p_rate_pkr: Number(rate.trim()),
+        p_rate_unit: rateUnit,
+        p_working_hours: `${formatMinutes(fromMin)} – ${formatMinutes(toMin)}`,
+        p_bio: bio.trim(),
+      });
+      if (rpcError) throw rpcError;
+      if (place.location) await saveWorkerLocation(data.userId, place.location.lat, place.location.lng);
+      reapply.onSubmitted();
+    } catch (e) {
+      setError(e instanceof Error ? e.message : en('approval.reapply.failed'));
+    } finally {
+      setBusy(false);
+    }
   };
 
   const submit = async () => {
+    if (reapply) return submitReapply();
     if (!privacyAccepted) {
       setError(en('register.error.privacy'));
       return;
@@ -201,10 +305,12 @@ export default function RegisterProfessionalScreen() {
         contentContainerStyle={[styles.root, { paddingTop: insets.top + spacing.md, paddingBottom: insets.bottom + spacing.xl }]}
         keyboardShouldPersistTaps="handled"
       >
-        <BiText id="register.professional.title" variant="title" tone="strong" style={styles.title} />
-        <BiText id="register.professional.subtitle" variant="bodySm" tone="muted" style={styles.subtitle} />
+        <BiText id={reapply ? 'approval.reapply.title' : 'register.professional.title'} variant="title" tone="strong" style={styles.title} />
+        <BiText id={reapply ? 'approval.reapply.hint' : 'register.professional.subtitle'} variant="bodySm" tone="muted" style={styles.subtitle} />
 
         <Card padding="lg">
+          {!reapply ? (
+            <>
           <BiText id="register.accountSection" variant="label" tone="muted" style={styles.sectionLabel} />
           <Input
             value={email}
@@ -225,6 +331,8 @@ export default function RegisterProfessionalScreen() {
             iconLeft="lock"
             textContentType="newPassword"
           />
+            </>
+          ) : null}
 
           <Input
             value={fullName}
@@ -337,6 +445,7 @@ export default function RegisterProfessionalScreen() {
             style={styles.bioInput}
           />
 
+          {!reapply ? (
           <Pressable
             onPress={() => (privacyAccepted ? setPrivacyAccepted(false) : setPrivacyOpen(true))}
             accessibilityRole="checkbox"
@@ -348,6 +457,7 @@ export default function RegisterProfessionalScreen() {
             </View>
             <Text style={[typography.bodySm, styles.privacyText]}>{t('privacy.checkbox').en}</Text>
           </Pressable>
+          ) : null}
 
           {!!error && (
             <View style={styles.errorBox}>
@@ -370,7 +480,7 @@ export default function RegisterProfessionalScreen() {
             </View>
           ) : null}
           <Button
-            labelId={busy ? 'register.professional.submitting' : 'register.professional.submit'}
+            labelId={busy ? 'register.professional.submitting' : reapply ? 'approval.reapply.submit' : 'register.professional.submit'}
             onPress={submit}
             loading={busy}
             disabled={busy || !canSubmit}
@@ -389,7 +499,7 @@ export default function RegisterProfessionalScreen() {
       <ImageEditorModal
         visible={editing !== null}
         uri={editing?.uri ?? null}
-        aspect={editing?.target === 'photo' ? 1 : null}
+        aspect={editing?.target === 'photo' ? 3 / 4 : 1.586}
         onDone={onEdited}
         onCancel={() => setEditing(null)}
       />
@@ -492,7 +602,8 @@ const styles = StyleSheet.create({
     marginBottom: spacing.md,
     overflow: 'hidden',
   },
-  photoPreview: { width: '100%', height: 140 },
+  // Portrait (3:4) so a face photo isn't squashed into a wide strip.
+  photoPreview: { width: 150, aspectRatio: 3 / 4, alignSelf: 'center', marginVertical: spacing.sm, borderRadius: radius.sm },
   photoUploadText: { color: colors.primaryDeep, marginTop: 6 },
   photoHintText: { color: colors.textMuted, marginTop: 2 },
   cnicRow: { flexDirection: 'row', gap: spacing.sm, marginBottom: spacing.md },
@@ -509,7 +620,8 @@ const styles = StyleSheet.create({
     backgroundColor: colors.primarySoft,
     overflow: 'hidden',
   },
-  cnicPreview: { width: '100%', height: 90 },
+  // Landscape, ID-1 card ratio (85.6 x 54 mm).
+  cnicPreview: { width: '100%', aspectRatio: 1.586 },
   cnicUploadText: { color: colors.primaryDeep, marginTop: 4, textAlign: 'center' },
   cnicHintText: { color: colors.textMuted, marginTop: 2 },
   bioInput: { minHeight: 88, textAlignVertical: 'top', paddingTop: spacing.sm },

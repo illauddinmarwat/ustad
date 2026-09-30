@@ -21,6 +21,10 @@ export type IconProps = {
 };
 
 export function Icon({ name, set = 'feather', size = 18, color = colors.textBody }: IconProps) {
+  // Amounts are in PKR, so never show a dollar glyph: render a banknote instead.
+  if (name === 'dollar-sign') {
+    return <MaterialCommunityIcons name="cash" size={size} color={color} />;
+  }
   if (set === 'ion') {
     return <Ionicons name={name as IoniconsName} size={size} color={color} />;
   }

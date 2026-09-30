@@ -5,6 +5,8 @@ export type TabParamList = {
   Nearby: { category?: string } | undefined;
   Services: { category?: string } | undefined;
   Applications: undefined;
+  Requests: undefined;
+  Earnings: undefined;
   Admin: undefined;
   Account: undefined;
 };

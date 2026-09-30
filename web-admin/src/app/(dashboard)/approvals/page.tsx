@@ -206,7 +206,7 @@ function ApprovalRow({
           </div>
 
           <div className="mt-4 grid grid-cols-1 gap-4 sm:grid-cols-3">
-            <DocPreview label="Profile Photo" url={row.photo_url} loading={false} />
+            <DocPreview label="Profile Photo" url={row.photo_url} loading={false} portrait />
             <DocPreview label="CNIC Front" url={frontUrl} loading={docsLoading} />
             <DocPreview label="CNIC Back" url={backUrl} loading={docsLoading} />
           </div>
@@ -274,7 +274,18 @@ function ApprovalRow({
   );
 }
 
-function DocPreview({ label, url, loading }: { label: string; url: string | null; loading: boolean }) {
+function DocPreview({
+  label,
+  url,
+  loading,
+  portrait = false,
+}: {
+  label: string;
+  url: string | null;
+  loading: boolean;
+  /** Profile photos are portrait; CNIC scans are landscape. */
+  portrait?: boolean;
+}) {
   const [open, setOpen] = useState(false);
 
   useEffect(() => {
@@ -287,7 +298,11 @@ function DocPreview({ label, url, loading }: { label: string; url: string | null
   return (
     <div>
       <div className="mb-1 text-xs text-ink-muted">{label}</div>
-      <div className="flex h-44 items-center justify-center overflow-hidden rounded-lg border border-border bg-surface">
+      <div
+        className={`flex items-center justify-center overflow-hidden rounded-lg border border-border bg-surface ${
+          portrait ? 'mx-auto aspect-[3/4] w-full max-w-[200px]' : 'aspect-[1.586/1] w-full'
+        }`}
+      >
         {loading ? (
           <span className="text-xs text-ink-muted">Loading…</span>
         ) : url ? (

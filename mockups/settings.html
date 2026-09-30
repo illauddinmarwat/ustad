@@ -1,0 +1,74 @@
+<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Ustad Admin - Settings</title><link rel="preconnect" href="https://fonts.googleapis.com"><link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@500;600;700&family=Public+Sans:wght@400;500;600;700&display=swap" rel="stylesheet"><style>
+:root{--side:#1C2321;--side2:#2A3330;--accent:#D9731A;--accent-soft:#FBE9D6;--bg:#F4F3EF;--card:#fff;--line:#E4E2DB;
+--ink:#1C2321;--body:#4A524F;--muted:#8A8F8B;--ok:#2F7D4F;--ok-bg:#DFF1E5;--warn:#B7791F;--warn-bg:#FBEFD0;--bad:#B4382E;--bad-bg:#F8DEDA;}
+*{box-sizing:border-box;margin:0}
+body{font-family:'Public Sans',system-ui,sans-serif;background:var(--bg);color:var(--body);font-size:14px;line-height:1.45}
+h1,h2,h3,.brand b,.stat .v{font-family:'Barlow Condensed',sans-serif;color:var(--ink);letter-spacing:.2px}
+.app{display:flex;min-height:100vh}
+aside{width:250px;background:var(--side);color:#cfd5d2;display:flex;flex-direction:column;position:sticky;top:0;height:100vh;flex-shrink:0}
+.brand{display:flex;gap:10px;align-items:center;padding:22px 20px}
+.logo{width:36px;height:36px;background:var(--accent);border-radius:8px;display:grid;place-items:center;color:#fff;font:700 22px 'Barlow Condensed'}
+.brand b{color:#fff;font-size:24px;line-height:1;display:block}.brand small{font-size:11px;color:#8d9793}
+.navlabel{font-size:10px;letter-spacing:1.2px;color:#6f7a76;padding:14px 22px 6px;text-transform:uppercase}
+nav a{display:flex;align-items:center;gap:11px;padding:10px 20px;margin:1px 10px;border-radius:6px;color:#cfd5d2;text-decoration:none;font-weight:500;border-left:3px solid transparent}
+nav a:hover{background:var(--side2)}
+nav a.on{background:var(--side2);color:#fff;border-left-color:var(--accent)}
+nav a.on svg{stroke:var(--accent)}
+nav svg{width:18px;height:18px;fill:none;stroke:#8d9793;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
+nav .n{margin-left:auto;background:var(--accent);color:#fff;font-size:11px;font-weight:700;border-radius:10px;padding:1px 7px}
+.side-foot{margin-top:auto;padding:16px 20px;border-top:1px solid #333d39;display:flex;gap:10px;align-items:center;font-size:12px}
+.av{width:32px;height:32px;border-radius:50%;background:#3b4844;color:#fff;display:grid;place-items:center;font-weight:600;flex-shrink:0}
+.side-foot a{color:#8d9793;margin-left:auto;text-decoration:none}
+main{flex:1;min-width:0}
+.top{height:60px;background:var(--card);border-bottom:1px solid var(--line);display:flex;align-items:center;padding:0 32px;gap:16px}
+.crumb{color:var(--muted);font-size:13px}.crumb b{color:var(--ink);font-weight:600}
+.search{margin-left:auto;background:var(--bg);border:1px solid var(--line);border-radius:6px;padding:7px 12px;width:260px;color:var(--muted);font-size:13px}
+.bell{position:relative;width:34px;height:34px;border:1px solid var(--line);border-radius:6px;display:grid;place-items:center}
+.bell i{position:absolute;top:6px;right:7px;width:8px;height:8px;background:var(--accent);border-radius:50%}
+.content{padding:28px 32px 48px;max-width:1280px}
+.head{display:flex;align-items:flex-end;justify-content:space-between;gap:16px;margin-bottom:22px}
+h1{font-size:36px;font-weight:700;line-height:1}
+.sub{color:var(--muted);margin-top:6px;max-width:680px}
+.card{background:var(--card);border:1px solid var(--line);border-radius:10px}
+.card>.ch{padding:14px 20px;border-bottom:1px solid var(--line);display:flex;justify-content:space-between;align-items:center}
+.card h2{font-size:20px;font-weight:600}
+.pad{padding:20px}
+.grid{display:grid;gap:16px}.g4{grid-template-columns:repeat(4,1fr)}.g2{grid-template-columns:1fr 1fr}.g3{grid-template-columns:repeat(3,1fr)}
+.mb{margin-bottom:20px}
+.stat{padding:18px 20px}.stat .l{font-size:12px;text-transform:uppercase;letter-spacing:.8px;color:var(--muted);font-weight:600}
+.stat .v{font-size:38px;font-weight:700;margin-top:4px;line-height:1.05}.stat .s{font-size:12px;color:var(--muted);margin-top:4px}
+.up{color:var(--ok);font-weight:600}.down{color:var(--bad);font-weight:600}
+table{width:100%;border-collapse:collapse;text-align:left}
+th{font-size:11px;text-transform:uppercase;letter-spacing:.8px;color:var(--muted);font-weight:600;padding:10px 20px;background:#FAF9F6;border-bottom:1px solid var(--line)}
+td{padding:13px 20px;border-bottom:1px solid var(--line);vertical-align:middle}
+tr:last-child td{border-bottom:0}
+td b{color:var(--ink);font-weight:600}.mut{color:var(--muted);font-size:12px}
+.num{font-variant-numeric:tabular-nums;text-align:right}th.num{text-align:right}
+.pill{display:inline-block;padding:2px 10px;border-radius:20px;font-size:12px;font-weight:600;white-space:nowrap}
+.ok{background:var(--ok-bg);color:var(--ok)}.warn{background:var(--warn-bg);color:var(--warn)}.bad{background:var(--bad-bg);color:var(--bad)}.neutral{background:#ECEBE6;color:var(--body)}
+.bar{height:6px;background:#ECEAE3;border-radius:4px;overflow:hidden;min-width:90px}.bar i{display:block;height:100%;background:var(--accent);border-radius:4px}
+.btn{display:inline-block;padding:8px 16px;border-radius:6px;font:600 13px 'Public Sans';border:1px solid var(--line);background:#fff;color:var(--ink)}
+.btn.p{background:var(--accent);border-color:var(--accent);color:#fff}.btn.d{background:var(--bad);border-color:var(--bad);color:#fff}.btn.s{padding:5px 11px;font-size:12px}
+.tabs{display:flex;gap:4px;margin-bottom:16px;border-bottom:1px solid var(--line)}
+.tabs span{padding:9px 16px;font-weight:600;color:var(--muted);border-bottom:3px solid transparent;margin-bottom:-1px}
+.tabs span.on{color:var(--ink);border-bottom-color:var(--accent)}
+.tabs em{font-style:normal;background:#ECEBE6;border-radius:10px;padding:0 7px;font-size:11px;margin-left:6px}
+.field{margin-bottom:14px}.field label{display:block;font-size:12px;font-weight:600;color:var(--muted);margin-bottom:5px;text-transform:uppercase;letter-spacing:.6px}
+.input{border:1px solid var(--line);border-radius:6px;padding:9px 12px;background:#fff;color:var(--ink);width:100%}
+.hint{font-size:12px;color:var(--muted);margin-top:4px}
+.dl{display:grid;grid-template-columns:repeat(3,1fr);gap:14px 24px}.dl div small{display:block;font-size:11px;text-transform:uppercase;letter-spacing:.7px;color:var(--muted);font-weight:600}.dl div span{color:var(--ink);font-weight:500}
+.doc{aspect-ratio:1.6;border:1px dashed #C9C6BC;border-radius:8px;background:repeating-linear-gradient(45deg,#F7F6F2,#F7F6F2 10px,#F1EFE9 10px,#F1EFE9 20px);display:grid;place-items:center;color:var(--muted);font-size:12px}
+.row{display:flex;gap:10px;align-items:center;flex-wrap:wrap}
+.toggle{width:38px;height:22px;border-radius:12px;background:#CFCCC2;position:relative;flex-shrink:0}.toggle:after{content:'';position:absolute;top:3px;left:3px;width:16px;height:16px;border-radius:50%;background:#fff}
+.toggle.on{background:var(--accent)}.toggle.on:after{left:19px}
+.item{display:flex;justify-content:space-between;align-items:center;gap:16px;padding:16px 20px;border-bottom:1px solid var(--line)}.item:last-child{border-bottom:0}
+.item .t{color:var(--ink);font-weight:600}
+.chart{display:flex;align-items:flex-end;gap:14px;height:190px;padding:10px 20px 0}
+.chart div{flex:1;text-align:center;font-size:11px;color:var(--muted)}.chart div i{display:block;background:#E8C9A8;border-radius:4px 4px 0 0;margin-bottom:6px}.chart div.last i{background:var(--accent)}
+.note{background:var(--accent-soft);border:1px solid #F0CDA6;border-radius:8px;padding:12px 16px;color:#7A4510;margin-bottom:20px}
+.login{min-height:100vh;display:grid;grid-template-columns:1.1fr 1fr}
+.login .l{background:var(--side);color:#fff;padding:56px;display:flex;flex-direction:column;justify-content:space-between}
+.login .l h1{color:#fff;font-size:64px;line-height:.95;max-width:420px}.login .l h1 em{color:var(--accent);font-style:normal}
+.login .r{display:grid;place-items:center;padding:40px}.login .box{width:100%;max-width:380px}
+@media(max-width:900px){aside{display:none}.g4,.g3,.g2,.dl{grid-template-columns:1fr 1fr}.login{grid-template-columns:1fr}.login .l{display:none}.search{display:none}}
+</style></head><body><div class="app"><aside><div class="brand"><div class="logo">U</div><div><b>Ustad</b><small>استاد — Admin</small></div></div><div class="navlabel">Operations</div><nav><a href="approvals.html" class=""><svg viewBox="0 0 24 24"><path d="M20 6 9 17l-5-5"/></svg>Approvals<span class="n">5</span></a><a href="jobs.html" class=""><svg viewBox="0 0 24 24"><rect x="4" y="3" width="16" height="18" rx="2"/><path d="M8 8h8M8 12h8M8 16h5"/></svg>Job Activity<span class="n">2</span></a><a href="payments.html" class=""><svg viewBox="0 0 24 24"><rect x="2" y="5" width="20" height="14" rx="2"/><path d="M2 10h20"/></svg>Payments</a><a href="hisab.html" class=""><svg viewBox="0 0 24 24"><path d="M4 4h12a4 4 0 0 1 4 4v12H8a4 4 0 0 1-4-4z"/><path d="M8 9h8M8 13h6"/></svg>Hisab (dues)</a><a href="moderation.html" class=""><svg viewBox="0 0 24 24"><path d="M12 3 4 6v6c0 5 3.5 8 8 9 4.5-1 8-4 8-9V6z"/></svg>Posted Jobs</a><a href="commissions.html" class=""><svg viewBox="0 0 24 24"><path d="M4 20V10M10 20V4M16 20v-7M22 20H2"/></svg>Commissions</a><a href="reports.html" class=""><svg viewBox="0 0 24 24"><path d="m3 17 6-6 4 4 8-8"/><path d="M15 7h6v6"/></svg>Reports</a><a href="settings.html" class="on"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M12 2v3M12 19v3M2 12h3M19 12h3M5 5l2 2M17 17l2 2M5 19l2-2M17 7l2-2"/></svg>Settings</a></nav><div class="side-foot"><div class="av">SA</div><div>Super Admin<br><span style="color:#8d9793">admin@ustad.pk</span></div><a href="login.html">Sign out</a></div></aside><main><div class="top"><div class="crumb">Admin / <b>Settings</b></div><div class="search">Search workers, jobs, transactions…</div><div class="bell">🔔<i></i></div></div><div class="content"><div class="head"><div><h1>Settings</h1><p class="sub">Branding, commission, payment methods and operating rules.</p></div><div class="row"><span class="btn p">Save changes</span></div></div><div class="grid g2 mb" style="align-items:start"><div class="card"><div class="ch"><h2>General</h2></div><div class="pad"><div class="field"><label>App name</label><div class="input">Ustad</div></div><div class="field"><label>Tagline</label><div class="input">Trusted skilled workers, one tap away</div></div></div></div><div class="card"><div class="ch"><h2>Commission</h2></div><div class="pad"><div class="field"><label>Commission rate (%)</label><div class="input">10</div><div class="hint">Charged on every paid job, taken from the worker.</div></div><div class="bar"><i style="width:10%"></i></div></div></div></div><div class="grid g2 mb" style="align-items:start"><div class="card"><div class="ch"><h2>Payment methods</h2></div><div class="item"><div><div class="t">Easypaisa</div><div class="mut">Mobile wallet</div></div><div class="toggle on"></div></div><div class="item"><div><div class="t">JazzCash</div><div class="mut">Mobile wallet</div></div><div class="toggle on"></div></div><div class="item"><div><div class="t">Cash</div><div class="mut">Paid directly to the worker</div></div><div class="toggle "></div></div></div><div class="card"><div class="ch"><h2>Operations &amp; Hisab</h2></div><div class="pad"><div class="field"><label>Commission due after (days)</label><div class="input">7</div><div class="hint">Days after a job closes that the worker must pay Ustad.</div></div><div class="field"><label>Deactivate after (days overdue)</label><div class="input">14</div><div class="hint">Suspend the worker until they settle.</div></div><div class="field"><label>Payment receipt window (days)</label><div class="input">3</div><div class="hint">Worker has this long to confirm before it becomes a dispute.</div></div><div class="field"><label>Helpline number</label><div class="input">0800-12345</div><div class="hint">Shown to users when a payment problem needs a call.</div></div></div></div></div><div class="card"><div class="ch"><h2>Recent setting changes</h2></div><table><tr><th>Setting</th><th>Change</th><th>By</th><th>When</th></tr><tr><td><b>commission_rate_pct</b></td><td>8 → 10</td><td>admin@ustad.pk</td><td class="mut">18 Sep, 16:02</td></tr><tr><td><b>payment_methods</b></td><td>cash: on → off</td><td>admin@ustad.pk</td><td class="mut">12 Sep, 11:47</td></tr></table></div></div></main></div></body></html>

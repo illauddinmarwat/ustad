@@ -31,8 +31,12 @@ import { getTabBarStyle } from './src/navigation/tabBarStyle';
 import type { RootStackParamList, TabParamList } from './src/navigation/types';
 import AccountScreen from './src/screens/app/AccountScreen';
 import AdminOpsScreen from './src/screens/app/AdminOpsScreen';
-import ApplicationsScreen from './src/screens/app/ApplicationsScreen';
 import CommunityTipsScreen from './src/screens/app/CommunityTipsScreen';
+import CustomerHomeScreen from './src/screens/customer/CustomerHomeScreen';
+import RequestsScreen from './src/screens/customer/RequestsScreen';
+import EarningsScreen from './src/screens/worker/EarningsScreen';
+import WorkerJobsScreen from './src/screens/worker/WorkerJobsScreen';
+import WorkerHomeScreen from './src/screens/worker/WorkerHomeScreen';
 import DashboardScreen from './src/screens/app/DashboardScreen';
 import FaqChatScreen from './src/screens/app/FaqChatScreen';
 import FaqScreen from './src/screens/app/FaqScreen';
@@ -130,7 +134,7 @@ function WorkerTabs() {
     <Tab.Navigator screenOptions={tabScreenOptions}>
       <Tab.Screen
         name="Dashboard"
-        component={DashboardScreen}
+        component={WorkerHomeScreen}
         options={{
           tabBarLabel: ({ focused }) => <TabBarLabel id="tabs.dashboard" focused={focused} />,
           tabBarIcon: tabIcon('home'),
@@ -139,18 +143,23 @@ function WorkerTabs() {
       <Tab.Screen
         name="Services"
         component={ServicesScreen}
-        options={{
-          tabBarLabel: ({ focused }) => <TabBarLabel id="tabs.services" focused={focused} />,
-          tabBarIcon: tabIcon('grid'),
-        }}
+        options={{ tabBarItemStyle: { display: 'none' } }}
       />
       <Tab.Screen
         name="Applications"
-        component={ApplicationsScreen}
+        component={WorkerJobsScreen}
         options={{
-          tabBarLabel: ({ focused }) => <TabBarLabel id="tabs.applications" focused={focused} />,
-          tabBarIcon: tabIcon('inbox'),
+          tabBarLabel: ({ focused }) => <TabBarLabel id="tabs.jobs" focused={focused} />,
+          tabBarIcon: tabIcon('briefcase'),
           tabBarBadge: badgeValue(unread),
+        }}
+      />
+      <Tab.Screen
+        name="Earnings"
+        component={EarningsScreen}
+        options={{
+          tabBarLabel: ({ focused }) => <TabBarLabel id="tabs.earnings" focused={focused} />,
+          tabBarIcon: tabIcon('dollar-sign'),
         }}
       />
       <Tab.Screen
@@ -173,7 +182,7 @@ function CustomerTabs() {
     <Tab.Navigator screenOptions={tabScreenOptions}>
       <Tab.Screen
         name="Dashboard"
-        component={DashboardScreen}
+        component={CustomerHomeScreen}
         options={{
           tabBarLabel: ({ focused }) => <TabBarLabel id="tabs.dashboard" focused={focused} />,
           tabBarIcon: tabIcon('home'),
@@ -193,6 +202,14 @@ function CustomerTabs() {
         options={{
           tabBarLabel: ({ focused }) => <TabBarLabel id="tabs.services" focused={focused} />,
           tabBarIcon: tabIcon('grid'),
+        }}
+      />
+      <Tab.Screen
+        name="Requests"
+        component={RequestsScreen}
+        options={{
+          tabBarLabel: ({ focused }) => <TabBarLabel id="tabs.requests" focused={focused} />,
+          tabBarIcon: tabIcon('clipboard'),
         }}
       />
       <Tab.Screen
@@ -228,7 +245,7 @@ configureForegroundNotifications();
 
 /** Registers this device for push while signed in, and opens the right screen when a push is tapped. */
 function PushRegistration() {
-  const { session } = useAuth();
+  const { session, role } = useAuth();
   const navigation = useNavigation<any>();
   const uid = session?.user.id;
 
@@ -242,10 +259,10 @@ function PushRegistration() {
       const target = notificationTarget(data?.kind ?? '', data?.job_id);
       if (target.screen === 'JobDetail') navigation.navigate('JobDetail', target.params);
       else if (target.screen === 'Account') navigation.navigate('Tabs', { screen: 'Account' });
-      else navigation.navigate('Tabs', { screen: 'Applications' });
+      else navigation.navigate('Tabs', { screen: role === 'worker' ? 'Applications' : 'Requests' });
     });
     return () => sub.remove();
-  }, [navigation]);
+  }, [navigation, role]);
 
   return null;
 }

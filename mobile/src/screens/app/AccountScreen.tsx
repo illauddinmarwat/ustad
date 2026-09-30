@@ -137,13 +137,15 @@ export default function AccountScreen() {
         { paddingTop: insets.top + spacing.md, paddingBottom: insets.bottom + spacing.xl },
       ]}
     >
-      <Card padding="lg">
+      <View style={[styles.header, role === 'worker' ? styles.headerWorker : styles.headerCustomer]}>
         <View style={styles.profileRow}>
           <Avatar name={email ?? 'Guest'} size={56} tone="primary" />
           <View style={styles.profileBody}>
-            <Text style={styles.profileName} numberOfLines={1}>{email ?? t('account.guest.title').en}</Text>
+            <Text style={[styles.profileName, role === 'worker' && styles.onDark]} numberOfLines={1}>
+              {email ?? t('account.guest.title').en}
+            </Text>
             <View style={styles.profileChips}>
-              <Chip label={roleLabel} tone="primary" icon="user" />
+              <Chip label={roleLabel} tone="primary" icon={role === 'worker' ? 'briefcase' : 'user'} />
               <Chip
                 label={useLiveDatabase ? t('account.runtime.live').en : t('account.runtime.fixture').en}
                 tone={useLiveDatabase ? 'accent' : 'neutral'}
@@ -152,7 +154,24 @@ export default function AccountScreen() {
             </View>
           </View>
         </View>
-      </Card>
+      </View>
+
+      {!isGuest && (role === 'worker' || role === 'customer') ? (
+        <Card padding="lg">
+          <BiText id="account.shortcuts" variant="title" tone="strong" style={styles.cardTitle} />
+          {role === 'worker' ? (
+            <>
+              <SettingsRow icon="grid" titleId="dashboard.cta.myListings" onPress={() => navigation.navigate('Tabs', { screen: 'Services' })} />
+              <SettingsRow icon="dollar-sign" titleId="account.myEarnings" onPress={() => navigation.navigate('Tabs', { screen: 'Earnings' })} />
+            </>
+          ) : (
+            <>
+              <SettingsRow icon="clipboard" titleId="account.myRequests" onPress={() => navigation.navigate('Tabs', { screen: 'Requests' })} />
+              <SettingsRow icon="map-pin" titleId="account.findNearby" onPress={() => navigation.navigate('Tabs', { screen: 'Nearby' })} />
+            </>
+          )}
+        </Card>
+      ) : null}
 
       {isGuest ? (
         <Card padding="lg">
@@ -284,6 +303,10 @@ function SettingsRow({
 
 const styles = StyleSheet.create({
   root: { padding: spacing.lg, backgroundColor: colors.bg, flexGrow: 1 },
+  header: { borderRadius: radius.lg, padding: spacing.lg },
+  headerWorker: { backgroundColor: colors.primaryDeep },
+  headerCustomer: { backgroundColor: colors.primarySoft },
+  onDark: { color: '#fff' },
   profileRow: { flexDirection: 'row', alignItems: 'center' },
   profileBody: { flex: 1, marginLeft: spacing.md },
   profileName: { ...typography.title, color: colors.textStrong },
