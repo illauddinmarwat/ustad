@@ -31,6 +31,7 @@ export default function RequestWorkerScreen() {
   const insets = useSafeAreaInsets();
 
   const [enabled, setEnabled] = useState<boolean | null>(null);
+  const [quoteMarkup, setQuoteMarkup] = useState(false);
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
   const [budget, setBudget] = useState('');
@@ -41,7 +42,10 @@ export default function RequestWorkerScreen() {
   const [busy, setBusy] = useState(false);
 
   useEffect(() => {
-    fetchDirectRequestFlags().then((f) => setEnabled(f.enabled));
+    fetchDirectRequestFlags().then((f) => {
+      setEnabled(f.enabled);
+      setQuoteMarkup(f.quoteMarkup === true);
+    });
   }, []);
 
   const submit = async () => {
@@ -50,7 +54,7 @@ export default function RequestWorkerScreen() {
       navigation.navigate('Auth');
       return;
     }
-    const result = validateRequestForm({ title, description, budget, preferredTime });
+    const result = validateRequestForm({ title, description, budget: quoteMarkup ? '' : budget, preferredTime });
     if (!result.ok) {
       setErrors(result.errors);
       return;
@@ -62,7 +66,7 @@ export default function RequestWorkerScreen() {
       p_title: result.title,
       p_description: result.description,
       p_category: category ?? '',
-      p_budget_pkr: result.budgetPkr,
+      p_budget_pkr: quoteMarkup ? null : result.budgetPkr,
       p_preferred_time: result.preferredTime,
       p_location_text: area.trim() || null,
     });
@@ -104,14 +108,16 @@ export default function RequestWorkerScreen() {
           style={styles.multiline}
           error={errors.description}
         />
-        <Input
-          labelId="request.field.budget"
-          value={budget}
-          onChangeText={setBudget}
-          keyboardType="numeric"
-          iconLeft="dollar-sign"
-          error={errors.budget}
-        />
+        {quoteMarkup ? null : (
+          <Input
+            labelId="request.field.budget"
+            value={budget}
+            onChangeText={setBudget}
+            keyboardType="numeric"
+            iconLeft="dollar-sign"
+            error={errors.budget}
+          />
+        )}
         <Input
           labelId="request.field.time"
           value={preferredTime}

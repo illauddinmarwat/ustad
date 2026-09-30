@@ -8,6 +8,7 @@ import { typography } from '../theme/typography';
 import { Avatar } from './ui/Avatar';
 import { Button } from './ui/Button';
 import { Chip } from './ui/Chip';
+import { QuotePricePreview } from './QuotePricePreview';
 import { Input } from './ui/Input';
 
 export type RequestJob = {
@@ -30,6 +31,8 @@ export type RequestRowProps = {
   mode: 'worker' | 'customer';
   counterpart: string;
   quotes: RequestQuote[];
+  /** Quote commission markup is on: the customer budget is gone, so "accept budget" is hidden. */
+  quoteMarkup?: boolean;
   onAcceptBudget: () => void;
   onQuote: (amount: number) => void;
   onDecline: () => void;
@@ -52,6 +55,7 @@ export function RequestRow({
   mode,
   counterpart,
   quotes,
+  quoteMarkup = false,
   onAcceptBudget,
   onQuote,
   onDecline,
@@ -78,13 +82,13 @@ export function RequestRow({
             label={requestStatusLabel(job.status, job.target_worker_id != null)}
             tone={TONE[job.status] ?? 'neutral'}
           />
-          {job.budget_pkr != null ? <Chip label={`Rs ${job.budget_pkr}`} tone="primary" icon="dollar-sign" /> : null}
+          {job.budget_pkr != null && !quoteMarkup ? <Chip label={`Rs ${job.budget_pkr}`} tone="primary" icon="dollar-sign" /> : null}
           {job.preferred_time ? <Chip label={job.preferred_time} tone="neutral" icon="calendar" /> : null}
         </View>
 
         {mode === 'worker' && isOpen && (
           <View style={styles.actions}>
-            {canAcceptAsIs(job.budget_pkr) && (
+            {!quoteMarkup && canAcceptAsIs(job.budget_pkr) && (
               <Button
                 labelId="requests.acceptBudget"
                 onPress={onAcceptBudget}
@@ -101,6 +105,7 @@ export function RequestRow({
               keyboardType="numeric"
               iconLeft="dollar-sign"
             />
+            <QuotePricePreview amount={amount} />
             <View style={styles.buttonRow}>
               <Button
                 labelId="requests.sendQuote"

@@ -35,9 +35,9 @@ A customer asks one chosen worker (from Nearby) to do a job. It is a row in `job
 
 | Function | Who | Input | Result |
 |----------|-----|-------|--------|
-| `create_direct_request` | customer | `p_worker_id`, `p_title`, `p_description`, `p_category`, `p_budget_pkr` (optional), `p_preferred_time` (optional), `p_location_text` (optional) | New job id. Errors: `direct requests are not enabled`, `cannot request yourself`, `title and description are required`, `worker not available for this category` (unknown, unapproved, or wrong category), `daily request limit reached` |
-| `worker_accept_direct_request` | targeted worker | `p_job_id` | void. Accepts the customer's budget as-is; job becomes `assigned`. Error `no budget set; send a quote instead` |
-| `worker_quote_direct_request` | targeted worker | `p_job_id`, `p_amount_pkr`, `p_message` (optional) | Quote id. Job becomes `quoted`. A new quote replaces the worker's earlier pending one |
+| `create_direct_request` | customer | `p_worker_id`, `p_title`, `p_description`, `p_category`, `p_budget_pkr` (optional; ignored and stored as null once `quote_commission_markup_enabled` is on), `p_preferred_time` (optional), `p_location_text` (optional) | New job id. Errors: `direct requests are not enabled`, `cannot request yourself`, `title and description are required`, `worker not available for this category` (unknown, unapproved, or wrong category), `daily request limit reached` |
+| `worker_accept_direct_request` | targeted worker | `p_job_id` | void. Accepts the customer's budget as-is; job becomes `assigned`. Error `no budget set; send a quote instead` (always, once `quote_commission_markup_enabled` is on) |
+| `worker_quote_direct_request` | targeted worker | `p_job_id`, `p_amount_pkr`, `p_message` (optional) | Quote id. Job becomes `quoted`. A new quote replaces the worker's earlier pending one. With the commission markup on, `p_amount_pkr` is the worker's own price and the stored quote amount is the customer price (see *Quote commission markup* below) |
 | `worker_decline_direct_request` | targeted worker | `p_job_id` | void. Job becomes `cancelled` |
 | `customer_accept_direct_quote` | job owner | `p_quote_id` | void. Job becomes `assigned` to the quoting worker; other pending quotes are rejected |
 | `customer_cancel_job` | job owner | `job_id` | void (existing function; works while `open`, `quoted`) |
@@ -104,9 +104,9 @@ A customer, or a **guest with no account**, posts a job. Approved workers see it
 | `post_job` | customer or guest (anon) | `p_title`, `p_description`, `p_category`, `p_city`, `p_location_text`, `p_preferred_time` (no customer budget: workers name their own price) | One row: `job_id`, `guest_token` (only for guests). Rejects phone numbers and links in the text. Limits: `job_post_daily_limit` (default 10) per customer per day; `guest_job_hourly_cap` (default 30) for all guests per hour |
 | `get_guest_job` | guest with token | `p_token` | The job (plus `quote_count`). Empty once the job is claimed |
 | `job_quotes` | job owner or guest with token | `p_job_id`, `p_token` | Quotes with `worker_name`, `amount_pkr`, `message`, `avg_rating`, `review_count`, `is_verified`, `years_experience`, cheapest first |
-| `list_open_jobs` | approved worker | `p_category`, `p_city`, `p_limit` | Open, unexpired jobs in the worker's categories, with full details, `quote_count` and the worker's own `my_quote_pkr`. No customer identity. Includes direct requests that expired and opened up |
-| `get_board_job` | approved worker | `p_job_id` | One job with full details |
-| `worker_quote_job` | approved worker | `p_job_id`, `p_amount_pkr`, `p_message` | Quote id. Free and unlimited; each is logged in `quote_events`. Replaces the worker's earlier pending quote. Errors include `this job is outside your categories`, `you cannot quote on your own job`, `this job is no longer open` |
+| `list_open_jobs` | approved worker | `p_category`, `p_city`, `p_limit` | Open, unexpired jobs in the worker's categories, with full details, `quote_count` and the worker's own `my_quote_pkr` (the price they typed, not the customer price). No customer identity. Includes direct requests that expired and opened up |
+| `get_board_job` | approved worker | `p_job_id` | One job with full details, `my_quote_pkr` (the worker's own price) and `my_customer_price_pkr` (what the customer sees) |
+| `worker_quote_job` | approved worker | `p_job_id`, `p_amount_pkr` (the worker's own price), `p_message` | Quote id. Free and unlimited; each is logged in `quote_events`. Replaces the worker's earlier pending quote. Errors include `this job is outside your categories`, `you cannot quote on your own job`, `this job is no longer open` |
 | `post_thread_message` | poster (or guest with token), or the quoting worker | `p_job_id`, `p_worker_id`, `p_body`, `p_token` | void. Pre-assignment thread per (job, worker). Rejects phone numbers and links. Notifies the other side |
 | `list_thread` | same | `p_job_id`, `p_worker_id`, `p_token` | Messages: `sender_role`, `body`, `created_at` |
 | `customer_accept_quote` | signed-in job owner | `p_quote_id` | void. Job becomes `assigned`, other quotes rejected. A guest gets `sign in to accept a quote`: they sign in or register and the job is attached first |
@@ -156,7 +156,7 @@ The Inbox tab lists everything from all three flows in one place, for customers 
 
 | Function | Who | Input | Result |
 |----------|-----|-------|--------|
-| `list_my_quotes` | signed-in worker | `p_limit` (default 50, max 100) | The worker's own quotes with `job_title`, `job_category`, `job_status`, `job_expires_at`, `amount_pkr`, `status`, `created_at`. Direct-request quotes are left out (they show as the request) |
+| `list_my_quotes` | signed-in worker | `p_limit` (default 50, max 100) | The worker's own quotes with `job_title`, `job_category`, `job_status`, `job_expires_at`, `amount_pkr` (the price they typed), `status`, `created_at`. Direct-request quotes are left out (they show as the request) |
 
 What each side sees: **customer** = applications they sent, and every job they created (direct requests and posted jobs, with pending quotes to accept). **Worker** = applications to their listings (accept/decline), direct requests sent to them (accept budget, quote, decline), quotes they sent on board jobs, and jobs they are assigned to. Once a job is assigned it shows once, as a job, whatever its origin. Filters: Pending = waiting for someone; Active = assigned through payment (including disputes); Done = closed, cancelled, declined or not chosen.
 
@@ -181,6 +181,8 @@ Payment is cash, so Ustad tracks commission per worker. When a job's payment is 
 | `admin_close_posted_job` | admin | `p_job_id`, `p_reason` | void. Cancels the job and logs a `moderated` event |
 
 **Deactivation** sets `profiles.status = 'suspended'` and `worker_profiles.commission_suspended = true`. A suspended worker disappears from Nearby, cannot use the job board, quote, or answer requests (`_is_approved_worker` now requires an active account), and their listings are hidden from direct table reads. Suspended customers cannot post jobs. Settings: `commission_rate_pct`, `commission_due_days`, `commission_warn_days`, `commission_deactivate_days`.
+
+**Quote commission markup** (flag `quote_commission_markup_enabled`, seeded false; `docs/quote-commission-plan.md`). With the flag on, the amount a worker passes to `worker_quote_job` / `worker_quote_direct_request` is their own price X. The server stores the **customer price** `ceil(X x (1 + pct / 100))` in `quotes.amount_pkr` (so `job_quotes`, notifications and sorting show the customer price), and keeps X and the rate in the private table `quote_pricing` (`quote_id`, `worker_id`, `base_amount_pkr`, `commission_pct`), readable only by that worker and admins. `quote_price_preview(p_amount_pkr)` (approved worker) returns `customer_price`, `commission`, `commission_pct` with the same maths, for the quote form. When the job's payment is confirmed (`worker_confirm_payment_received`) or an admin resolves a dispute as paid, `_job_commission` sets the fee: for a job whose accepted quote has a `quote_pricing` row it is `customer price - X` (capped at the amount paid) at the quote's rate; every other job uses the old rule, `commission_rate_pct` of the amount paid. Old quotes and jobs are unchanged.
 
 Notification kinds added: `commission_created`, `commission_overdue`, `commission_warning`, `account_deactivated`, `account_reactivated` (all open the Account tab).
 
@@ -225,7 +227,7 @@ Exact parameters for these are in `supabase/migrations/`; search for `create or 
 | `admin_reports_summary` | `p_days` int (default 30) | `total_earnings, prev_total_earnings, new_customers, prev_new_customers, avg_commission_pct, active_workers` |
 | `admin_monthly_earnings` | `p_months` int (default 6, max 24) | `month_start` date, `total_pkr` |
 | `admin_top_workers` | `p_limit` int (default 5) | `worker_id, display_name, avg_rating, review_count, total_jobs_paid, total_earnings` |
-| `get_app_setting` | `p_key` text | JSON value. Keys used: `app_branding`, `commission_rate_pct`, `payment_methods` |
+| `get_app_setting` | `p_key` text | JSON value. Keys used: `app_branding`, `commission_rate_pct`, `quote_commission_markup_enabled`, `payment_methods` |
 | `admin_set_app_setting` | `p_key` text, `p_value` json | void |
 
 Others used for admin and ops (see the migrations for their parameters): `admin_update_payment_status`, `admin_set_user_status`, `admin_resolve_report`, `admin_set_extraction_status`, `admin_set_template_active`, `admin_upsert_city`, `admin_set_city_rollout_config`, `admin_set_city_service_availability`, `admin_backfill_worker_signals`.
@@ -237,7 +239,7 @@ await supabase.rpc('admin_set_worker_approval', { p_user_id: id, p_status: 'reje
 ```
 
 ## Main tables (via PostgREST)
-`profiles`, `worker_profiles`, `worker_service_listings`, `service_templates`, `listing_applications`, `jobs`, `quotes`, `messages`, `reviews`, `payment_ledger`, `job_contacts`, `admin_job_events`, `notifications`, `device_tokens`, `quote_events`, `job_thread_messages`, `worker_commission_ledger`, `commission_events`, `app_setting_audit`, `job_realtime_states`, `job_completion_photos`, `job_quality_surveys`, `faqs`, `ocr_extractions`, `abuse_reports`, `cities`, `city_rollout_configs`, `city_service_availability`, `app_settings`, `app_events`. Access to each is decided by the RLS policies in the migrations.
+`profiles`, `worker_profiles`, `worker_service_listings`, `service_templates`, `listing_applications`, `jobs`, `quotes`, `messages`, `reviews`, `payment_ledger`, `job_contacts`, `admin_job_events`, `notifications`, `device_tokens`, `quote_events`, `quote_pricing`, `job_thread_messages`, `worker_commission_ledger`, `commission_events`, `app_setting_audit`, `job_realtime_states`, `job_completion_photos`, `job_quality_surveys`, `faqs`, `ocr_extractions`, `abuse_reports`, `cities`, `city_rollout_configs`, `city_service_availability`, `app_settings`, `app_events`. Access to each is decided by the RLS policies in the migrations.
 
 ## Storage buckets
 | Bucket | Content | Access |

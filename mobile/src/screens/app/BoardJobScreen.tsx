@@ -6,6 +6,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { JobMediaGallery } from '../../components/JobMediaGallery';
 import { QuoteFields } from '../../components/QuoteFields';
 import { JobThread } from '../../components/JobThread';
+import { QuotePricePreview } from '../../components/QuotePricePreview';
 import { Banner } from '../../components/ui/Banner';
 import { BiText } from '../../components/ui/BiText';
 import { Button } from '../../components/ui/Button';
@@ -30,7 +31,7 @@ import { typography } from '../../theme/typography';
 
 import type { BoardJob } from './JobBoardScreen';
 
-type BoardJobDetail = BoardJob & { status: string };
+type BoardJobDetail = BoardJob & { status: string; my_customer_price_pkr?: number | null };
 
 export default function BoardJobScreen() {
   const route = useRoute<RouteProp<RootStackParamList, 'BoardJob'>>();
@@ -132,8 +133,18 @@ export default function BoardJobScreen() {
 
       <Card padding="lg">
         <BiText id="board.yourQuote" variant="title" tone="strong" style={styles.gap} />
-        {job.my_quote_pkr != null ? <Banner text={`Your current quote: Rs ${job.my_quote_pkr}`} tone="info" /> : null}
+        {job.my_quote_pkr != null ? (
+          <Banner
+            text={
+              job.my_customer_price_pkr != null && job.my_customer_price_pkr !== job.my_quote_pkr
+                ? `Your current quote: Rs ${job.my_quote_pkr} (the customer sees Rs ${job.my_customer_price_pkr})`
+                : `Your current quote: Rs ${job.my_quote_pkr}`
+            }
+            tone="info"
+          />
+        ) : null}
         <Input labelId="requests.quoteAmount" value={amount} onChangeText={setAmount} keyboardType="numeric" iconLeft="dollar-sign" />
+        <QuotePricePreview amount={amount} />
         <Input labelId="board.quoteMessage" value={message} onChangeText={setMessage} multiline />
         {detailed ? (
           <QuoteFields

@@ -76,7 +76,7 @@ export default function HisabPage() {
   };
 
   const exportCsv = () => {
-    const header = 'Worker,Job,Order amount,Commission %,Commission,Due date,Status,Settled at,Method,Reference,Note\n';
+    const header = 'Worker,Job,Customer paid,Ustad keeps,Commission %,Commission,Due date,Status,Settled at,Method,Reference,Note\n';
     const esc = (v: unknown) => `"${String(v ?? '').replace(/"/g, '""')}"`;
     const body = rows
       .map((r) =>
@@ -84,6 +84,7 @@ export default function HisabPage() {
           r.worker_name,
           r.job_title,
           r.order_amount_pkr,
+          Number(r.order_amount_pkr) - Number(r.commission_pkr),
           r.commission_pct,
           r.commission_pkr,
           r.due_date,
@@ -197,7 +198,8 @@ export default function HisabPage() {
                 <div>
                   <div className="text-sm font-medium text-ink-strong">{r.job_title}</div>
                   <div className="text-xs text-ink-muted">
-                    Order {formatPkr(r.order_amount_pkr)} × {r.commission_pct}% = {formatPkr(r.commission_pkr)} · due {r.due_date}
+                    Customer paid {formatPkr(r.order_amount_pkr)} · Ustad keeps {formatPkr(Number(r.order_amount_pkr) - Number(r.commission_pkr))} · commission{' '}
+                    {formatPkr(r.commission_pkr)} ({r.commission_pct}% rate) · due {r.due_date}
                   </div>
                   {r.settled_at ? (
                     <div className="text-xs text-ink-muted">

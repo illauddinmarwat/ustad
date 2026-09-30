@@ -31,7 +31,7 @@ All three then follow the same steps: the worker is assigned, contact details ar
 
 ## Money rules
 - Payment is **cash to the worker**. The customer marks it paid, the worker confirms the amount received. A different amount, or no confirmation within 3 days, makes the job `disputed`.
-- Ustad's commission is **15% of the confirmed amount** (editable). It is owed per closed job, **due 7 days later**.
+- Ustad's commission is **15%** (editable). With **"add commission on top"** on (admin Settings), an Ustad types the price they want to earn and sees a live preview ("customer will see Rs 115, platform fee Rs 15, you keep Rs 100"); the customer sees one price only, the Ustad's price plus the rate, rounded up to a whole rupee. The commission owed is the difference (15% of the Ustad's own price). The rate is saved on each quote, so a later change never moves a quote already sent. Direct requests no longer take a customer budget. With the option off, commission is 15% of the confirmed amount, as before. It is owed per closed job, **due 7 days later**.
 - Overdue: a warning 7 days after the due date, **account deactivated 14 days after** unless settled. A deactivated worker is hidden from Nearby, the job board and listings, and cannot quote or answer requests. Settling or waiving the last overdue row reopens the account. All these numbers are settings.
 
 ## Notifications
@@ -53,7 +53,7 @@ Both new flows ship **off**. In the Supabase SQL editor:
 update app_settings set value = 'true' where key = 'direct_requests_enabled';  -- send a request from Nearby
 update app_settings set value = 'true' where key = 'job_posting_enabled';      -- post a job, job board, quotes
 ```
-Numbers you can change (rows in `app_settings`): `commission_rate_pct`, `commission_due_days`, `commission_warn_days`, `commission_deactivate_days`, `direct_request_timeout_hours`, `direct_request_daily_limit`, `job_post_daily_limit`, `guest_job_hourly_cap`, `job_expiry_days`, `payment_confirm_days`, `helpline_number` (text). Most are also on the admin Settings page.
+Numbers you can change (rows in `app_settings`): `commission_rate_pct`, `quote_commission_markup_enabled` (true/false), `commission_due_days`, `commission_warn_days`, `commission_deactivate_days`, `direct_request_timeout_hours`, `direct_request_daily_limit`, `job_post_daily_limit`, `guest_job_hourly_cap`, `job_expiry_days`, `payment_confirm_days`, `helpline_number` (text). Most are also on the admin Settings page.
 
 Some features need Supabase extensions: **`pg_cron`** for the timed jobs (request timeout, job expiry, unconfirmed payments, overdue commission) and **`pg_net`** for push. See [how-to-run.md](how-to-run.md).
 

@@ -57,15 +57,28 @@ Example at 15%: the Ustad types **100**, the customer sees **115**, the commissi
 
 ## Phases
 
-### Phase 1: database (1.5 days)
-- [ ] Migration: columns and backfill, `_apply_commission`, both quote functions, preview RPC, job columns, both accept functions, ledger rule, remove budget from direct requests, flag.
+### Phase 1: database (1.5 days) — DONE, not pushed
+Built in `supabase/migrations/20260930190000_quote_commission_markup.sql`, tested by `supabase/tests/database/phase20_quote_commission_seeded.test.sql` (39 assertions pass; phase 12–16 and 18 tests still pass locally). Deviations from the design below, all to keep the breakdown away from customers:
+- X and the percent are kept in a **private table `quote_pricing`** (readable only by the quoting worker and admins), not as columns on `quotes`, because a customer can select their job's quote rows. No backfill is needed: a quote with no pricing row is an old quote.
+- The job does not copy the price. At close, `_job_commission` reads the accepted quote's pricing row; both `worker_confirm_payment_received` and `admin_resolve_job_dispute` use it. The accept functions are unchanged.
+- The flag `quote_commission_markup_enabled` is seeded **false**. With it on, `create_direct_request` ignores a budget and `worker_accept_direct_request` is closed. The `p_budget_pkr` parameter stays until the mobile app stops sending it.
+- Worker preview RPC: `quote_price_preview(amount)` returns customer price, commission and percent.
+
+Original checklist:
+- [x] Migration: columns and backfill, `_apply_commission`, both quote functions, preview RPC, job columns, both accept functions, ledger rule, remove budget from direct requests, flag.
 - [ ] pgTAP: 100 at 15% gives 115 and commission 15; rounding case; percent snapshotted (admin change after quoting does not move the price); same result through the posted-job and direct-request paths; customer/guest RPCs never expose X or percent; another worker cannot read the breakdown; ledger fee equals `agreed − X`; old jobs keep the old rule; flag off = old behaviour.
 
-### Phase 2: mobile (1.5 days)
+### Phase 2: mobile (1.5 days) — DONE, not pushed
+Built: `QuotePricePreview` (live card under the price field on the job-board quote form and the direct-request quote row), `lib/quotePricing.ts`, budget field removed from the request form and "Accept budget" hidden when the flag is on (the client reads `quote_commission_markup_enabled` through `fetchDirectRequestFlags`), new strings in English and Urdu. Added migration `20260930210000_worker_own_quote_price.sql`: `list_open_jobs`, `get_board_job` (new column `my_customer_price_pkr`) and `list_my_quotes` show the worker their own price, so the form is prefilled with what they typed and re-sending cannot compound the markup. Tests: 4 more pgTAP assertions (43 total in phase20), Jest for the helpers, the preview, the request row and the request form; full suite 267/267 and typecheck clean.
+
+Original checklist:
 - [ ] Worker preview card on both quote forms; remove the direct-request budget field and "accept budget" button; customer screens show the single price.
 - [ ] Jest: preview matches the server maths, customer screens never render X or the word commission, Urdu strings present.
 
-### Phase 3: estimates and admin (1 day)
+### Phase 3: estimates and admin (1 day) — admin and docs DONE, estimates waiting
+Done: Settings page toggle for `quote_commission_markup_enabled` with a plain explanation and a live example; Hisab rows now read "Customer paid, Ustad keeps, commission (rate)" instead of the old "order x %" formula (which is wrong for marked-up jobs); Hisab CSV gains a "Ustad keeps" column and "Customer paid" heading; the Reports average-commission card says it is of the amount customers paid; `docs/features.md` and `docs/api-reference.md` updated. No database change was needed: the customer price and the commission are already on the ledger, so the Ustad's own price is their difference. Not done: the final-price flow for estimates, which needs the quotes plan's Phase 2 first.
+
+Original checklist:
 - [ ] Final-price flow uses the snapshotted percent (after quotes-plan Phase 2 lands).
 - [ ] Admin views and CSV show the breakdown; update `docs/features.md` and `docs/api-reference.md`.
 

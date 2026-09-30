@@ -73,6 +73,7 @@ export function InboxSection({ userId, role }: Props) {
   const [loaded, setLoaded] = useState(false);
   const [available, setAvailable] = useState(true);
   const [directEnabled, setDirectEnabled] = useState(false);
+  const [quoteMarkup, setQuoteMarkup] = useState(false);
   const [msg, setMsg] = useState<Msg>(null);
 
   const load = useCallback(async () => {
@@ -174,7 +175,10 @@ export function InboxSection({ userId, role }: Props) {
       setMsg({ id: 'applications.error.load' });
       setLoaded(true);
     });
-    fetchDirectRequestFlags().then((f) => setDirectEnabled(f.enabled));
+    fetchDirectRequestFlags().then((f) => {
+      setDirectEnabled(f.enabled);
+      setQuoteMarkup(f.quoteMarkup === true);
+    });
   }, [load]);
 
   const run = async (fn: () => RpcResult, done: StringId) => {
@@ -208,6 +212,7 @@ export function InboxSection({ userId, role }: Props) {
           mode={role}
           counterpart={names[role === 'worker' ? (j.customer_id ?? '') : (j.worker_id ?? j.target_worker_id ?? '')] ?? ''}
           quotes={quotes.filter((q) => q.job_id === j.id)}
+          quoteMarkup={quoteMarkup}
           onAcceptBudget={() => run(() => supabase.rpc('worker_accept_direct_request', { p_job_id: j.id }), 'requests.done.accepted')}
           onQuote={(amount) =>
             run(() => supabase.rpc('worker_quote_direct_request', { p_job_id: j.id, p_amount_pkr: amount }), 'requests.done.quoted')

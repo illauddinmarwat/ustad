@@ -26,6 +26,7 @@ export default function SettingsPage() {
   const [ops, setOps] = useState<Record<string, number>>({});
   const [helpline, setHelpline] = useState('');
   const [respectHours, setRespectHours] = useState(true);
+  const [markupOn, setMarkupOn] = useState(false);
   const [audit, setAudit] = useState<SettingAuditRow[]>([]);
   const [error, setError] = useState<string | null>(null);
 
@@ -51,6 +52,8 @@ export default function SettingsPage() {
       if (typeof hl.data === 'string') setHelpline(hl.data);
       const rh = await supabase.rpc('get_app_setting', { p_key: 'nearby_respect_working_hours' });
       if (typeof rh.data === 'boolean') setRespectHours(rh.data);
+      const mk = await supabase.rpc('get_app_setting', { p_key: 'quote_commission_markup_enabled' });
+      if (typeof mk.data === 'boolean') setMarkupOn(mk.data);
       const au = await supabase.rpc('admin_list_setting_audit', { p_limit: 20 });
       if (!au.error) setAudit((au.data ?? []) as SettingAuditRow[]);
       setLoading(false);
@@ -118,6 +121,28 @@ export default function SettingsPage() {
             <span>30%</span>
           </div>
           <SaveButton onClick={() => save('commission_rate_pct', commissionRate)} saved={savedKey === 'commission_rate_pct'} />
+
+          <div className="mt-5 border-t border-border pt-4">
+            <label className="flex items-center justify-between text-sm font-medium text-ink-body">
+              Add commission on top of the Ustad&apos;s quote
+              <input
+                type="checkbox"
+                checked={markupOn}
+                onChange={(e) => setMarkupOn(e.target.checked)}
+                className="h-5 w-5 accent-primary"
+              />
+            </label>
+            <p className="mt-1 text-xs text-ink-muted">
+              On: the Ustad types the price they want to earn and the customer sees that price plus {commissionRate}% (rounded up to a
+              whole rupee), as one price. The Ustad owes the difference as commission, so at {commissionRate}% a Rs 100 quote shows the
+              customer Rs {Math.ceil(100 * (1 + commissionRate / 100))}. Direct requests stop taking a customer budget. Quotes already
+              sent keep the rate they were sent with. Off: the price is used as typed and commission is a percentage of the amount paid.
+            </p>
+            <SaveButton
+              onClick={() => save('quote_commission_markup_enabled', markupOn)}
+              saved={savedKey === 'quote_commission_markup_enabled'}
+            />
+          </div>
         </section>
 
         <section className="rounded-xl2 border border-border bg-surface p-5 lg:col-span-2">
@@ -142,8 +167,9 @@ export default function SettingsPage() {
         <section className="rounded-xl2 border border-border bg-surface p-5 lg:col-span-2">
           <h2 className="mb-1 text-sm font-semibold text-ink-strong">Operations and Hisab</h2>
           <p className="mb-4 text-xs text-ink-muted">
-            Commission is charged on the amount a worker confirms receiving. The commission rate above is copied onto each job when it
-            closes, so changing it later does not change past jobs.
+            With &quot;add commission on top&quot; on, each quote keeps the rate it was sent with and the commission owed is the customer
+            price minus the Ustad&apos;s own price. Otherwise commission is the rate times the amount the worker confirms receiving, copied
+            onto the job when it closes. Either way, changing the rate later does not change past jobs.
           </p>
           <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
             {OPS_NUMBERS.map((o) => (

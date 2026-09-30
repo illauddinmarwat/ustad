@@ -87,6 +87,7 @@ export default function ReportsPage() {
           icon="📈"
           label="Avg Commission"
           value={summary ? `${summary.avg_commission_pct.toFixed(1)}%` : '—'}
+          sublabel="of the amount customers paid"
         />
         <StatCard icon="🧑‍🔧" label="Active Ustads" value={summary ? String(summary.active_workers) : '—'} />
       </div>

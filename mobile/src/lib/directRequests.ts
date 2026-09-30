@@ -4,9 +4,13 @@ import { supabase } from './supabase';
  * Direct requests: a customer asks one chosen worker (from Nearby) to do a job.
  * Server flag: `app_settings.direct_requests_enabled` (default false).
  */
-export type DirectRequestFlags = { enabled: boolean };
+export type DirectRequestFlags = {
+  enabled: boolean;
+  /** Quote commission markup is on: no customer budget, workers quote what they earn. */
+  quoteMarkup?: boolean;
+};
 
-export const DIRECT_REQUEST_DEFAULT_FLAGS: DirectRequestFlags = { enabled: false };
+export const DIRECT_REQUEST_DEFAULT_FLAGS: DirectRequestFlags = { enabled: false, quoteMarkup: false };
 
 const TTL_MS = 60_000;
 let cache: { value: DirectRequestFlags; fetchedAt: number } | null = null;
@@ -17,14 +21,19 @@ export async function fetchDirectRequestFlags(): Promise<DirectRequestFlags> {
     const { data, error } = await supabase
       .from('app_settings')
       .select('key,value')
-      .eq('key', 'direct_requests_enabled');
+      .in('key', ['direct_requests_enabled', 'quote_commission_markup_enabled']);
     if (error || !data) {
       cache = { value: DIRECT_REQUEST_DEFAULT_FLAGS, fetchedAt: Date.now() };
       return DIRECT_REQUEST_DEFAULT_FLAGS;
     }
-    const raw = (data as Array<{ value: unknown }>)[0]?.value;
-    const enabled = raw === true || (typeof raw === 'string' && raw.toLowerCase() === 'true');
-    cache = { value: { enabled }, fetchedAt: Date.now() };
+    const isOn = (key: string) => {
+      const raw = (data as Array<{ key: string; value: unknown }>).find((r) => r.key === key)?.value;
+      return raw === true || (typeof raw === 'string' && raw.toLowerCase() === 'true');
+    };
+    cache = {
+      value: { enabled: isOn('direct_requests_enabled'), quoteMarkup: isOn('quote_commission_markup_enabled') },
+      fetchedAt: Date.now(),
+    };
     return cache.value;
   } catch {
     return DIRECT_REQUEST_DEFAULT_FLAGS;
