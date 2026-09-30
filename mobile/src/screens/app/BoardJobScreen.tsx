@@ -4,6 +4,7 @@ import { ScrollView, StyleSheet, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { JobMediaGallery } from '../../components/JobMediaGallery';
+import { QuoteFields } from '../../components/QuoteFields';
 import { JobThread } from '../../components/JobThread';
 import { Banner } from '../../components/ui/Banner';
 import { BiText } from '../../components/ui/BiText';
@@ -16,6 +17,12 @@ import type { StringId } from '../../i18n/strings';
 import { trackEvent } from '../../lib/analytics';
 import { expiresIn, formatBudget, looksLikeContact } from '../../lib/jobPosting';
 import { parseAmount } from '../../lib/jobPayments';
+import {
+  availabilityDate,
+  fetchQuoteUpgradesEnabled,
+  type AvailabilityKey,
+  type PriceType,
+} from '../../lib/quoteDetails';
 import { supabase } from '../../lib/supabase';
 import type { RootStackParamList } from '../../navigation/types';
 import { colors, spacing } from '../../theme/tokens';
@@ -36,6 +43,9 @@ export default function BoardJobScreen() {
   const [loaded, setLoaded] = useState(false);
   const [amount, setAmount] = useState('');
   const [message, setMessage] = useState('');
+  const [detailed, setDetailed] = useState(false);
+  const [priceType, setPriceType] = useState<PriceType>('fixed');
+  const [availability, setAvailability] = useState<AvailabilityKey | null>(null);
   const [msg, setMsg] = useState<{ id?: StringId; text?: string; tone?: 'success' | 'warning' } | null>(null);
 
   const load = useCallback(async () => {
@@ -50,6 +60,10 @@ export default function BoardJobScreen() {
     load().catch(() => setLoaded(true));
   }, [load]);
 
+  useEffect(() => {
+    fetchQuoteUpgradesEnabled().then(setDetailed);
+  }, []);
+
   const sendQuote = async () => {
     const value = parseAmount(amount);
     if (value == null) {
@@ -60,11 +74,23 @@ export default function BoardJobScreen() {
       setMsg({ id: 'thread.noContact', tone: 'warning' });
       return;
     }
-    const { error } = await supabase.rpc('worker_quote_job', {
-      p_job_id: jobId,
-      p_amount_pkr: value,
-      p_message: message.trim() || null,
-    });
+    if (detailed && !availability) {
+      setMsg({ id: 'quote.needDate', tone: 'warning' });
+      return;
+    }
+    const { error } = detailed
+      ? await supabase.rpc('worker_send_quote', {
+          p_job_id: jobId,
+          p_amount_pkr: value,
+          p_message: message.trim() || null,
+          p_price_type: priceType,
+          p_available_from: availabilityDate(availability as AvailabilityKey),
+        })
+      : await supabase.rpc('worker_quote_job', {
+          p_job_id: jobId,
+          p_amount_pkr: value,
+          p_message: message.trim() || null,
+        });
     if (error) {
       setMsg({ text: error.message, tone: 'warning' });
       return;
@@ -109,6 +135,14 @@ export default function BoardJobScreen() {
         {job.my_quote_pkr != null ? <Banner text={`Your current quote: Rs ${job.my_quote_pkr}`} tone="info" /> : null}
         <Input labelId="requests.quoteAmount" value={amount} onChangeText={setAmount} keyboardType="numeric" iconLeft="dollar-sign" />
         <Input labelId="board.quoteMessage" value={message} onChangeText={setMessage} multiline />
+        {detailed ? (
+          <QuoteFields
+            priceType={priceType}
+            onPriceType={setPriceType}
+            availability={availability}
+            onAvailability={setAvailability}
+          />
+        ) : null}
         <Button labelId="requests.sendQuote" onPress={sendQuote} iconLeft="send" fullWidth />
         {msg ? msg.id ? <Banner id={msg.id} tone={msg.tone ?? 'info'} /> : <Banner text={msg.text} tone="warning" /> : null}
       </Card>

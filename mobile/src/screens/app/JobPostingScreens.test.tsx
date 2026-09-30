@@ -30,6 +30,11 @@ jest.mock('../../lib/jobPosting', () => ({
   addGuestJob: (...a: unknown[]) => mockAddGuestJob(...a),
   removeGuestJob: (...a: unknown[]) => mockRemoveGuestJob(...a),
 }));
+const mockDetailed = { current: false };
+jest.mock('../../lib/quoteDetails', () => ({
+  ...jest.requireActual('../../lib/quoteDetails'),
+  fetchQuoteUpgradesEnabled: () => Promise.resolve(mockDetailed.current),
+}));
 const mockMediaEnabled = { current: false };
 jest.mock('../../lib/jobMedia', () => ({
   ...jest.requireActual('../../lib/jobMedia'),
@@ -63,6 +68,7 @@ beforeEach(() => {
   mockAuth.current = { session: null, role: null };
   mockParams.current = {};
   mockMediaEnabled.current = false;
+  mockDetailed.current = false;
 });
 
 const fillPost = (utils: ReturnType<typeof wrap>, description = 'The kitchen tap is leaking badly') => {
@@ -210,6 +216,25 @@ describe('PostedJobScreen', () => {
     expect(mockRemoveGuestJob).toHaveBeenCalledWith('tok-1');
   });
 
+  it('shows price type, start date and jobs done, and sorts the quotes', async () => {
+    mockParams.current = { jobId: 'j1', token: 'tok-1' };
+    const tomorrow = new Date(Date.now() + 86_400_000);
+    const pad = (n: number) => (n < 10 ? `0${n}` : String(n));
+    const tomorrowStr = `${tomorrow.getFullYear()}-${pad(tomorrow.getMonth() + 1)}-${pad(tomorrow.getDate())}`;
+    const cheap = { ...quote, quote_id: 'q2', worker_id: 'w2', worker_name: 'Zaid', amount_pkr: 1200, avg_rating: 3.9, price_type: 'fixed', available_from: null, completed_jobs: 0 };
+    const rated = { ...quote, price_type: 'estimate', available_from: tomorrowStr, completed_jobs: 12 };
+    rpcFor({ job_quotes: { data: [cheap, rated] } });
+    const u = wrap(<PostedJobScreen />);
+    await u.findByText('Usman');
+    expect(u.getByText('Estimate')).toBeTruthy();
+    expect(u.getByText('Can start: Tomorrow')).toBeTruthy();
+    expect(u.getByText('12 jobs done')).toBeTruthy();
+    const names = () => u.getAllByText(/^(Usman|Zaid)$/).map((n) => n.props.children);
+    expect(names()).toEqual(['Zaid', 'Usman']);
+    fireEvent.press(u.getByText('Best rated'));
+    expect(names()).toEqual(['Usman', 'Zaid']);
+  });
+
   it('lets a signed-in customer accept a quote', async () => {
     mockAuth.current = { session: { user: { id: 'c1' } }, role: 'customer' };
     mockParams.current = { jobId: 'j1' };
@@ -246,6 +271,27 @@ describe('BoardJobScreen', () => {
   beforeEach(() => {
     mockAuth.current = { session: { user: { id: 'w1' } }, role: 'worker' };
     mockParams.current = { jobId: 'j9' };
+  });
+
+  it('asks for a start date and sends the price type when quote details are on', async () => {
+    mockDetailed.current = true;
+    rpcBoard();
+    const u = wrap(<BoardJobScreen />);
+    expect(await u.findByText('New wiring for two bedrooms')).toBeTruthy();
+    fireEvent.changeText(u.UNSAFE_getAllByType(TextInput)[0], '9500');
+    fireEvent.press(await u.findByText('Estimate'));
+    fireEvent.press(u.getByText('Send quote'));
+    expect(await u.findByText('Choose when you can start.')).toBeTruthy();
+    expect(mockRpc).not.toHaveBeenCalledWith('worker_send_quote', expect.anything());
+    fireEvent.press(u.getByText('Tomorrow'));
+    fireEvent.press(u.getByText('Send quote'));
+    await waitFor(() =>
+      expect(mockRpc).toHaveBeenCalledWith(
+        'worker_send_quote',
+        expect.objectContaining({ p_job_id: 'j9', p_amount_pkr: 9500, p_price_type: 'estimate', p_available_from: expect.stringMatching(/^\d{4}-\d{2}-\d{2}$/) }),
+      ),
+    );
+    expect(mockRpc).not.toHaveBeenCalledWith('worker_quote_job', expect.anything());
   });
 
   it('shows full details and sends a quote', async () => {

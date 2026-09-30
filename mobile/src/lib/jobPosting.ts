@@ -166,6 +166,10 @@ export type JobQuote = {
   review_count: number | null;
   is_verified: boolean;
   years_experience: number | null;
+  /** Present once the server sends quote details; older rows are fixed with no date. */
+  price_type?: 'fixed' | 'estimate';
+  available_from?: string | null;
+  completed_jobs?: number | null;
 };
 
 export type ThreadMessage = { id: string; sender_role: 'worker' | 'customer'; body: string; created_at: string };

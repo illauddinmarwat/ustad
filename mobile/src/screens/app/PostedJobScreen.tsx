@@ -6,6 +6,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { JobMediaGallery } from '../../components/JobMediaGallery';
 import { JobThread } from '../../components/JobThread';
+import { QuoteSortBar } from '../../components/QuoteSortBar';
 import { Avatar } from '../../components/ui/Avatar';
 import { Banner } from '../../components/ui/Banner';
 import { BiText } from '../../components/ui/BiText';
@@ -21,6 +22,7 @@ import {
   type JobQuote,
   type PostedJob,
 } from '../../lib/jobPosting';
+import { formatAvailability, sortQuotes, type QuoteSort } from '../../lib/quoteDetails';
 import { supabase } from '../../lib/supabase';
 import type { RootStackParamList } from '../../navigation/types';
 import { colors, spacing } from '../../theme/tokens';
@@ -47,6 +49,7 @@ export default function PostedJobScreen() {
   const [job, setJob] = useState<PostedJob | null>(null);
   const [quotes, setQuotes] = useState<JobQuote[]>([]);
   const [openThread, setOpenThread] = useState<string | null>(null);
+  const [sort, setSort] = useState<QuoteSort>('price');
   const [msg, setMsg] = useState<{ id?: StringId; text?: string } | null>(null);
   const [loaded, setLoaded] = useState(false);
   const [mediaMsg] = useState(route.params.mediaFailed ? 'media.uploadFailed' : null);
@@ -154,7 +157,9 @@ export default function PostedJobScreen() {
           {quotes.length === 0 ? (
             <BiText id="posted.noQuotes" variant="body" tone="muted" />
           ) : (
-            quotes.map((q) => (
+            <>
+              {quotes.length > 1 ? <QuoteSortBar value={sort} onChange={setSort} /> : null}
+              {sortQuotes(quotes, sort).map((q) => (
               <View key={q.quote_id} style={styles.quote}>
                 <View style={styles.quoteHead}>
                   <Avatar name={q.worker_name} tone="primary" />
@@ -164,6 +169,11 @@ export default function PostedJobScreen() {
                       {q.avg_rating != null ? <Chip label={`${Number(q.avg_rating).toFixed(1)} ★`} tone="warning" /> : null}
                       {q.is_verified ? <Chip label="Verified" tone="accent" icon="check-circle" /> : null}
                       {q.years_experience != null ? <Chip label={`${q.years_experience} yrs`} tone="neutral" /> : null}
+                      {q.completed_jobs ? <Chip label={`${q.completed_jobs} jobs done`} tone="neutral" icon="briefcase" /> : null}
+                      {q.price_type === 'estimate' ? <Chip label="Estimate" tone="warning" icon="help-circle" /> : null}
+                      {formatAvailability(q.available_from) ? (
+                        <Chip label={`Can start: ${formatAvailability(q.available_from)}`} tone="info" icon="calendar" />
+                      ) : null}
                     </View>
                   </View>
                   <Text style={styles.qAmount}>Rs {q.amount_pkr}</Text>
@@ -184,7 +194,8 @@ export default function PostedJobScreen() {
                   <JobThread jobId={job.id} workerId={q.worker_id} token={token} viewer="customer" />
                 ) : null}
               </View>
-            ))
+              ))}
+            </>
           )}
           <Button labelId="requests.cancel" onPress={cancel} variant="secondary" iconLeft="x" size="sm" hideUrdu style={styles.cancel} />
         </Card>
