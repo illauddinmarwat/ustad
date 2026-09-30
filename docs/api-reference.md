@@ -129,6 +129,16 @@ Behind `quote_upgrades_enabled` (default `false`). A quote can carry a price typ
 
 `quotes` gains `price_type` (default `fixed`) and `available_from`. Quotes sent the old way stay fixed with no date.
 
+**Estimates and final price.** A quote with `price_type = 'estimate'` needs a final price before the job can be paid. The Ustad proposes their own price after inspecting the job; if the commission markup is on, the same percent as on the accepted quote is applied, so the customer sees their price and the Ustad keeps their own. The customer accepts or declines; up to three proposals. The breakdown is in the private table `job_final_prices` (no client access).
+
+| Function | Who | Input | Result |
+|----------|-----|-------|--------|
+| `worker_set_final_price` | the assigned Ustad | `p_job_id`, `p_amount_pkr` (their own price) | The customer price. Only for an accepted estimate quote, while the job is `assigned` or `completed`; replaces a proposed or declined price; refused once confirmed or after three declined proposals |
+| `customer_respond_final_price` | the customer | `p_job_id`, `p_accept` | `confirmed` or `declined`. Notifies the Ustad |
+| `job_final_price` | customer, assigned Ustad, admin | `p_job_id` | `is_estimate`, `status` (`none`, `proposed`, `confirmed`, `declined`), `amount_pkr` (the viewer's own number), `customer_price_pkr` (what is paid in cash), `attempts`, `viewer` |
+
+`mark_job_paid` on an estimate job fails with `agree the final price before paying` until the price is confirmed, and the amount must equal it. Notifications: `final_price_proposed`, `final_price_confirmed`, `final_price_declined`.
+
 #### Job media (photos)
 
 Signed-in customers can attach up to 4 photos to an open job they posted (guests cannot). Approved, active workers whose categories include the job's category can see them so they can price the work; the owner and admins can too. Everyone else, including workers in other categories, cannot. Files live in the private `job-media` bucket at `{customer_id}/{job_id}/{file}`; a file is readable only through short-lived signed URLs and only once it is registered. Server flag: `job_media_enabled` (default `false`). The table `job_media` has no client access.

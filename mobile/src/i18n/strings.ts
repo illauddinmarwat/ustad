@@ -798,6 +798,35 @@ export const strings = {
     en: 'The customer\'s phone number and address are shared only after they accept your quote.',
     ur: 'کسٹمر کا فون نمبر اور پتہ آپ کی قیمت قبول ہونے کے بعد ہی شیئر ہوتا ہے۔',
   },
+  'final.title': { en: 'Final price', ur: 'حتمی قیمت' },
+  'final.customerWaiting': {
+    en: 'The Ustad will set the final price after inspecting the job. You will be asked to accept it before paying.',
+    ur: 'استاد کام دیکھنے کے بعد حتمی قیمت بتائے گا۔ ادائیگی سے پہلے آپ کو اسے قبول کرنا ہوگا۔',
+  },
+  'final.customerDeclined': {
+    en: 'You declined this price. Talk to the Ustad; they can send a new one.',
+    ur: 'آپ نے یہ قیمت قبول نہیں کی۔ استاد سے بات کریں؛ وہ نئی قیمت بھیج سکتا ہے۔',
+  },
+  'final.customerAsk': {
+    en: 'The Ustad proposed this final price. Accept it to continue to payment.',
+    ur: 'استاد نے یہ حتمی قیمت بتائی ہے۔ ادائیگی کے لیے اسے قبول کریں۔',
+  },
+  'final.accept': { en: 'Accept price', ur: 'قیمت قبول' },
+  'final.decline': { en: 'Decline', ur: 'مسترد' },
+  'final.workerWaiting': {
+    en: 'Waiting for the customer to accept your price.',
+    ur: 'کسٹمر کی طرف سے آپ کی قیمت کی منظوری کا انتظار ہے۔',
+  },
+  'final.workerDeclined': {
+    en: 'The customer did not accept your price. Talk to them and send a new one.',
+    ur: 'کسٹمر نے آپ کی قیمت قبول نہیں کی۔ ان سے بات کر کے نئی قیمت بھیجیں۔',
+  },
+  'final.workerAsk': {
+    en: 'You quoted an estimate. After inspecting the job, send your final price. The customer must accept it before paying.',
+    ur: 'آپ نے اندازہ دیا تھا۔ کام دیکھنے کے بعد اپنی حتمی قیمت بھیجیں۔ ادائیگی سے پہلے کسٹمر کو اسے قبول کرنا ہوگا۔',
+  },
+  'final.yourPrice': { en: 'Your final price in Rs', ur: 'آپ کی حتمی قیمت روپے میں' },
+  'final.send': { en: 'Send final price', ur: 'حتمی قیمت بھیجیں' },
   'quote.priceType': { en: 'Price type', ur: 'قیمت کی قسم' },
   'quote.fixed': { en: 'Fixed price', ur: 'مقررہ قیمت' },
   'quote.estimate': { en: 'Estimate', ur: 'اندازہ' },

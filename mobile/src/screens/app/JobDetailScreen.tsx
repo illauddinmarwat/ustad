@@ -17,6 +17,7 @@ import { useAuth } from '../../context/AuthContext';
 import type { StringId } from '../../i18n/strings';
 import { useT } from '../../i18n/useT';
 import { trackEvent } from '../../lib/analytics';
+import { FinalPriceSection } from '../../components/FinalPriceSection';
 import { JobContactSection } from '../../components/JobContactSection';
 import { JobPaymentSection } from '../../components/JobPaymentSection';
 import { ensureAuthenticated } from '../../lib/authGuards';
@@ -73,6 +74,7 @@ export default function JobDetailScreen({ route, navigation }: Props) {
   const [rating, setRating] = useState(5);
   const [reviewComment, setReviewComment] = useState('');
   const [acceptedAmount, setAcceptedAmount] = useState<number | null>(null);
+  const [agreedFinal, setAgreedFinal] = useState<number | null>(null);
   const [banner, setBanner] = useState<BannerState>(null);
   const [phase4RealtimeEnabled, setPhase4RealtimeEnabled] = useState(false);
   const [phase4QualityEnabled, setPhase4QualityEnabled] = useState(false);
@@ -508,12 +510,21 @@ export default function JobDetailScreen({ route, navigation }: Props) {
 
       <JobContactSection jobId={jobId} status={job.status} isCustomer={isCustomer} isWorker={isWorker} />
 
+      <FinalPriceSection
+        jobId={jobId}
+        status={job.status}
+        isCustomer={isCustomer}
+        isWorker={isWorker}
+        onChanged={load}
+        onAgreed={setAgreedFinal}
+      />
+
       <JobPaymentSection
         jobId={jobId}
         status={job.status}
         isCustomer={isCustomer}
         isWorker={isWorker}
-        suggestedAmount={acceptedAmount}
+        suggestedAmount={agreedFinal ?? acceptedAmount}
         onChanged={load}
       />
 
