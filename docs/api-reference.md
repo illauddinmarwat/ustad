@@ -101,7 +101,7 @@ A customer, or a **guest with no account**, posts a job. Approved workers see it
 
 | Function | Who | Input | Result |
 |----------|-----|-------|--------|
-| `post_job` | customer or guest (anon) | `p_title`, `p_description`, `p_category`, `p_city`, `p_location_text`, `p_budget_min`, `p_budget_max`, `p_preferred_time` | One row: `job_id`, `guest_token` (only for guests). Rejects phone numbers and links in the text. Limits: `job_post_daily_limit` (default 10) per customer per day; `guest_job_hourly_cap` (default 30) for all guests per hour |
+| `post_job` | customer or guest (anon) | `p_title`, `p_description`, `p_category`, `p_city`, `p_location_text`, `p_preferred_time` (no customer budget: workers name their own price) | One row: `job_id`, `guest_token` (only for guests). Rejects phone numbers and links in the text. Limits: `job_post_daily_limit` (default 10) per customer per day; `guest_job_hourly_cap` (default 30) for all guests per hour |
 | `get_guest_job` | guest with token | `p_token` | The job (plus `quote_count`). Empty once the job is claimed |
 | `job_quotes` | job owner or guest with token | `p_job_id`, `p_token` | Quotes with `worker_name`, `amount_pkr`, `message`, `avg_rating`, `review_count`, `is_verified`, `years_experience`, cheapest first |
 | `list_open_jobs` | approved worker | `p_category`, `p_city`, `p_limit` | Open, unexpired jobs in the worker's categories, with full details, `quote_count` and the worker's own `my_quote_pkr`. No customer identity. Includes direct requests that expired and opened up |
@@ -114,9 +114,24 @@ A customer, or a **guest with no account**, posts a job. Approved workers see it
 | `cancel_posted_job` | job owner or guest with token | `p_job_id`, `p_token` | void, while `open`/`quoted` |
 | `expire_posted_jobs` | scheduled (every 30 min, if `pg_cron`) | none | Cancels open customer jobs older than `job_expiry_days` (default 7) |
 
-New columns on `jobs`: `city`, `budget_min_pkr`, `budget_max_pkr`, `expires_at`. New tables (no client access): `quote_events`, `job_thread_messages`. Settings: `job_posting_enabled` (default `false`), `job_post_daily_limit`, `guest_job_hourly_cap`, `job_expiry_days`.
+New columns on `jobs`: `city`, `budget_min_pkr`, `budget_max_pkr` (kept for jobs posted before budgets were removed; new jobs leave them empty), `expires_at`. New tables (no client access): `quote_events`, `job_thread_messages`. Settings: `job_posting_enabled` (default `false`), `job_media_enabled` (default `false`), `job_post_daily_limit`, `guest_job_hourly_cap`, `job_expiry_days`.
 
-Not yet built: phone OTP and SMS for guests (a guest signs in or registers to accept instead), photos, distance filtering on the board (jobs carry a city, not coordinates), and per-IP rate limits for guests.
+Not yet built: phone OTP and SMS for guests (a guest signs in or registers to accept instead), voice notes and video on jobs (see `docs/job-media-plan.md`), distance filtering on the board (jobs carry a city, not coordinates), and per-IP rate limits for guests.
+
+#### Job media (photos)
+
+Signed-in customers can attach up to 4 photos to an open job they posted (guests cannot). Approved, active workers whose categories include the job's category can see them so they can price the work; the owner and admins can too. Everyone else, including workers in other categories, cannot. Files live in the private `job-media` bucket at `{customer_id}/{job_id}/{file}`; a file is readable only through short-lived signed URLs and only once it is registered. Server flag: `job_media_enabled` (default `false`). The table `job_media` has no client access.
+
+| Function | Who | Input | Result |
+|----------|-----|-------|--------|
+| `add_job_media` | job owner | `p_job_id`, `p_kind` (`photo`, `audio`, `video`), `p_path`, `p_bytes`, `p_duration_s` | Media id, after the file was uploaded to the owner's job folder. Caps: 4 photos (3 MB each), 1 voice note (60 s, 3 MB), 1 video (30 s, 25 MB). Only while the job is open |
+| `remove_job_media` | job owner or admin | `p_media_id` | The stored path, so the caller can delete the file |
+| `list_job_media` | owner, admin, or a matching worker | `p_job_id` | Files (`id`, `kind`, `path`, `bytes`, `duration_s`). Empty for anyone else |
+| `job_media_counts` | same | `p_job_ids` | Per job: `photos`, `audios`, `videos`, only for jobs the caller may see (board chips) |
+| `admin_job_media_to_purge` | admin | `p_limit` | Files of removed media, of jobs cancelled or expired over 7 days ago, and of closed jobs over 30 days ago |
+| `admin_mark_job_media_purged` | admin | `p_ids` | Count. Call after deleting the files from Storage; the admin Posted jobs page has a button that does both |
+
+Only photos are wired into the app so far; audio and video reuse these functions in later phases.
 
 ```ts
 const { data } = await supabase.rpc('post_job', { p_title: 'Fix tap', p_description: 'Kitchen tap leaking', p_category: 'plumber' });
@@ -218,6 +233,7 @@ await supabase.rpc('admin_set_worker_approval', { p_user_id: id, p_status: 'reje
 |--------|---------|--------|
 | `worker-documents` | CNIC front/back | Private. Admin views them through a signed URL (5 min) |
 | `worker-photos` | Worker profile photos | See the migrations for the policy |
+| `job-media` | Photos on job posts (private) | Owner uploads into their own job folder; reads only through registered files for the owner, admins and matching workers |
 
 ## External services
 - **Google Cloud Vision** (OCR): see `implementation/google-cloud-vision-key-restriction.md`.

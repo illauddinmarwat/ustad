@@ -6,7 +6,7 @@ begin;
 
 create extension if not exists pgtap with schema extensions;
 
-select plan(53);
+select plan(61);
 
 -- ─── Test helpers (created inside this transaction, rolled back at the end) ───
 --   _t_id(name)      stable uuids for the seeded people
@@ -248,6 +248,25 @@ reset role;
 select public._t_as ('c1');
 select throws_ok(format ($$select public.add_job_media (%L, 'photo', %L, 100000)$$, current_setting ('t.j'), public._t_id ('c1') || '/' || current_setting ('t.j') || '/late.jpg'),
   'job not found or no longer open', 'no media can be added after assignment');
+reset role;
+
+-- ─── Clean-up ────────────────────────────────────────────────────────────
+select public._t_as ('c1');
+select throws_ok($$select * from public.admin_job_media_to_purge ()$$, 'admin only', 'only an admin can list files to purge');
+select throws_ok($$select public.admin_mark_job_media_purged (array[gen_random_uuid ()])$$, 'admin only', 'only an admin can mark files purged');
+reset role;
+select public._t_as ('adm');
+select is ((select count(*) from public.admin_job_media_to_purge ()), 2::bigint, 'files that were removed are listed for purging');
+reset role;
+update public.jobs set expires_at = now () - interval '8 days' where id = current_setting ('t.k')::uuid;
+select public._t_as ('adm');
+select is ((select count(*) from public.admin_job_media_to_purge ()), 3::bigint, 'files of a job that expired over a week ago are listed too');
+select is ((select count(*) from public.admin_job_media_to_purge () where path like '%/p3.jpg' or path like '%/v.mp4'), 0::bigint, 'files of a live assigned job are never listed');
+select is (public.admin_mark_job_media_purged (array (select id from public.admin_job_media_to_purge ())), 3, 'marking purged reports how many');
+select is ((select count(*) from public.admin_job_media_to_purge ()), 0::bigint, 'nothing is left to purge');
+reset role;
+select public._t_as ('c1');
+select is ((select count(*) from public.list_job_media (current_setting ('t.k')::uuid)), 0::bigint, 'a purged file is no longer listed');
 reset role;
 
 select * from finish ();

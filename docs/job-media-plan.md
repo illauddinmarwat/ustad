@@ -1,6 +1,8 @@
 # Job media plan: photos, audio and video on job posts
 
-**Status: planned, nothing built.** Estimate: 6–9 working days over three phases.
+**Status: Phase 1 (foundation, photos, budget removal) built, tested and deployed; flag `job_media_enabled` is still off. Phases 2 (audio) and 3 (video) not started.** Estimate: 6–9 working days over three phases.
+
+Phase 1 notes: photos, admin view and removal, and clean-up (admin button on the Posted jobs page: the database cannot delete stored files itself) are done. Not built: an automatic scheduled clean-up, and sweeping uploads that were never registered (rare, when both the registration and the follow-up delete fail). The bucket's storage policies were not tested on a real Supabase project (the local test setup stubs storage); check one real upload before enabling the flag.
 
 ## Decisions (agreed)
 

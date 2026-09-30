@@ -94,6 +94,34 @@ export default function ModerationPage() {
     load();
   }, [load]);
 
+  const [cleanup, setCleanup] = useState<string | null>(null);
+
+  // Deletes attachments of ended jobs: the database lists them, Storage deletes the files, the database marks them done.
+  const cleanUpAttachments = async () => {
+    setCleanup('Working…');
+    setError(null);
+    const { data, error: e } = await supabase.rpc('admin_job_media_to_purge', { p_limit: 200 });
+    if (e) {
+      setCleanup(null);
+      setError(e.message);
+      return;
+    }
+    const files = (data ?? []) as { id: string; path: string }[];
+    if (files.length === 0) {
+      setCleanup('Nothing to clean up.');
+      return;
+    }
+    const { error: rmError } = await supabase.storage.from('job-media').remove(files.map((f) => f.path));
+    if (rmError) {
+      setCleanup(null);
+      setError(rmError.message);
+      return;
+    }
+    const { data: n, error: markError } = await supabase.rpc('admin_mark_job_media_purged', { p_ids: files.map((f) => f.id) });
+    if (markError) setError(markError.message);
+    setCleanup(`Deleted ${n ?? files.length} attachment${(n ?? files.length) === 1 ? '' : 's'}.`);
+  };
+
   const close = async (id: string) => {
     if (!reason.trim()) {
       setError('A reason is required.');
@@ -119,6 +147,16 @@ export default function ModerationPage() {
         Open jobs from customers and guests. Close a job that is spam or breaks the rules. To stop an abusive customer, suspend them from the Admin tab in the mobile app; a
         suspended customer can no longer post jobs.
       </p>
+
+      <div className="mb-4 flex flex-wrap items-center gap-3">
+        <button onClick={cleanUpAttachments} className="rounded-lg border border-border px-3 py-1.5 text-sm hover:bg-surfaceAlt">
+          Clean up old attachments
+        </button>
+        <span className="text-xs text-ink-muted">
+          Deletes photos of jobs that were cancelled or expired over a week ago, and of closed jobs after 30 days.
+        </span>
+        {cleanup ? <span className="text-sm text-ink-body">{cleanup}</span> : null}
+      </div>
 
       {error ? <p className="mb-4 text-sm text-danger">{error}</p> : null}
 
