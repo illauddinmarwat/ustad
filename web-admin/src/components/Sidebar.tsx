@@ -6,6 +6,7 @@ import { usePathname, useRouter } from 'next/navigation';
 import { useAdminAuth } from '@/lib/useAdminAuth';
 
 const NAV = [
+  { href: '/dashboard', label: 'Dashboard', icon: '🏠' },
   { href: '/approvals', label: 'Approvals', icon: '✅' },
   { href: '/jobs', label: 'Job Activity', icon: '🧾' },
   { href: '/payments', label: 'Payments', icon: '💳' },

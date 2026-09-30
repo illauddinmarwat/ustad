@@ -154,3 +154,49 @@ export type SettingAuditRow = {
   changed_by_name: string | null;
   changed_at: string;
 };
+
+export type DashboardCounts = {
+  pending_workers: number;
+  approved_workers: number;
+  rejected_workers: number;
+  customers: number;
+  pending_payments: number;
+  open_disputes: number;
+  overdue_dues_pkr: number;
+  overdue_30_plus_workers: number;
+  suspended_workers: number;
+  open_posted_jobs: number;
+  new_areas_pending: number;
+  approved_without_location: number;
+  approved_without_photo: number;
+  active_listings: number;
+};
+
+export type DashboardKpis = {
+  earnings_pkr: number;
+  prev_earnings_pkr: number;
+  commission_pkr: number;
+  prev_commission_pkr: number;
+  jobs_completed: number;
+  prev_jobs_completed: number;
+  new_customers: number;
+  prev_new_customers: number;
+  new_workers: number;
+  prev_new_workers: number;
+  avg_rating: number | null;
+  prev_avg_rating: number | null;
+};
+
+export type BreakdownRow = { dimension: 'city' | 'category'; label: string; workers: number; jobs: number };
+
+export type MapWorker = {
+  user_id: string;
+  display_name: string | null;
+  phone: string | null;
+  city: string | null;
+  area: string | null;
+  categories: string[] | null;
+  avg_rating: number | null;
+  lat: number;
+  lng: number;
+};

@@ -15,7 +15,7 @@ export default function LoginPage() {
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    if (!loading && session && isAdmin) router.replace('/payments');
+    if (!loading && session && isAdmin) router.replace('/dashboard');
   }, [loading, session, isAdmin, router]);
 
   const submit = async (e: React.FormEvent) => {
