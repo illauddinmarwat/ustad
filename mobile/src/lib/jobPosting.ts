@@ -40,12 +40,10 @@ export type PostJobForm = {
   description: string;
   city: string;
   area: string;
-  budgetMin: string;
-  budgetMax: string;
   preferredTime: string;
 };
 
-export type PostJobErrors = Partial<Record<'category' | 'title' | 'description' | 'budget' | 'contact', string>>;
+export type PostJobErrors = Partial<Record<'category' | 'title' | 'description' | 'contact', string>>;
 
 export type PostJobResult =
   | {
@@ -56,19 +54,10 @@ export type PostJobResult =
         description: string;
         city: string | null;
         area: string | null;
-        budgetMin: number | null;
-        budgetMax: number | null;
         preferredTime: string | null;
       };
     }
   | { ok: false; errors: PostJobErrors };
-
-function parseBudget(text: string): number | null | 'bad' {
-  const t = text.trim().replace(/,/g, '');
-  if (t === '') return null;
-  const n = Number(t);
-  return Number.isFinite(n) && n >= 0 ? n : 'bad';
-}
 
 export function validatePostJob(form: PostJobForm): PostJobResult {
   const errors: PostJobErrors = {};
@@ -78,11 +67,6 @@ export function validatePostJob(form: PostJobForm): PostJobResult {
   if (!form.category) errors.category = 'Choose a category.';
   if (title.length < 3 || title.length > 120) errors.title = 'Enter a short title (3 to 120 characters).';
   if (description.length < 10) errors.description = 'Describe the job (at least 10 characters).';
-
-  const min = parseBudget(form.budgetMin);
-  const max = parseBudget(form.budgetMax);
-  if (min === 'bad' || max === 'bad') errors.budget = 'Enter valid amounts, or leave the budget empty.';
-  else if (min != null && max != null && min > max) errors.budget = 'Minimum cannot be above maximum.';
 
   if ([title, description, form.area, form.preferredTime].some(looksLikeContact)) {
     errors.contact = 'Do not include phone numbers or links. They are shared after a worker accepts.';
@@ -97,13 +81,12 @@ export function validatePostJob(form: PostJobForm): PostJobResult {
       description,
       city: form.city.trim() || null,
       area: form.area.trim() || null,
-      budgetMin: min as number | null,
-      budgetMax: max as number | null,
       preferredTime: form.preferredTime.trim() || null,
     },
   };
 }
 
+/** Jobs posted before budgets were removed still carry one; new jobs have none. */
 export function formatBudget(min: number | null | undefined, max: number | null | undefined): string | null {
   if (min != null && max != null) return min === max ? `Rs ${min}` : `Rs ${min} - ${max}`;
   if (min != null) return `From Rs ${min}`;

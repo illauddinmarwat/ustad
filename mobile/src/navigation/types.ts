@@ -22,7 +22,7 @@ export type RootStackParamList = {
   ListingDetail: { listingId: string };
   Notifications: undefined;
   PostJob: undefined;
-  PostedJob: { jobId?: string; token?: string };
+  PostedJob: { jobId?: string; token?: string; mediaFailed?: boolean };
   JobBoard: undefined;
   BoardJob: { jobId: string };
   RequestWorker: { workerId: string; workerName?: string | null; category?: string | null };

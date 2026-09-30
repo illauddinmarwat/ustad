@@ -670,7 +670,7 @@ export const strings = {
   'post.title': { en: 'Post a job', ur: 'کام پوسٹ کریں' },
   'post.subtitle': {
     en: 'Describe the work. Approved workers nearby will send you quotes.',
-    ur: 'کام بیان کریں۔ قریبی منظور شدہ کارکن آپ کو قیمتیں بھیجیں گے۔',
+    ur: 'کام بیان کریں۔ قریبی منظور شدہ کارکن آپ کو اپنی قیمتیں بھیجیں گے۔',
   },
   'post.disabled': { en: 'Job posting is not available yet.', ur: 'کام پوسٹ کرنا ابھی دستیاب نہیں۔' },
   'post.workerBlocked': {
@@ -690,8 +690,25 @@ export const strings = {
   'post.field.description': { en: 'Describe the work', ur: 'کام بیان کریں' },
   'post.field.city': { en: 'City (optional)', ur: 'شہر (اختیاری)' },
   'post.field.area': { en: 'Area / neighbourhood (optional)', ur: 'علاقہ (اختیاری)' },
-  'post.field.budgetMin': { en: 'Minimum budget in Rs (optional)', ur: 'کم از کم بجٹ روپے (اختیاری)' },
-  'post.field.budgetMax': { en: 'Maximum budget in Rs (optional)', ur: 'زیادہ سے زیادہ بجٹ روپے (اختیاری)' },
+  'media.photos': { en: 'Photos', ur: 'تصاویر' },
+  'media.photoHint': {
+    en: 'Up to 4 photos help workers understand the job and quote a fair price.',
+    ur: 'زیادہ سے زیادہ 4 تصاویر کارکن کو کام سمجھنے اور مناسب قیمت بتانے میں مدد دیتی ہیں۔',
+  },
+  'media.addPhoto': { en: 'Add photo', ur: 'تصویر شامل کریں' },
+  'media.remove': { en: 'Remove', ur: 'ہٹائیں' },
+  'media.openPhoto': { en: 'Open photo', ur: 'تصویر کھولیں' },
+  'media.none': { en: 'No photos yet.', ur: 'ابھی کوئی تصویر نہیں۔' },
+  'media.upload': { en: 'Upload photos', ur: 'تصاویر اپلوڈ کریں' },
+  'media.uploadFailed': {
+    en: 'Some photos could not be uploaded. Your job is posted; you can add them again below.',
+    ur: 'کچھ تصاویر اپلوڈ نہ ہو سکیں۔ آپ کا کام پوسٹ ہو گیا ہے؛ نیچے سے دوبارہ شامل کریں۔',
+  },
+  'media.signInForPhotos': {
+    en: 'Sign in to add photos to your job.',
+    ur: 'اپنے کام میں تصاویر شامل کرنے کے لیے لاگ ان کریں۔',
+  },
+  'media.count': { en: 'Attachments', ur: 'منسلکات' },
   'post.field.time': { en: 'Preferred date and time (optional)', ur: 'پسندیدہ تاریخ اور وقت (اختیاری)' },
   'post.submit': { en: 'Post job', ur: 'کام پوسٹ کریں' },
   'posted.quotes': { en: 'Quotes', ur: 'قیمتیں' },

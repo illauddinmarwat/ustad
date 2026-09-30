@@ -30,6 +30,14 @@ jest.mock('../../lib/jobPosting', () => ({
   addGuestJob: (...a: unknown[]) => mockAddGuestJob(...a),
   removeGuestJob: (...a: unknown[]) => mockRemoveGuestJob(...a),
 }));
+const mockMediaEnabled = { current: false };
+jest.mock('../../lib/jobMedia', () => ({
+  ...jest.requireActual('../../lib/jobMedia'),
+  fetchJobMediaEnabled: () => Promise.resolve(mockMediaEnabled.current),
+  loadJobMedia: () => Promise.resolve([]),
+  loadMediaCounts: () => Promise.resolve({}),
+  uploadJobPhotos: jest.fn(() => Promise.resolve({ failed: 0 })),
+}));
 jest.mock('@react-native-async-storage/async-storage', () => ({
   __esModule: true,
   default: { getItem: jest.fn(), setItem: jest.fn() },
@@ -54,6 +62,7 @@ beforeEach(() => {
   [mockNavigate, mockReplace, mockRpc, mockFrom, mockAddGuestJob, mockRemoveGuestJob].forEach((m) => m.mockReset());
   mockAuth.current = { session: null, role: null };
   mockParams.current = {};
+  mockMediaEnabled.current = false;
 });
 
 const fillPost = (utils: ReturnType<typeof wrap>, description = 'The kitchen tap is leaking badly') => {
@@ -102,8 +111,30 @@ describe('PostJobScreen', () => {
     const u = wrap(<PostJobScreen />);
     fillPost(u);
     fireEvent.press(await u.findByText('Post job'));
-    await waitFor(() => expect(mockReplace).toHaveBeenCalledWith('PostedJob', { jobId: 'j2' }));
+    await waitFor(() => expect(mockReplace).toHaveBeenCalledWith('PostedJob', { jobId: 'j2', mediaFailed: false }));
     expect(mockAddGuestJob).not.toHaveBeenCalled();
+  });
+
+  it('shows the photo picker to a signed-in customer when media is on, and never a budget field', async () => {
+    mockMediaEnabled.current = true;
+    mockAuth.current = { session: { user: { id: 'c1' } }, role: 'customer' };
+    const u = wrap(<PostJobScreen />);
+    expect(await u.findByText('Add photo')).toBeTruthy();
+    expect(u.queryByText(/budget/i)).toBeNull();
+  });
+
+  it('tells a guest to sign in to add photos', async () => {
+    mockMediaEnabled.current = true;
+    const u = wrap(<PostJobScreen />);
+    expect(await u.findByText('Sign in to add photos to your job.')).toBeTruthy();
+    expect(u.queryByText('Add photo')).toBeNull();
+  });
+
+  it('hides the photo picker while the media flag is off', async () => {
+    mockAuth.current = { session: { user: { id: 'c1' } }, role: 'customer' };
+    const u = wrap(<PostJobScreen />);
+    await u.findByText('Post job');
+    expect(u.queryByText('Add photo')).toBeNull();
   });
 
   it('shows the server error', async () => {

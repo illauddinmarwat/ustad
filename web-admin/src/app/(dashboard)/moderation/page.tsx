@@ -5,6 +5,75 @@ import { useCallback, useEffect, useState } from 'react';
 import { supabase } from '@/lib/supabaseClient';
 import type { PostedJobRow } from '@/lib/types';
 
+type MediaRow = { id: string; kind: string; path: string; url: string | null };
+
+/** Photos on a posted job, with a Remove button for anything that breaks the rules. */
+function JobMedia({ jobId, onError }: { jobId: string; onError: (m: string) => void }) {
+  const [open, setOpen] = useState(false);
+  const [items, setItems] = useState<MediaRow[] | null>(null);
+
+  const load = useCallback(async () => {
+    const { data, error } = await supabase.rpc('list_job_media', { p_job_id: jobId });
+    if (error) {
+      onError(error.message);
+      return;
+    }
+    const rows = (data ?? []) as MediaRow[];
+    const { data: signed } = rows.length
+      ? await supabase.storage.from('job-media').createSignedUrls(rows.map((r) => r.path), 3600)
+      : { data: [] as { path: string | null; signedUrl: string }[] };
+    const byPath = new Map((signed ?? []).map((x) => [x.path ?? '', x.signedUrl]));
+    setItems(rows.map((r) => ({ ...r, url: byPath.get(r.path) ?? null })));
+  }, [jobId, onError]);
+
+  const remove = async (id: string) => {
+    const { data, error } = await supabase.rpc('remove_job_media', { p_media_id: id });
+    if (error) {
+      onError(error.message);
+      return;
+    }
+    if (typeof data === 'string' && data) await supabase.storage.from('job-media').remove([data]);
+    load();
+  };
+
+  return (
+    <div className="mt-2">
+      <button
+        onClick={() => {
+          setOpen(!open);
+          if (!open && items === null) load();
+        }}
+        className="text-xs font-medium text-primary hover:underline"
+      >
+        {open ? 'Hide attachments' : 'Show attachments'}
+      </button>
+      {open ? (
+        <div className="mt-2 flex flex-wrap gap-3">
+          {items === null ? <span className="text-xs text-ink-muted">Loading…</span> : null}
+          {items?.length === 0 ? <span className="text-xs text-ink-muted">No attachments.</span> : null}
+          {items?.map((m) => (
+            <div key={m.id} className="w-28">
+              {m.kind === 'photo' && m.url ? (
+                <a href={m.url} target="_blank" rel="noreferrer">
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                  <img src={m.url} alt="Job attachment" className="h-28 w-28 rounded-lg border border-border object-cover" />
+                </a>
+              ) : (
+                <a href={m.url ?? '#'} target="_blank" rel="noreferrer" className="block text-xs text-primary hover:underline">
+                  {m.kind}
+                </a>
+              )}
+              <button onClick={() => remove(m.id)} className="mt-1 text-xs text-danger hover:underline">
+                Remove
+              </button>
+            </div>
+          ))}
+        </div>
+      ) : null}
+    </div>
+  );
+}
+
 export default function ModerationPage() {
   const [rows, setRows] = useState<PostedJobRow[]>([]);
   const [loading, setLoading] = useState(true);
@@ -67,6 +136,7 @@ export default function ModerationPage() {
                   posted {new Date(r.created_at).toLocaleString()}
                 </div>
                 {r.description ? <div className="mt-1 text-sm text-ink-body">{r.description}</div> : null}
+                {r.is_guest ? null : <JobMedia jobId={r.id} onError={setError} />}
               </div>
               {closing === r.id ? null : (
                 <button

@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react';
 import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
+import { PhotoAttach } from '../../components/PhotoAttach';
 import { Banner } from '../../components/ui/Banner';
 import { BiText } from '../../components/ui/BiText';
 import { Button } from '../../components/ui/Button';
@@ -13,6 +14,7 @@ import { ScreenHeader } from '../../components/ui/ScreenHeader';
 import { useAuth } from '../../context/AuthContext';
 import { useT } from '../../i18n/useT';
 import { trackEvent } from '../../lib/analytics';
+import { fetchJobMediaEnabled, uploadJobPhotos } from '../../lib/jobMedia';
 import {
   addGuestJob,
   fetchJobPostingEnabled,
@@ -40,8 +42,8 @@ export default function PostJobScreen() {
   const [description, setDescription] = useState('');
   const [city, setCity] = useState('');
   const [area, setArea] = useState('');
-  const [budgetMin, setBudgetMin] = useState('');
-  const [budgetMax, setBudgetMax] = useState('');
+  const [photos, setPhotos] = useState<string[]>([]);
+  const [mediaEnabled, setMediaEnabled] = useState(false);
   const [preferredTime, setPreferredTime] = useState('');
   const [errors, setErrors] = useState<PostJobErrors>({});
   const [serverError, setServerError] = useState<string | null>(null);
@@ -49,13 +51,14 @@ export default function PostJobScreen() {
 
   useEffect(() => {
     fetchJobPostingEnabled().then(setEnabled);
+    fetchJobMediaEnabled().then(setMediaEnabled);
   }, []);
 
   const isWorker = !!session && role === 'worker';
 
   const submit = async () => {
     setServerError(null);
-    const result = validatePostJob({ category, title, description, city, area, budgetMin, budgetMax, preferredTime });
+    const result = validatePostJob({ category, title, description, city, area, preferredTime });
     if (!result.ok) {
       setErrors(result.errors);
       return;
@@ -69,8 +72,6 @@ export default function PostJobScreen() {
       p_category: v.category,
       p_city: v.city,
       p_location_text: v.area,
-      p_budget_min: v.budgetMin,
-      p_budget_max: v.budgetMax,
       p_preferred_time: v.preferredTime,
     });
     setBusy(false);
@@ -83,12 +84,19 @@ export default function PostJobScreen() {
       setServerError('Could not post the job.');
       return;
     }
-    void trackEvent('job_posted', session?.user.id ?? null, { job_id: row.job_id, guest: !session });
+    void trackEvent('job_posted', session?.user.id ?? null, { job_id: row.job_id, guest: !session, photos: photos.length });
+    let mediaFailed = false;
+    if (session && mediaEnabled && photos.length > 0) {
+      setBusy(true);
+      const { failed } = await uploadJobPhotos(session.user.id, row.job_id, photos);
+      setBusy(false);
+      mediaFailed = failed > 0;
+    }
     if (row.guest_token) {
       await addGuestJob({ jobId: row.job_id, token: row.guest_token, title: v.title, createdAt: new Date().toISOString() });
       navigation.replace('PostedJob', { jobId: row.job_id, token: row.guest_token });
     } else {
-      navigation.replace('PostedJob', { jobId: row.job_id });
+      navigation.replace('PostedJob', { jobId: row.job_id, mediaFailed });
     }
   };
 
@@ -136,16 +144,15 @@ export default function PostJobScreen() {
         />
         <Input labelId="post.field.city" value={city} onChangeText={setCity} iconLeft="map" />
         <Input labelId="post.field.area" value={area} onChangeText={setArea} iconLeft="map-pin" />
-        <Input
-          labelId="post.field.budgetMin"
-          value={budgetMin}
-          onChangeText={setBudgetMin}
-          keyboardType="numeric"
-          iconLeft="dollar-sign"
-          error={errors.budget}
-        />
-        <Input labelId="post.field.budgetMax" value={budgetMax} onChangeText={setBudgetMax} keyboardType="numeric" iconLeft="dollar-sign" />
         <Input labelId="post.field.time" value={preferredTime} onChangeText={setPreferredTime} iconLeft="calendar" />
+
+        {mediaEnabled ? (
+          session && !isWorker ? (
+            <PhotoAttach uris={photos} onChange={setPhotos} />
+          ) : !session ? (
+            <Banner id="media.signInForPhotos" tone="info" icon="camera" />
+          ) : null
+        ) : null}
 
         <Banner id="post.privacy" tone="info" icon="lock" />
         <View style={styles.submit}>

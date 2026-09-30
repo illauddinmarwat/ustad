@@ -34,8 +34,6 @@ const form = {
   description: 'The kitchen tap is leaking badly',
   city: 'Karachi',
   area: 'Gulshan',
-  budgetMin: '',
-  budgetMax: '',
   preferredTime: '',
 };
 
@@ -59,7 +57,7 @@ describe('looksLikeContact', () => {
 
 describe('validatePostJob', () => {
   it('accepts a valid post and trims it', () => {
-    const res = validatePostJob({ ...form, title: '  Fix kitchen tap ', budgetMin: '1,000', budgetMax: '2500' });
+    const res = validatePostJob({ ...form, title: '  Fix kitchen tap ' });
     expect(res).toEqual({
       ok: true,
       value: {
@@ -68,8 +66,6 @@ describe('validatePostJob', () => {
         description: 'The kitchen tap is leaking badly',
         city: 'Karachi',
         area: 'Gulshan',
-        budgetMin: 1000,
-        budgetMax: 2500,
         preferredTime: null,
       },
     });
@@ -81,12 +77,10 @@ describe('validatePostJob', () => {
     if (!res.ok) expect(Object.keys(res.errors).sort()).toEqual(['category', 'description', 'title']);
   });
 
-  it('rejects a reversed or invalid budget', () => {
-    for (const [min, max] of [['5000', '1000'], ['abc', ''], ['-1', '']]) {
-      const res = validatePostJob({ ...form, budgetMin: min, budgetMax: max });
-      expect(res.ok).toBe(false);
-      if (!res.ok) expect(res.errors.budget).toBeDefined();
-    }
+  it('has no budget field', () => {
+    const res = validatePostJob(form);
+    expect(res.ok).toBe(true);
+    if (res.ok) expect(Object.keys(res.value)).not.toContain('budgetMin');
   });
 
   it('rejects contact details in any free-text field', () => {

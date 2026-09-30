@@ -13,6 +13,7 @@ import { Icon } from '../../components/ui/Icon';
 import { ScreenHeader } from '../../components/ui/ScreenHeader';
 import { useAuth } from '../../context/AuthContext';
 import { useT } from '../../i18n/useT';
+import { describeMediaCounts, fetchJobMediaEnabled, loadMediaCounts, type JobMediaCounts } from '../../lib/jobMedia';
 import { expiresIn, fetchJobPostingEnabled, formatBudget } from '../../lib/jobPosting';
 import { useSkillCategories } from '../../lib/skillCategories';
 import { supabase } from '../../lib/supabase';
@@ -47,6 +48,7 @@ export function JobBoardList() {
   const [enabled, setEnabled] = useState<boolean | null>(null);
   const [category, setCategory] = useState<string | null>(null);
   const [jobs, setJobs] = useState<BoardJob[]>([]);
+  const [counts, setCounts] = useState<Record<string, JobMediaCounts>>({});
   const [loaded, setLoaded] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -62,7 +64,11 @@ export function JobBoardList() {
       p_limit: 50,
     });
     if (rpcError) setError(rpcError.message);
-    else setJobs((data ?? []) as BoardJob[]);
+    else {
+      const rows = (data ?? []) as BoardJob[];
+      setJobs(rows);
+      setCounts((await fetchJobMediaEnabled()) ? await loadMediaCounts(rows.map((r) => r.id)) : {});
+    }
     setLoaded(true);
   }, [category]);
 
@@ -100,6 +106,9 @@ export function JobBoardList() {
                 {j.city ? <Chip label={j.city} tone="neutral" icon="map" /> : null}
                 {budget ? <Chip label={budget} tone="primary" icon="dollar-sign" /> : null}
                 {left ? <Chip label={left} tone="neutral" icon="clock" /> : null}
+                {describeMediaCounts(counts[j.id]) ? (
+                  <Chip label={describeMediaCounts(counts[j.id]) as string} tone="info" icon="paperclip" />
+                ) : null}
               </View>
               {j.description ? (
                 <Text style={styles.body} numberOfLines={3}>

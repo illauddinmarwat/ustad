@@ -35,7 +35,7 @@ function base64ToBytes(b64: string): Uint8Array {
  * On device, read the file as base64 and upload raw bytes: `fetch(file://).blob()` can upload an empty
  * object on React Native, which "succeeds" but leaves an unreadable image. Web has no file system, so it uses a blob.
  */
-async function readBody(uri: string): Promise<Uint8Array | Blob> {
+export async function readBody(uri: string): Promise<Uint8Array | Blob> {
   if (Platform.OS === 'web') return (await fetch(uri)).blob();
   const b64 = await FileSystem.readAsStringAsync(uri, { encoding: 'base64' });
   return base64ToBytes(b64);

@@ -3,6 +3,7 @@ import { useCallback, useEffect, useState } from 'react';
 import { ScrollView, StyleSheet, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
+import { JobMediaGallery } from '../../components/JobMediaGallery';
 import { JobThread } from '../../components/JobThread';
 import { Banner } from '../../components/ui/Banner';
 import { BiText } from '../../components/ui/BiText';
@@ -100,6 +101,8 @@ export default function BoardJobScreen() {
         {job.location_text ? <Text style={styles.meta}>{job.location_text}</Text> : null}
         <Banner id="board.privacy" tone="info" icon="lock" />
       </Card>
+
+      <JobMediaGallery jobId={job.id} />
 
       <Card padding="lg">
         <BiText id="board.yourQuote" variant="title" tone="strong" style={styles.gap} />

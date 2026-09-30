@@ -37,7 +37,7 @@ select ok(not has_table_privilege ('authenticated', 'public.job_thread_messages'
 
 -- Guest-callable functions are token checked inside; everything else needs a session.
 select ok(
-  has_function_privilege ('anon', 'public.post_job(text,text,text,text,text,numeric,numeric,text)', 'execute')
+  has_function_privilege ('anon', 'public.post_job(text,text,text,text,text,text)', 'execute')
   and has_function_privilege ('anon', 'public.get_guest_job(uuid)', 'execute')
   and has_function_privilege ('anon', 'public.job_quotes(uuid,uuid)', 'execute')
   and has_function_privilege ('anon', 'public.post_thread_message(uuid,uuid,text,uuid)', 'execute')
@@ -83,11 +83,7 @@ select throws_ok(
   'please do not include phone numbers or links; they are shared after a worker accepts',
   'phone numbers in the description are rejected, even for guests'
 );
-select throws_ok(
-  $$select * from public.post_job('Fix tap', 'The kitchen tap is leaking badly', 'plumber', null, null, 5000, 1000)$$,
-  'minimum budget cannot be above maximum budget',
-  'reversed budget is rejected'
-);
+select hasnt_function ('public', 'post_job', array['text','text','text','text','text','numeric','numeric','text'], 'the old budget signature is gone');
 
 select is (
   (select count(*) from public.get_guest_job ('00000000-0000-0000-0000-0000000000f1')),

@@ -4,6 +4,7 @@ import { useCallback, useEffect, useState } from 'react';
 import { ScrollView, StyleSheet, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
+import { JobMediaGallery } from '../../components/JobMediaGallery';
 import { JobThread } from '../../components/JobThread';
 import { Avatar } from '../../components/ui/Avatar';
 import { Banner } from '../../components/ui/Banner';
@@ -48,6 +49,7 @@ export default function PostedJobScreen() {
   const [openThread, setOpenThread] = useState<string | null>(null);
   const [msg, setMsg] = useState<{ id?: StringId; text?: string } | null>(null);
   const [loaded, setLoaded] = useState(false);
+  const [mediaMsg] = useState(route.params.mediaFailed ? 'media.uploadFailed' : null);
 
   const load = useCallback(async () => {
     // A guest who has since signed in: attach the job to their account first.
@@ -124,6 +126,7 @@ export default function PostedJobScreen() {
 
   return (
     <ScrollView contentContainerStyle={[styles.root, { paddingBottom: insets.bottom + spacing.xl }]} keyboardShouldPersistTaps="handled">
+      {mediaMsg ? <Banner id="media.uploadFailed" tone="warning" /> : null}
       {msg ? msg.id ? <Banner id={msg.id} tone="info" /> : <Banner text={msg.text} tone="warning" /> : null}
 
       {job ? (
@@ -142,6 +145,8 @@ export default function PostedJobScreen() {
           {token ? <Banner id="posted.guestKeep" tone="info" icon="user-plus" /> : null}
         </Card>
       ) : null}
+
+      {job && !token ? <JobMediaGallery jobId={job.id} ownerId={open ? uid : null} /> : null}
 
       {job && open ? (
         <Card padding="lg">

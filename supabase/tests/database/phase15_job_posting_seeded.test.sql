@@ -102,7 +102,7 @@ select public._t_setting ('job_posting_enabled', 'true'::jsonb);
 
 -- ─── A guest posts a job ─────────────────────────────────────────────────
 select public._t_as_anon ();
-with r as (select * from public.post_job ('Fix kitchen tap', 'The kitchen tap is leaking badly', 'plumber', 'Karachi', 'Gulshan', 1000, 2000, 'tomorrow'))
+with r as (select * from public.post_job ('Fix kitchen tap', 'The kitchen tap is leaking badly', 'plumber', 'Karachi', 'Gulshan', 'tomorrow'))
 select set_config ('t.gj', (select job_id from r)::text, true), set_config ('t.gt', (select guest_token from r)::text, true);
 reset role;
 
@@ -113,7 +113,7 @@ select is ((select anon_post_token::text from public.jobs where id = current_set
 select is ((select status from public.jobs where id = current_setting ('t.gj')::uuid), 'open', 'the job is open');
 select is ((select origin from public.jobs where id = current_setting ('t.gj')::uuid), 'customer_job', 'it is a customer job');
 select is ((select city from public.jobs where id = current_setting ('t.gj')::uuid), 'Karachi', 'the city is stored');
-select is ((select budget_min_pkr from public.jobs where id = current_setting ('t.gj')::uuid), 1000::numeric, 'the budget range is stored');
+select is ((select budget_min_pkr from public.jobs where id = current_setting ('t.gj')::uuid), null::numeric, 'no budget is stored');
 select ok(
   (select expires_at from public.jobs where id = current_setting ('t.gj')::uuid) between now () + interval '6 days 23 hours' and now () + interval '7 days 1 hour',
   'the job expires in about 7 days'
@@ -136,11 +136,11 @@ select throws_ok($$select * from public.post_job('Fix tap', 'short', 'plumber')$
 select throws_ok($$select * from public.post_job('', 'The kitchen tap is leaking badly', 'plumber')$$, 'a title of up to 120 characters is required', 'a blank title is rejected');
 select throws_ok($$select * from public.post_job(repeat('x', 121), 'The kitchen tap is leaking badly', 'plumber')$$, 'a title of up to 120 characters is required', 'a very long title is rejected');
 select throws_ok($$select * from public.post_job('Fix tap', 'The kitchen tap is leaking badly', '')$$, 'category is required', 'a blank category is rejected');
-select throws_ok($$select * from public.post_job('Fix tap', 'The kitchen tap is leaking badly', 'plumber', null, null, 5000, 1000)$$, 'minimum budget cannot be above maximum budget', 'a reversed budget is rejected');
+select is ((select count(*) from pg_proc where proname = 'post_job' and pronamespace = 'public'::regnamespace), 1::bigint, 'there is a single post_job function');
 select throws_ok($$select * from public.post_job('Fix tap', 'Tap leaks, call 0300 1234567', 'plumber')$$, 'please do not include phone numbers or links; they are shared after a worker accepts', 'a phone number in the description is rejected');
 select throws_ok($$select * from public.post_job('Fix tap www.example.com', 'The kitchen tap is leaking badly', 'plumber')$$, 'please do not include phone numbers or links; they are shared after a worker accepts', 'a link in the title is rejected');
 select throws_ok($$select * from public.post_job('Fix tap', 'The kitchen tap is leaking badly', 'plumber', null, 'mail me a@b.com')$$, 'please do not include phone numbers or links; they are shared after a worker accepts', 'an email in the area is rejected');
-select throws_ok($$select * from public.post_job('Fix tap', 'The kitchen tap is leaking badly', 'plumber', null, null, null, null, 'whatsapp me')$$, 'please do not include phone numbers or links; they are shared after a worker accepts', 'a chat handle in the time is rejected');
+select throws_ok($$select * from public.post_job('Fix tap', 'The kitchen tap is leaking badly', 'plumber', null, null, 'whatsapp me')$$, 'please do not include phone numbers or links; they are shared after a worker accepts', 'a chat handle in the time is rejected');
 select lives_ok($$select * from public.post_job('Fix tap', 'Flat 12, floor 3, budget Rs 25000 for the work', 'plumber')$$, 'ordinary numbers in the text are fine');
 reset role;
 
