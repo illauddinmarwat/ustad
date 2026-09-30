@@ -3,7 +3,8 @@
 import { useCallback, useEffect, useState } from 'react';
 
 import { supabase } from '@/lib/supabaseClient';
-import type { FunnelRow, JobEventRow } from '@/lib/types';
+import { formatPkr } from '@/components/StatCard';
+import type { FunnelRow, JobEventRow, JobPricingRow } from '@/lib/types';
 
 const KIND_LABEL: Record<JobEventRow['kind'], string> = {
   accepted: 'Worker accepted',
@@ -32,13 +33,26 @@ export default function JobsFeedPage() {
   const [note, setNote] = useState('');
   const [busy, setBusy] = useState(false);
   const [funnel, setFunnel] = useState<FunnelRow[]>([]);
+  const [pricing, setPricing] = useState<Record<string, JobPricingRow>>({});
 
   const load = useCallback(async () => {
     setLoading(true);
     setError(null);
     const { data, error: loadError } = await supabase.rpc('admin_list_job_events', { p_limit: 100 });
     if (loadError) setError(loadError.message);
-    else setRows((data ?? []) as JobEventRow[]);
+    else {
+      const list = (data ?? []) as JobEventRow[];
+      setRows(list);
+      const ids = Array.from(new Set(list.map((r) => r.job_id)));
+      if (ids.length > 0) {
+        const { data: priced } = await supabase.rpc('admin_job_pricing', { p_job_ids: ids });
+        const map: Record<string, JobPricingRow> = {};
+        ((priced ?? []) as JobPricingRow[]).forEach((r) => {
+          map[r.job_id] = r;
+        });
+        setPricing(map);
+      }
+    }
     setLoading(false);
   }, []);
 
@@ -135,6 +149,20 @@ export default function JobsFeedPage() {
                 <div className="mt-1 text-xs text-ink-muted">{new Date(row.created_at).toLocaleString()}</div>
               </div>
             </div>
+
+            {pricing[row.job_id] ? (
+              <div className="mt-2 text-xs text-ink-body">
+                {pricing[row.job_id].marked_up ? (
+                  <>
+                    Customer price {formatPkr(pricing[row.job_id].customer_price_pkr)} · Ustad price{' '}
+                    {formatPkr(pricing[row.job_id].ustad_price_pkr ?? 0)} · commission {formatPkr(pricing[row.job_id].commission_pkr ?? 0)} (
+                    {pricing[row.job_id].commission_pct}% rate)
+                  </>
+                ) : (
+                  <>Accepted price {formatPkr(pricing[row.job_id].customer_price_pkr)} (commission not added on top)</>
+                )}
+              </div>
+            ) : null}
 
             {row.kind === 'dispute_resolved' && typeof row.detail?.note === 'string' ? (
               <div className="mt-2 text-xs text-ink-muted">Note: {row.detail.note}</div>

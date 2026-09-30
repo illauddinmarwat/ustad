@@ -200,3 +200,13 @@ export type MapWorker = {
   lat: number;
   lng: number;
 };
+
+/** How a job's accepted quote was priced; `ustad_price_pkr` is null when the commission was not added on top. */
+export type JobPricingRow = {
+  job_id: string;
+  customer_price_pkr: number;
+  ustad_price_pkr: number | null;
+  commission_pkr: number | null;
+  commission_pct: number | null;
+  marked_up: boolean;
+};

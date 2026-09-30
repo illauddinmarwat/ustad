@@ -7,7 +7,7 @@ begin;
 
 create extension if not exists pgtap with schema extensions;
 
-select plan(43);
+select plan(50);
 
 -- ─── Test helpers (created inside this transaction, rolled back at the end) ───
 --   _t_id(name)      stable uuids for the seeded people
@@ -237,6 +237,21 @@ select public.worker_accept_direct_request (current_setting ('t.l')::uuid);
 reset role;
 select is (public._t_finish (current_setting ('t.l')::uuid, 'c1', 'w1', 2000, 2000), 'closed', 'flag off: the budget job closes');
 select is ((select commission_pkr from public.worker_commission_ledger where job_id = current_setting ('t.l')::uuid), 300::numeric, 'flag off: the old rule, 15% of Rs 2000, applies');
+
+-- ─── Admin per-job pricing ───────────────────────────────────────────────
+select public._t_as ('adm');
+select is ((select customer_price_pkr from public.admin_job_pricing (array[current_setting ('t.j')::uuid])), 115::numeric, 'admin: the customer price of a marked-up job');
+select is ((select ustad_price_pkr from public.admin_job_pricing (array[current_setting ('t.j')::uuid])), 100::numeric, 'admin: the Ustad price');
+select is ((select commission_pkr from public.admin_job_pricing (array[current_setting ('t.j')::uuid])), 15::numeric, 'admin: the commission');
+select is ((select marked_up from public.admin_job_pricing (array[current_setting ('t.l')::uuid])), false, 'admin: a job accepted at the budget as-is is not marked up');
+select is ((select ustad_price_pkr from public.admin_job_pricing (array[current_setting ('t.l')::uuid])), null::numeric, 'admin: and has no separate Ustad price');
+reset role;
+select public._t_as ('c1');
+select throws_ok(format ($$select * from public.admin_job_pricing (array[%L::uuid])$$, current_setting ('t.j')), 'admin only', 'a customer cannot read job pricing');
+reset role;
+select public._t_as ('w1');
+select throws_ok(format ($$select * from public.admin_job_pricing (array[%L::uuid])$$, current_setting ('t.j')), 'admin only', 'a worker cannot read job pricing');
+reset role;
 
 select * from finish ();
 rollback;
