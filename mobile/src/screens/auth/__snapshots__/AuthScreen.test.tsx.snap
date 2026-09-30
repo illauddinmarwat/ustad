@@ -519,6 +519,54 @@ exports[`AuthScreen matches snapshot 1`] = `
                 textContentType="password"
                 value=""
               />
+              <View
+                accessibilityLabel="Show password"
+                accessibilityRole="button"
+                accessibilityState={
+                  {
+                    "busy": undefined,
+                    "checked": undefined,
+                    "disabled": undefined,
+                    "expanded": undefined,
+                    "selected": undefined,
+                  }
+                }
+                accessibilityValue={
+                  {
+                    "max": undefined,
+                    "min": undefined,
+                    "now": undefined,
+                    "text": undefined,
+                  }
+                }
+                accessible={true}
+                collapsable={false}
+                focusable={true}
+                hitSlop={10}
+                onBlur={[Function]}
+                onClick={[Function]}
+                onFocus={[Function]}
+                onResponderGrant={[Function]}
+                onResponderMove={[Function]}
+                onResponderRelease={[Function]}
+                onResponderTerminate={[Function]}
+                onResponderTerminationRequest={[Function]}
+                onStartShouldSetResponder={[Function]}
+                style={
+                  {
+                    "paddingLeft": 8,
+                    "paddingVertical": 8,
+                  }
+                }
+              >
+                <Text
+                  color="#6B7280"
+                  name="eye"
+                  size={18}
+                >
+                  [Feather:eye]
+                </Text>
+              </View>
             </View>
           </View>
           <View

@@ -7,6 +7,7 @@ import { useT } from '../i18n/useT';
 import { colors, radius, spacing } from '../theme/tokens';
 import { typography, urduTypography } from '../theme/typography';
 
+import { Banner } from './ui/Banner';
 import { Button } from './ui/Button';
 import { Icon } from './ui/Icon';
 
@@ -14,12 +15,13 @@ const POLL_MS = 30_000;
 
 /** Full-screen lock shown to an Ustad whose registration has not been approved yet. */
 export function PendingApprovalGate() {
-  const { session, role, workerApprovalStatus, refreshApproval, signOut } = useAuth();
+  const { session, role, workerApprovalStatus, refreshApproval, signOut, registering } = useAuth();
   const { t } = useT();
   const insets = useSafeAreaInsets();
   const [checking, setChecking] = useState(false);
+  const [result, setResult] = useState<'pending' | 'failed' | null>(null);
 
-  const locked = !!session && role === 'worker' && workerApprovalStatus !== 'approved';
+  const locked = !!session && !registering && role === 'worker' && workerApprovalStatus !== 'approved';
   const rejected = workerApprovalStatus === 'rejected';
 
   useEffect(() => {
@@ -41,8 +43,10 @@ export function PendingApprovalGate() {
 
   const check = async () => {
     setChecking(true);
+    setResult(null);
     try {
-      await refreshApproval();
+      const status = await refreshApproval();
+      setResult(status === 'pending' ? 'pending' : status === null ? 'failed' : null);
     } finally {
       setChecking(false);
     }
@@ -59,6 +63,11 @@ export function PendingApprovalGate() {
           <Text style={[urduTypography.title, styles.urdu]}>{title.ur}</Text>
           <Text style={[typography.body, styles.body]}>{body.en}</Text>
           <Text style={[urduTypography.body, styles.urduBody]}>{body.ur}</Text>
+          {result ? (
+            <View style={styles.result}>
+              <Banner id={result === 'pending' ? 'approval.gate.stillPending' : 'approval.gate.checkFailed'} tone={result === 'pending' ? 'info' : 'warning'} />
+            </View>
+          ) : null}
           <View style={styles.actions}>
             {!rejected ? (
               <Button labelId="approval.gate.refresh" onPress={check} loading={checking} fullWidth variant="primary" />
@@ -100,5 +109,6 @@ const styles = StyleSheet.create({
   urdu: { color: colors.textMuted, textAlign: 'center', marginTop: 2 },
   body: { color: colors.textBody, textAlign: 'center', marginTop: spacing.md },
   urduBody: { color: colors.textMuted, textAlign: 'center', marginTop: spacing.xs },
+  result: { alignSelf: 'stretch', marginTop: spacing.md, marginBottom: -spacing.md },
   actions: { alignSelf: 'stretch', gap: spacing.sm, marginTop: spacing.lg },
 });

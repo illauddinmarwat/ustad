@@ -1,23 +1,28 @@
+import { useNavigation } from '@react-navigation/native';
+import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { useState } from 'react';
 import { Image, KeyboardAvoidingView, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { useCityAreaFields } from '../../components/CityAreaFields';
 import { PrivacyPolicyModal } from '../../components/PrivacyPolicyModal';
-import { Banner } from '../../components/ui/Banner';
+import { RegistrationDoneModal } from '../../components/RegistrationDoneModal';
 import { BiText } from '../../components/ui/BiText';
 import { Button } from '../../components/ui/Button';
 import { Card } from '../../components/ui/Card';
 import { Icon } from '../../components/ui/Icon';
+import { ImageEditorModal } from '../../components/ui/ImageEditorModal';
 import { ImageSourceSheet } from '../../components/ui/ImageSourceSheet';
 import { Input } from '../../components/ui/Input';
 import { formatMinutes, TimeField } from '../../components/ui/TimeField';
+import { useAuth } from '../../context/AuthContext';
 import type { StringId } from '../../i18n/strings';
 import { en, useT } from '../../i18n/useT';
 import { pickImage, type ImageSource } from '../../lib/pickImage';
 import { useSkillCategories } from '../../lib/skillCategories';
 import { supabase } from '../../lib/supabase';
-import { stashPendingUploads, uploadWorkerFiles } from '../../lib/workerUploads';
+import type { RootStackParamList } from '../../navigation/types';
+import { saveWorkerLocation, stashPendingUploads, uploadWorkerFiles } from '../../lib/workerUploads';
 import { colors, radius, spacing } from '../../theme/tokens';
 import { typography } from '../../theme/typography';
 
@@ -34,6 +39,8 @@ const STEP_LABEL: Record<Step, StringId> = {
 export default function RegisterProfessionalScreen() {
   const insets = useSafeAreaInsets();
   const { t } = useT();
+  const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
+  const { setRegistering, signOut } = useAuth();
   const categories = useSkillCategories();
   const place = useCityAreaFields();
 
@@ -58,27 +65,30 @@ export default function RegisterProfessionalScreen() {
   const [busy, setBusy] = useState(false);
   const [step, setStep] = useState<Step | null>(null);
   const [error, setError] = useState<string | null>(null);
-  const [notice, setNotice] = useState<'checkEmail' | 'pendingApproval' | null>(null);
+  const [done, setDone] = useState(false);
+  const [uploadWarning, setUploadWarning] = useState(false);
+  const [editing, setEditing] = useState<{ target: ImageTarget; uri: string } | null>(null);
 
   const hoursValid = toMin > fromMin;
 
-  const canSubmit = !!(
-    email.trim() &&
-    password &&
-    fullName.trim() &&
-    mobile.trim() &&
-    cnic.trim() &&
-    place.complete &&
-    skillKey &&
-    experience.trim() &&
-    rate.trim() &&
-    hoursValid &&
-    photoUri &&
-    cnicFrontUri &&
-    cnicBackUri &&
-    bio.trim() &&
-    privacyAccepted
-  );
+  const missing: StringId[] = [];
+  if (!email.trim()) missing.push('register.missing.email');
+  if (!password) missing.push('register.missing.password');
+  if (!fullName.trim()) missing.push('register.missing.name');
+  if (!mobile.trim()) missing.push('register.missing.mobile');
+  if (!cnic.trim()) missing.push('register.missing.cnic');
+  if (!cnicFrontUri) missing.push('register.missing.cnicFront');
+  if (!cnicBackUri) missing.push('register.missing.cnicBack');
+  if (!place.cityName) missing.push('register.missing.city');
+  if (!place.areaName) missing.push('register.missing.area');
+  if (!skillKey) missing.push('register.missing.skill');
+  if (!experience.trim()) missing.push('register.missing.experience');
+  if (!rate.trim()) missing.push('register.missing.rate');
+  if (!hoursValid) missing.push('register.missing.hours');
+  if (!photoUri) missing.push('register.missing.photo');
+  if (!bio.trim()) missing.push('register.missing.bio');
+  if (!privacyAccepted) missing.push('register.missing.privacy');
+  const canSubmit = missing.length === 0;
 
   const onPickSource = async (source: ImageSource) => {
     const target = sheetTarget;
@@ -91,9 +101,20 @@ export default function RegisterProfessionalScreen() {
     }
     if (result.status !== 'ok') return;
     setError(null);
-    if (target === 'photo') setPhotoUri(result.uri);
-    else if (target === 'cnicFront') setCnicFrontUri(result.uri);
-    else setCnicBackUri(result.uri);
+    setEditing({ target, uri: result.uri });
+  };
+
+  const onEdited = (uri: string) => {
+    const target = editing?.target;
+    setEditing(null);
+    if (target === 'photo') setPhotoUri(uri);
+    else if (target === 'cnicFront') setCnicFrontUri(uri);
+    else if (target === 'cnicBack') setCnicBackUri(uri);
+  };
+
+  const closeDone = () => {
+    setDone(false);
+    navigation.reset({ index: 1, routes: [{ name: 'Tabs' }, { name: 'Auth' }] });
   };
 
   const submit = async () => {
@@ -107,8 +128,10 @@ export default function RegisterProfessionalScreen() {
     }
     setBusy(true);
     setError(null);
-    setNotice(null);
+    setUploadWarning(false);
     setStep('creating');
+    // Keeps the approval lock from covering this screen while the account is created and files are uploaded.
+    setRegistering(true);
     try {
       const { data, error: signUpError } = await supabase.auth.signUp({
         email: email.trim(),
@@ -133,21 +156,40 @@ export default function RegisterProfessionalScreen() {
       });
       if (signUpError) throw signUpError;
 
-      if (data.session && data.user) {
-        setStep('uploading');
-        await uploadWorkerFiles(data.user.id, { photo: photoUri, cnicFront: cnicFrontUri, cnicBack: cnicBackUri });
+      let userId = data.user?.id ?? null;
+      if (!data.session) {
+        // Email confirmation is off, so a session normally arrives with sign-up; this is a safety net.
+        const { data: signedIn, error: signInError } = await supabase.auth.signInWithPassword({
+          email: email.trim(),
+          password,
+        });
+        if (signInError) throw signInError;
+        userId = signedIn.user?.id ?? userId;
       }
 
-      if (!data.session) {
-        await stashPendingUploads(email, { photo: photoUri, cnicFront: cnicFrontUri, cnicBack: cnicBackUri });
-        setNotice('checkEmail');
-        setPassword('');
-      } else {
-        setNotice('pendingApproval');
+      if (userId) {
+        setStep('uploading');
+        const files = { photo: photoUri, cnicFront: cnicFrontUri, cnicBack: cnicBackUri };
+        const uploaded = await uploadWorkerFiles(userId, files);
+        if (place.location) await saveWorkerLocation(userId, place.location.lat, place.location.lng);
+        if (!uploaded) {
+          await stashPendingUploads(email, files);
+          setUploadWarning(true);
+        }
       }
+
+      setStep('finishing');
+      try {
+        await signOut();
+      } catch {
+        // the session is cleared locally either way
+      }
+      setPassword('');
+      setDone(true);
     } catch (e) {
       setError(e instanceof Error ? e.message : en('auth.error.failed'));
     } finally {
+      setRegistering(false);
       setBusy(false);
       setStep(null);
     }
@@ -314,17 +356,19 @@ export default function RegisterProfessionalScreen() {
             </View>
           )}
           {busy && step ? <Text style={styles.stepText}>{t(STEP_LABEL[step]).en}</Text> : null}
-          {notice === 'checkEmail' && (
-            <View style={styles.notice}>
-              <Banner id="auth.signup.checkEmail" tone="info" />
+          {!canSubmit && !busy ? (
+            <View style={styles.missingBox}>
+              <Icon name="info" size={16} color={colors.textMuted} />
+              <View style={{ flex: 1, marginLeft: spacing.xs }}>
+                <Text style={styles.missingText}>
+                  {t('register.missing').en} {missing.map((id) => t(id).en).join(', ')}
+                </Text>
+                <Text style={[styles.missingText, styles.missingUrdu]}>
+                  {t('register.missing').ur} {missing.map((id) => t(id).ur).join('، ')}
+                </Text>
+              </View>
             </View>
-          )}
-          {notice === 'pendingApproval' && (
-            <View style={styles.notice}>
-              <Banner id="register.professional.pendingApproval" tone="success" />
-            </View>
-          )}
-
+          ) : null}
           <Button
             labelId={busy ? 'register.professional.submitting' : 'register.professional.submit'}
             onPress={submit}
@@ -342,6 +386,14 @@ export default function RegisterProfessionalScreen() {
       </ScrollView>
 
       <ImageSourceSheet visible={sheetTarget !== null} onPick={onPickSource} onClose={() => setSheetTarget(null)} />
+      <ImageEditorModal
+        visible={editing !== null}
+        uri={editing?.uri ?? null}
+        aspect={editing?.target === 'photo' ? 1 : null}
+        onDone={onEdited}
+        onCancel={() => setEditing(null)}
+      />
+      <RegistrationDoneModal visible={done} uploadWarning={uploadWarning} onClose={closeDone} />
       <PrivacyPolicyModal
         visible={privacyOpen}
         onAgree={() => {
@@ -484,7 +536,16 @@ const styles = StyleSheet.create({
     marginBottom: spacing.sm,
   },
   errorText: { ...typography.bodySm, color: colors.danger, marginLeft: spacing.xs, flex: 1 },
-  notice: { marginBottom: spacing.sm },
+  missingBox: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    backgroundColor: colors.surfaceAlt,
+    padding: spacing.sm,
+    borderRadius: radius.sm,
+    marginBottom: spacing.sm,
+  },
+  missingText: { ...typography.caption, color: colors.textMuted },
+  missingUrdu: { textAlign: 'right', writingDirection: 'rtl', marginTop: 2 },
   submitBtn: { marginTop: spacing.sm },
   termsNotice: { marginTop: spacing.lg, paddingHorizontal: spacing.lg },
 });

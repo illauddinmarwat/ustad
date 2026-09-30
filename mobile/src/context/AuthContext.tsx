@@ -19,7 +19,11 @@ type AuthCtx = {
   signIn: (email: string, password: string) => Promise<void>;
   signUp: (email: string, password: string) => Promise<SignUpResult>;
   signOut: () => Promise<void>;
-  refreshApproval: () => Promise<void>;
+  /** Re-reads the approval status; resolves to the latest value (null when it could not be read). */
+  refreshApproval: () => Promise<WorkerApprovalStatus | null>;
+  /** True while an Ustad registration is being submitted, so the approval lock does not flash over the form. */
+  registering: boolean;
+  setRegistering: (v: boolean) => void;
   setRole: (r: 'customer' | 'worker') => Promise<void>;
 };
 
@@ -50,8 +54,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [previewRole, setPreviewRole] = useState<'customer' | 'worker'>('customer');
   const [role, setRoleState] = useState<'customer' | 'worker' | 'admin' | null>(null);
   const [workerApprovalStatus, setWorkerApprovalStatus] = useState<WorkerApprovalStatus | null>(null);
+  const [registering, setRegistering] = useState(false);
 
-  const applyRoleForUser = async (userId: string, email?: string) => {
+  const applyRoleForUser = async (userId: string, email?: string): Promise<WorkerApprovalStatus | null> => {
     const { data } = await supabase.from('profiles').select('role').eq('id', userId).maybeSingle();
     const resolvedRole = (data?.role as 'customer' | 'worker' | 'admin') ?? 'customer';
     let approval: WorkerApprovalStatus | null = null;
@@ -67,12 +72,13 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     setWorkerApprovalStatus(approval);
     setRoleState(resolvedRole);
     if (resolvedRole === 'worker') void flushPendingUploads(userId, email);
+    return approval;
   };
 
-  const refreshApproval = async () => {
-    if (useFixtureMode) return;
+  const refreshApproval = async (): Promise<WorkerApprovalStatus | null> => {
+    if (useFixtureMode) return null;
     const uid = session?.user?.id;
-    if (uid) await applyRoleForUser(uid, session?.user?.email);
+    return uid ? applyRoleForUser(uid, session?.user?.email) : null;
   };
 
   useEffect(() => {
@@ -186,9 +192,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       signUp,
       signOut,
       refreshApproval,
+      registering,
+      setRegistering,
       setRole,
     }),
-    [session, loading, role, workerApprovalStatus]
+    [session, loading, role, workerApprovalStatus, registering]
   );
 
   return <Ctx.Provider value={value}>{children}</Ctx.Provider>;

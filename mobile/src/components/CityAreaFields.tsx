@@ -1,7 +1,14 @@
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
+import { StyleSheet, Text } from 'react-native';
 
 import { useT } from '../i18n/useT';
+import { reverseGeocode } from '../lib/geocode';
 import { useAreas, useCities } from '../lib/locations';
+import { colors, spacing } from '../theme/tokens';
+import { typography } from '../theme/typography';
+
+import { LocationPickerModal, type PinnedLocation } from './LocationPickerModal';
+import { Button } from './ui/Button';
 
 import { Input } from './ui/Input';
 import { SelectField } from './ui/SelectField';
@@ -15,6 +22,8 @@ export type CityAreaState = {
   addressDetails: string;
   /** City chosen and an area chosen (or typed under "Other"). */
   complete: boolean;
+  /** Map pin chosen by the user, if any. */
+  location: PinnedLocation | null;
   fields: React.ReactElement;
 };
 
@@ -27,6 +36,52 @@ export function useCityAreaFields(): CityAreaState {
   const [otherArea, setOtherArea] = useState('');
   const [addressDetails, setAddressDetails] = useState('');
   const areas = useAreas(cityId);
+  const [location, setLocation] = useState<PinnedLocation | null>(null);
+  const [pickerOpen, setPickerOpen] = useState(false);
+  const [looking, setLooking] = useState(false);
+  const [lookupFailed, setLookupFailed] = useState(false);
+  // Area suggested by the map pin, applied once that city's area list has loaded.
+  const [pendingArea, setPendingArea] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (!pendingArea || areas.loading || !cityId) return;
+    const hit = areas.items.find((a) => a.name.toLowerCase() === pendingArea.toLowerCase());
+    if (hit) {
+      setArea(hit.name);
+      setOtherArea('');
+    } else {
+      setArea(OTHER);
+      setOtherArea(pendingArea);
+    }
+    setPendingArea(null);
+  }, [pendingArea, areas.items, areas.loading, cityId]);
+
+  const onPinned = async (loc: PinnedLocation) => {
+    setPickerOpen(false);
+    setLocation(loc);
+    setLooking(true);
+    setLookupFailed(false);
+    const found = await reverseGeocode(loc.lat, loc.lng);
+    setLooking(false);
+    if (!found) {
+      setLookupFailed(true);
+      return;
+    }
+    setAddressDetails(found.displayName);
+    const cityHit = found.city
+      ? cities.items.find((c) => {
+          const a = c.name.toLowerCase();
+          const b = found.city!.toLowerCase();
+          return a === b || b.includes(a) || a.includes(b);
+        })
+      : undefined;
+    if (cityHit) {
+      setCityId(cityHit.id);
+      setArea(null);
+      setOtherArea('');
+      setPendingArea(found.area);
+    }
+  };
 
   const cityName = cities.items.find((c) => c.id === cityId)?.name ?? '';
   const areaName = area === OTHER ? otherArea.trim() : (area ?? '');
@@ -71,6 +126,16 @@ export function useCityAreaFields(): CityAreaState {
           iconLeft="map"
         />
       ) : null}
+      <Button
+        labelId={location ? 'map.pinnedButton' : 'map.pinButton'}
+        onPress={() => setPickerOpen(true)}
+        variant="secondary"
+        iconLeft="map-pin"
+        fullWidth
+        style={styles.pinBtn}
+      />
+      {looking ? <Text style={styles.note}>{t('map.looking').en}</Text> : null}
+      {lookupFailed ? <Text style={styles.note}>{t('map.addressFailed').en}</Text> : null}
       <Input
         value={addressDetails}
         onChangeText={setAddressDetails}
@@ -78,10 +143,17 @@ export function useCityAreaFields(): CityAreaState {
         placeholderId="pick.addressDetailsPh"
         iconLeft="home"
       />
+      <LocationPickerModal
+        visible={pickerOpen}
+        initial={location}
+        onConfirm={onPinned}
+        onClose={() => setPickerOpen(false)}
+      />
     </>
   );
 
   return {
+    location,
     cityId,
     cityName,
     areaName,
@@ -90,3 +162,8 @@ export function useCityAreaFields(): CityAreaState {
     fields,
   };
 }
+
+const styles = StyleSheet.create({
+  pinBtn: { marginBottom: spacing.sm },
+  note: { ...typography.caption, color: colors.textMuted, marginBottom: spacing.sm },
+});

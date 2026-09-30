@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import {
+  Pressable,
   StyleSheet,
   Text,
   TextInput,
@@ -43,10 +44,12 @@ export function Input({
   style,
   onFocus,
   onBlur,
+  secureTextEntry,
   ...rest
 }: InputProps) {
   const { t } = useT();
   const [focused, setFocused] = useState(false);
+  const [revealed, setRevealed] = useState(false);
   const labelEntry = labelId ? t(labelId) : null;
   const placeholderEntry = placeholderId ? t(placeholderId) : null;
 
@@ -86,8 +89,20 @@ export function Input({
             iconLeft ? styles.inputWithIcon : null,
             style,
           ]}
+          secureTextEntry={secureTextEntry && !revealed}
           {...rest}
         />
+        {secureTextEntry ? (
+          <Pressable
+            onPress={() => setRevealed((v) => !v)}
+            hitSlop={10}
+            accessibilityRole="button"
+            accessibilityLabel={t(revealed ? 'input.hidePassword' : 'input.showPassword').en}
+            style={styles.eye}
+          >
+            <Icon name={revealed ? 'eye-off' : 'eye'} size={18} color={colors.textMuted} />
+          </Pressable>
+        ) : null}
       </View>
       {placeholderEntry &&
       !hideUrduHint &&
@@ -125,6 +140,7 @@ const styles = StyleSheet.create({
     borderColor: colors.danger,
   },
   iconLeft: { marginRight: spacing.sm },
+  eye: { paddingLeft: spacing.sm, paddingVertical: spacing.sm },
   input: {
     flex: 1,
     paddingVertical: spacing.sm,

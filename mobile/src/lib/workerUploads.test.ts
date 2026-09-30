@@ -22,6 +22,7 @@ jest.mock('expo-file-system/legacy', () => ({
   makeDirectoryAsync: jest.fn(() => Promise.resolve()),
   copyAsync: jest.fn(() => Promise.resolve()),
   deleteAsync: jest.fn(() => Promise.resolve()),
+  readAsStringAsync: jest.fn(() => Promise.resolve('/9j/4AAQSkZJRg==')),
 }));
 
 jest.mock('./supabase', () => ({
@@ -44,7 +45,6 @@ beforeEach(() => {
   for (const k of Object.keys(mockStore)) delete mockStore[k];
   mockUpload.mockReset().mockResolvedValue({ error: null });
   mockUpdate.mockReset().mockResolvedValue({ error: null });
-  (global as unknown as { fetch: unknown }).fetch = jest.fn(() => Promise.resolve({ blob: () => Promise.resolve({}) }));
 });
 
 describe('pending worker uploads', () => {

@@ -59,6 +59,12 @@ export type WorkerApprovalRow = {
   display_name: string | null;
   phone: string | null;
   city: string | null;
+  area: string | null;
+  address: string | null;
+  /** True when the area is not in the managed list yet; it is added when the worker is approved. */
+  area_is_new: boolean;
+  lat: number | null;
+  lng: number | null;
   cnic_number: string | null;
   categories: string[] | null;
   years_experience: number | null;

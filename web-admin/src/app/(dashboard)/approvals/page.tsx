@@ -163,6 +163,33 @@ function ApprovalRow({
           <div className="grid grid-cols-2 gap-x-8 gap-y-3 text-sm md:grid-cols-3">
             <Detail label="Phone" value={row.phone ?? '—'} />
             <Detail label="CNIC Number" value={row.cnic_number ?? '—'} />
+            <div>
+              <div className="text-xs text-ink-muted">City / Area</div>
+              <div className="font-medium text-ink-strong">
+                {[row.city, row.area].filter(Boolean).join(' · ') || '—'}
+                {row.area_is_new ? (
+                  <span className="ml-2 rounded-full bg-warning-soft px-2 py-0.5 text-[11px] font-semibold text-amber-800">
+                    New area — added to the list on approval
+                  </span>
+                ) : null}
+              </div>
+            </div>
+            <div className="col-span-full md:col-span-2">
+              <div className="text-xs text-ink-muted">Address</div>
+              <div className="font-medium text-ink-strong">
+                {row.address ?? '—'}
+                {row.lat != null && row.lng != null ? (
+                  <a
+                    href={`https://www.openstreetmap.org/?mlat=${row.lat}&mlon=${row.lng}#map=17/${row.lat}/${row.lng}`}
+                    target="_blank"
+                    rel="noreferrer"
+                    className="ml-2 text-xs font-semibold text-primary underline"
+                  >
+                    View pin on map
+                  </a>
+                ) : null}
+              </div>
+            </div>
             <Detail label="Experience" value={row.years_experience != null ? `${row.years_experience} yrs` : '—'} />
             <Detail
               label="Rate"
