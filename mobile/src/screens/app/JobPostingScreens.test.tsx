@@ -127,6 +127,7 @@ describe('PostJobScreen', () => {
     const u = wrap(<PostJobScreen />);
     expect(await u.findByText('Add photo')).toBeTruthy();
     expect(await u.findByText('Record voice note')).toBeTruthy();
+    expect(await u.findByText('Record video')).toBeTruthy();
     expect(u.queryByText(/budget/i)).toBeNull();
   });
 
@@ -136,6 +137,7 @@ describe('PostJobScreen', () => {
     expect(await u.findByText('Sign in to add photos to your job.')).toBeTruthy();
     expect(u.queryByText('Add photo')).toBeNull();
     expect(u.queryByText('Record voice note')).toBeNull();
+    expect(u.queryByText('Record video')).toBeNull();
   });
 
   it('hides the photo picker while the media flag is off', async () => {

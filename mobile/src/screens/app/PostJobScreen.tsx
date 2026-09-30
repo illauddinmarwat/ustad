@@ -5,6 +5,7 @@ import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { PhotoAttach } from '../../components/PhotoAttach';
+import { VideoRecorder } from '../../components/VideoRecorder';
 import { VoiceRecorder } from '../../components/VoiceRecorder';
 import { Banner } from '../../components/ui/Banner';
 import { BiText } from '../../components/ui/BiText';
@@ -15,7 +16,7 @@ import { ScreenHeader } from '../../components/ui/ScreenHeader';
 import { useAuth } from '../../context/AuthContext';
 import { useT } from '../../i18n/useT';
 import { trackEvent } from '../../lib/analytics';
-import { fetchJobMediaEnabled, uploadJobPhotos, uploadJobVoice } from '../../lib/jobMedia';
+import { fetchJobMediaEnabled, uploadJobPhotos, uploadJobVideoClip, uploadJobVoice } from '../../lib/jobMedia';
 import {
   addGuestJob,
   fetchJobPostingEnabled,
@@ -24,6 +25,7 @@ import {
 } from '../../lib/jobPosting';
 import { useSkillCategories } from '../../lib/skillCategories';
 import { supabase } from '../../lib/supabase';
+import type { VideoClip } from '../../lib/videoNote';
 import type { VoiceNote } from '../../lib/voiceNote';
 import type { RootStackParamList } from '../../navigation/types';
 import { colors, radius, spacing } from '../../theme/tokens';
@@ -46,6 +48,8 @@ export default function PostJobScreen() {
   const [area, setArea] = useState('');
   const [photos, setPhotos] = useState<string[]>([]);
   const [voice, setVoice] = useState<VoiceNote | null>(null);
+  const [video, setVideo] = useState<VideoClip | null>(null);
+  const [uploadPct, setUploadPct] = useState<number | null>(null);
   const [mediaEnabled, setMediaEnabled] = useState(false);
   const [preferredTime, setPreferredTime] = useState('');
   const [errors, setErrors] = useState<PostJobErrors>({});
@@ -87,14 +91,18 @@ export default function PostJobScreen() {
       setServerError('Could not post the job.');
       return;
     }
-    void trackEvent('job_posted', session?.user.id ?? null, { job_id: row.job_id, guest: !session, photos: photos.length, voice: !!voice });
+    void trackEvent('job_posted', session?.user.id ?? null, { job_id: row.job_id, guest: !session, photos: photos.length, voice: !!voice, video: !!video });
     let mediaFailed = false;
-    if (session && mediaEnabled && (photos.length > 0 || voice)) {
+    if (session && mediaEnabled && (photos.length > 0 || voice || video)) {
       setBusy(true);
       const photoResult = photos.length > 0 ? await uploadJobPhotos(session.user.id, row.job_id, photos) : { failed: 0 };
       const voiceResult = voice ? await uploadJobVoice(session.user.id, row.job_id, voice) : { failed: 0 };
+      const videoResult = video
+        ? await uploadJobVideoClip(session.user.id, row.job_id, video, (f) => setUploadPct(Math.round(f * 100)))
+        : { failed: 0 };
+      setUploadPct(null);
       setBusy(false);
-      mediaFailed = photoResult.failed + voiceResult.failed > 0;
+      mediaFailed = photoResult.failed + voiceResult.failed + videoResult.failed > 0;
     }
     if (row.guest_token) {
       await addGuestJob({ jobId: row.job_id, token: row.guest_token, title: v.title, createdAt: new Date().toISOString() });
@@ -115,6 +123,7 @@ export default function PostJobScreen() {
       {isWorker && <Banner id="post.workerBlocked" tone="warning" />}
       {!session && <Banner id="post.guestNote" tone="info" icon="user" />}
       {serverError ? <Banner text={serverError} tone="warning" /> : null}
+      {uploadPct != null ? <Banner text={`Uploading video… ${uploadPct}%`} tone="info" /> : null}
       {errors.contact ? <Banner text={errors.contact} tone="warning" /> : null}
 
       <Card padding="lg">
@@ -155,6 +164,7 @@ export default function PostJobScreen() {
             <>
               <PhotoAttach uris={photos} onChange={setPhotos} />
               <VoiceRecorder value={voice} onChange={setVoice} />
+              <VideoRecorder value={video} onChange={setVideo} />
             </>
           ) : !session ? (
             <Banner id="media.signInForPhotos" tone="info" icon="camera" />

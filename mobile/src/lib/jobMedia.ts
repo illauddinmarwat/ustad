@@ -1,4 +1,8 @@
-import { supabase } from './supabase';
+import * as FileSystem from 'expo-file-system/legacy';
+import { Platform } from 'react-native';
+
+import { supabase, supabaseAnonKey, supabaseUrl } from './supabase';
+import { MAX_VIDEO_BYTES, videoContentType, videoExtension, type VideoClip } from './videoNote';
 import { audioContentType, audioExtension, type VoiceNote } from './voiceNote';
 import { readBody } from './workerUploads';
 
@@ -96,6 +100,112 @@ export async function uploadJobAudio(userId: string, jobId: string, note: VoiceN
   if (error) {
     await supabase.storage.from('job-media').remove([path]);
     throw new Error(error.message);
+  }
+}
+
+const UPLOAD_ATTEMPTS = 3;
+
+function pause(ms: number): Promise<void> {
+  return new Promise((resolve) => setTimeout(resolve, ms));
+}
+
+/** Streams a file to the private bucket from disk (a video can be too big to load into memory). */
+async function streamToBucket(path: string, uri: string, contentType: string, onProgress?: (fraction: number) => void) {
+  const { data } = await supabase.auth.getSession();
+  const token = data.session?.access_token;
+  if (!token) throw new Error('Please sign in again.');
+  const task = FileSystem.createUploadTask(
+    `${supabaseUrl}/storage/v1/object/job-media/${path}`,
+    uri,
+    {
+      httpMethod: 'POST',
+      uploadType: FileSystem.FileSystemUploadType.BINARY_CONTENT,
+      headers: {
+        Authorization: `Bearer ${token}`,
+        apikey: supabaseAnonKey,
+        'Content-Type': contentType,
+        'x-upsert': 'false',
+      },
+    },
+    (p) => {
+      if (onProgress && p.totalBytesExpectedToSend > 0) onProgress(p.totalBytesSent / p.totalBytesExpectedToSend);
+    },
+  );
+  const result = await task.uploadAsync();
+  if (!result || result.status < 200 || result.status >= 300) {
+    throw new Error(`Upload failed (${result?.status ?? 'no response'}).`);
+  }
+}
+
+/**
+ * Uploads a recorded video and registers it. Retries a failed transfer up to three times (weak data), reports
+ * progress as a fraction, and throws a readable message when it still fails.
+ */
+export async function uploadJobVideo(
+  userId: string,
+  jobId: string,
+  clip: VideoClip,
+  onProgress?: (fraction: number) => void,
+): Promise<void> {
+  const path = `${userId}/${jobId}/${randomName()}.${videoExtension(clip.uri)}`;
+  const contentType = videoContentType(clip.uri);
+  let size = 0;
+
+  if (Platform.OS === 'web') {
+    const blob = await (await fetch(clip.uri)).blob();
+    size = blob.size;
+    if (!size) throw new Error('The video could not be read.');
+    if (size > MAX_VIDEO_BYTES) throw new Error('VIDEO_TOO_LARGE');
+    const { error } = await supabase.storage.from('job-media').upload(path, blob, { contentType });
+    if (error) throw new Error(error.message);
+  } else {
+    const info = await FileSystem.getInfoAsync(clip.uri);
+    size = info.exists && 'size' in info ? (info.size ?? 0) : 0;
+    if (!size) throw new Error('The video could not be read.');
+    if (size > MAX_VIDEO_BYTES) throw new Error('VIDEO_TOO_LARGE');
+    let lastError: unknown = null;
+    for (let attempt = 1; attempt <= UPLOAD_ATTEMPTS; attempt += 1) {
+      try {
+        onProgress?.(0);
+        await streamToBucket(path, clip.uri, contentType, onProgress);
+        lastError = null;
+        break;
+      } catch (e) {
+        lastError = e;
+        // An earlier attempt may have stored the file; clear it so the retry can write the same path.
+        await supabase.storage.from('job-media').remove([path]);
+        if (attempt < UPLOAD_ATTEMPTS) await pause(1500 * attempt);
+      }
+    }
+    if (lastError) throw lastError instanceof Error ? lastError : new Error('The video could not be uploaded.');
+  }
+
+  const { error } = await supabase.rpc('add_job_media', {
+    p_job_id: jobId,
+    p_kind: 'video',
+    p_path: path,
+    p_bytes: size,
+    p_duration_s: clip.seconds,
+  });
+  if (error) {
+    await supabase.storage.from('job-media').remove([path]);
+    throw new Error(error.message);
+  }
+}
+
+/** Uploads a video; returns how many failed (0 or 1) and whether it was too large. The job itself is never lost. */
+export async function uploadJobVideoClip(
+  userId: string,
+  jobId: string,
+  clip: VideoClip,
+  onProgress?: (fraction: number) => void,
+): Promise<{ failed: number; tooLarge: boolean }> {
+  try {
+    await uploadJobVideo(userId, jobId, clip, onProgress);
+    return { failed: 0, tooLarge: false };
+  } catch (e) {
+    console.warn('[jobMedia] video upload failed', e);
+    return { failed: 1, tooLarge: e instanceof Error && e.message === 'VIDEO_TOO_LARGE' };
   }
 }
 

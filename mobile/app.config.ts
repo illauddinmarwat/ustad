@@ -69,6 +69,14 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
     'expo-font',
     'expo-notifications',
     [
+      'expo-camera',
+      {
+        cameraPermission: 'Ustad needs the camera so you can record a short video showing your job.',
+        microphonePermission: 'Ustad needs the microphone so your job video can include sound.',
+        recordAudioAndroid: true,
+      },
+    ],
+    [
       'expo-audio',
       {
         microphonePermission: 'Ustad needs the microphone so you can record a voice note describing your job.',

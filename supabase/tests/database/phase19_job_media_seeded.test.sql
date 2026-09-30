@@ -6,7 +6,7 @@ begin;
 
 create extension if not exists pgtap with schema extensions;
 
-select plan(63);
+select plan(64);
 
 -- ─── Test helpers (created inside this transaction, rolled back at the end) ───
 --   _t_id(name)      stable uuids for the seeded people
@@ -271,7 +271,8 @@ reset role;
 
 -- ─── Bucket accepts what the app records ─────────────────────────────────
 select ok ((select 'audio/mp4' = any (allowed_mime_types) and 'audio/webm' = any (allowed_mime_types) and 'audio/3gpp' = any (allowed_mime_types) from storage.buckets where id = 'job-media'), 'the bucket accepts the voice note types the app records');
-select ok ((select 'image/jpeg' = any (allowed_mime_types) and not ('video/mp4' = any (allowed_mime_types)) from storage.buckets where id = 'job-media'), 'photos are still accepted and video is not yet');
+select ok ((select 'video/mp4' = any (allowed_mime_types) and 'video/quicktime' = any (allowed_mime_types) and 'image/jpeg' = any (allowed_mime_types) from storage.buckets where id = 'job-media'), 'the bucket accepts the video types the app records, and photos');
+select ok ((select not ('application/pdf' = any (allowed_mime_types)) and not ('text/html' = any (allowed_mime_types)) from storage.buckets where id = 'job-media'), 'the bucket still refuses other file types');
 
 select * from finish ();
 rollback;

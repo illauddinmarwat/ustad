@@ -13,6 +13,10 @@ const anonKey =
   '';
 
 import { useFixtureMode } from '../config/env';
+
+/** The project URL and anon key, for uploads that stream a file instead of loading it into memory. */
+export const supabaseUrl: string = url;
+export const supabaseAnonKey: string = anonKey;
 import { FIXTURE_RPC } from './fixtures';
 
 export { isSupabaseConfigured, useFixtureMode } from '../config/env';

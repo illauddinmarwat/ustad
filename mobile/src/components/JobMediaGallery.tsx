@@ -7,13 +7,16 @@ import {
   loadJobMedia,
   removeJobMedia,
   uploadJobPhotos,
+  uploadJobVideoClip,
   uploadJobVoice,
   type JobMediaItem,
 } from '../lib/jobMedia';
+import type { VideoClip } from '../lib/videoNote';
 import type { VoiceNote } from '../lib/voiceNote';
 import { colors, radius, spacing } from '../theme/tokens';
 
 import { PhotoAttach } from './PhotoAttach';
+import { VideoPlayer, VideoRecorder } from './VideoRecorder';
 import { VoicePlayer, VoiceRecorder } from './VoiceRecorder';
 import { Banner } from './ui/Banner';
 import { BiText } from './ui/BiText';
@@ -36,6 +39,8 @@ export function JobMediaGallery({ jobId, ownerId = null, refreshKey = 0 }: Props
   const [items, setItems] = useState<JobMediaItem[]>([]);
   const [pending, setPending] = useState<string[]>([]);
   const [pendingVoice, setPendingVoice] = useState<VoiceNote | null>(null);
+  const [pendingVideo, setPendingVideo] = useState<VideoClip | null>(null);
+  const [pct, setPct] = useState<number | null>(null);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [viewing, setViewing] = useState<string | null>(null);
@@ -55,6 +60,7 @@ export function JobMediaGallery({ jobId, ownerId = null, refreshKey = 0 }: Props
   if (!enabled) return null;
   const photos = items.filter((i) => i.kind === 'photo');
   const voice = items.find((i) => i.kind === 'audio') ?? null;
+  const clip = items.find((i) => i.kind === 'video') ?? null;
   if (items.length === 0 && !ownerId) return null;
 
   const remove = async (id: string) => {
@@ -68,15 +74,21 @@ export function JobMediaGallery({ jobId, ownerId = null, refreshKey = 0 }: Props
   };
 
   const upload = async () => {
-    if (!ownerId || (pending.length === 0 && !pendingVoice)) return;
+    if (!ownerId || (pending.length === 0 && !pendingVoice && !pendingVideo)) return;
     setBusy(true);
     setError(null);
     const photoResult = pending.length > 0 ? await uploadJobPhotos(ownerId, jobId, pending) : { failed: 0 };
     const voiceResult = pendingVoice ? await uploadJobVoice(ownerId, jobId, pendingVoice) : { failed: 0 };
+    const videoResult = pendingVideo
+      ? await uploadJobVideoClip(ownerId, jobId, pendingVideo, (f) => setPct(Math.round(f * 100)))
+      : { failed: 0, tooLarge: false };
+    setPct(null);
     setBusy(false);
     setPending([]);
     setPendingVoice(null);
-    if (photoResult.failed + voiceResult.failed > 0) setError(t('media.uploadFailed').en);
+    setPendingVideo(null);
+    if (videoResult.tooLarge) setError(t('media.videoTooLarge').en);
+    else if (photoResult.failed + voiceResult.failed + videoResult.failed > 0) setError(t('media.uploadFailed').en);
     await load();
   };
 
@@ -138,11 +150,35 @@ export function JobMediaGallery({ jobId, ownerId = null, refreshKey = 0 }: Props
         <BiText id="media.voiceNone" variant="body" tone="muted" style={styles.gap} />
       )}
 
+      <BiText id="media.video" variant="label" tone="body" style={styles.gap} />
+      {clip ? (
+        <View style={styles.voiceRow}>
+          <View style={styles.videoBox}>
+            {clip.url ? <VideoPlayer uri={clip.url} /> : <BiText id="media.recordFailed" variant="caption" tone="muted" />}
+          </View>
+          {ownerId ? (
+            <Pressable
+              onPress={() => remove(clip.id)}
+              accessibilityRole="button"
+              accessibilityLabel={t('media.remove').en}
+              hitSlop={8}
+              style={styles.voiceRemove}
+            >
+              <Icon name="trash-2" size={18} color={colors.danger} />
+            </Pressable>
+          ) : null}
+        </View>
+      ) : (
+        <BiText id="media.videoNone" variant="body" tone="muted" style={styles.gap} />
+      )}
+
       {ownerId ? (
         <>
           <PhotoAttach uris={pending} onChange={setPending} alreadyAttached={photos.length} />
           {!voice ? <VoiceRecorder value={pendingVoice} onChange={setPendingVoice} /> : null}
-          {pending.length > 0 || pendingVoice ? (
+          {!clip ? <VideoRecorder value={pendingVideo} onChange={setPendingVideo} /> : null}
+          {pct != null ? <Banner text={`Uploading video… ${pct}%`} tone="info" /> : null}
+          {pending.length > 0 || pendingVoice || pendingVideo ? (
             <Button labelId="media.upload" onPress={upload} iconLeft="upload" fullWidth disabled={busy} loading={busy} />
           ) : null}
         </>
@@ -177,6 +213,7 @@ const styles = StyleSheet.create({
   },
   voiceRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: spacing.md },
   voiceRemove: { padding: spacing.sm },
+  videoBox: { flex: 1 },
   viewer: { flex: 1, backgroundColor: 'rgba(0,0,0,0.92)', justifyContent: 'center' },
   full: { width: '100%', height: '100%' },
 });
