@@ -275,19 +275,72 @@ function ApprovalRow({
 }
 
 function DocPreview({ label, url, loading }: { label: string; url: string | null; loading: boolean }) {
+  const [open, setOpen] = useState(false);
+
+  useEffect(() => {
+    if (!open) return;
+    const onKey = (e: KeyboardEvent) => e.key === 'Escape' && setOpen(false);
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
+  }, [open]);
+
   return (
     <div>
       <div className="mb-1 text-xs text-ink-muted">{label}</div>
-      <div className="flex h-32 items-center justify-center overflow-hidden rounded-lg border border-border bg-surface">
+      <div className="flex h-44 items-center justify-center overflow-hidden rounded-lg border border-border bg-surface">
         {loading ? (
           <span className="text-xs text-ink-muted">Loading…</span>
         ) : url ? (
-          // eslint-disable-next-line @next/next/no-img-element
-          <img src={url} alt={label} className="h-full w-full object-cover" />
+          <button
+            type="button"
+            onClick={() => setOpen(true)}
+            title="Click to view full size"
+            className="group relative flex h-full w-full cursor-zoom-in items-center justify-center bg-black/5"
+          >
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img src={url} alt={label} className="max-h-full max-w-full object-contain" />
+            <span className="absolute bottom-1 right-1 rounded bg-black/60 px-2 py-0.5 text-[11px] font-medium text-white opacity-0 transition group-hover:opacity-100">
+              View full
+            </span>
+          </button>
         ) : (
           <span className="text-xs text-ink-muted">Not provided</span>
         )}
       </div>
+
+      {open && url ? (
+        <div
+          className="fixed inset-0 z-50 flex flex-col items-center justify-center bg-black/85 p-4"
+          onClick={() => setOpen(false)}
+          role="dialog"
+          aria-label={`${label} full view`}
+        >
+          <div className="mb-3 flex w-full max-w-5xl items-center justify-between text-white">
+            <span className="text-sm font-semibold">{label}</span>
+            <div className="flex items-center gap-4 text-sm">
+              <a
+                href={url}
+                target="_blank"
+                rel="noreferrer"
+                onClick={(e) => e.stopPropagation()}
+                className="underline"
+              >
+                Open in new tab
+              </a>
+              <button type="button" onClick={() => setOpen(false)} className="rounded bg-white/20 px-3 py-1 font-semibold hover:bg-white/30">
+                Close ✕
+              </button>
+            </div>
+          </div>
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img
+            src={url}
+            alt={label}
+            onClick={(e) => e.stopPropagation()}
+            className="max-h-[85vh] max-w-full rounded-lg object-contain"
+          />
+        </div>
+      ) : null}
     </div>
   );
 }
