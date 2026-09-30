@@ -5,6 +5,7 @@ import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { PhotoAttach } from '../../components/PhotoAttach';
+import { VoiceRecorder } from '../../components/VoiceRecorder';
 import { Banner } from '../../components/ui/Banner';
 import { BiText } from '../../components/ui/BiText';
 import { Button } from '../../components/ui/Button';
@@ -14,7 +15,7 @@ import { ScreenHeader } from '../../components/ui/ScreenHeader';
 import { useAuth } from '../../context/AuthContext';
 import { useT } from '../../i18n/useT';
 import { trackEvent } from '../../lib/analytics';
-import { fetchJobMediaEnabled, uploadJobPhotos } from '../../lib/jobMedia';
+import { fetchJobMediaEnabled, uploadJobPhotos, uploadJobVoice } from '../../lib/jobMedia';
 import {
   addGuestJob,
   fetchJobPostingEnabled,
@@ -23,6 +24,7 @@ import {
 } from '../../lib/jobPosting';
 import { useSkillCategories } from '../../lib/skillCategories';
 import { supabase } from '../../lib/supabase';
+import type { VoiceNote } from '../../lib/voiceNote';
 import type { RootStackParamList } from '../../navigation/types';
 import { colors, radius, spacing } from '../../theme/tokens';
 import { typography } from '../../theme/typography';
@@ -43,6 +45,7 @@ export default function PostJobScreen() {
   const [city, setCity] = useState('');
   const [area, setArea] = useState('');
   const [photos, setPhotos] = useState<string[]>([]);
+  const [voice, setVoice] = useState<VoiceNote | null>(null);
   const [mediaEnabled, setMediaEnabled] = useState(false);
   const [preferredTime, setPreferredTime] = useState('');
   const [errors, setErrors] = useState<PostJobErrors>({});
@@ -84,13 +87,14 @@ export default function PostJobScreen() {
       setServerError('Could not post the job.');
       return;
     }
-    void trackEvent('job_posted', session?.user.id ?? null, { job_id: row.job_id, guest: !session, photos: photos.length });
+    void trackEvent('job_posted', session?.user.id ?? null, { job_id: row.job_id, guest: !session, photos: photos.length, voice: !!voice });
     let mediaFailed = false;
-    if (session && mediaEnabled && photos.length > 0) {
+    if (session && mediaEnabled && (photos.length > 0 || voice)) {
       setBusy(true);
-      const { failed } = await uploadJobPhotos(session.user.id, row.job_id, photos);
+      const photoResult = photos.length > 0 ? await uploadJobPhotos(session.user.id, row.job_id, photos) : { failed: 0 };
+      const voiceResult = voice ? await uploadJobVoice(session.user.id, row.job_id, voice) : { failed: 0 };
       setBusy(false);
-      mediaFailed = failed > 0;
+      mediaFailed = photoResult.failed + voiceResult.failed > 0;
     }
     if (row.guest_token) {
       await addGuestJob({ jobId: row.job_id, token: row.guest_token, title: v.title, createdAt: new Date().toISOString() });
@@ -148,7 +152,10 @@ export default function PostJobScreen() {
 
         {mediaEnabled ? (
           session && !isWorker ? (
-            <PhotoAttach uris={photos} onChange={setPhotos} />
+            <>
+              <PhotoAttach uris={photos} onChange={setPhotos} />
+              <VoiceRecorder value={voice} onChange={setVoice} />
+            </>
           ) : !session ? (
             <Banner id="media.signInForPhotos" tone="info" icon="camera" />
           ) : null

@@ -6,7 +6,7 @@ begin;
 
 create extension if not exists pgtap with schema extensions;
 
-select plan(61);
+select plan(63);
 
 -- ─── Test helpers (created inside this transaction, rolled back at the end) ───
 --   _t_id(name)      stable uuids for the seeded people
@@ -268,6 +268,10 @@ reset role;
 select public._t_as ('c1');
 select is ((select count(*) from public.list_job_media (current_setting ('t.k')::uuid)), 0::bigint, 'a purged file is no longer listed');
 reset role;
+
+-- ─── Bucket accepts what the app records ─────────────────────────────────
+select ok ((select 'audio/mp4' = any (allowed_mime_types) and 'audio/webm' = any (allowed_mime_types) and 'audio/3gpp' = any (allowed_mime_types) from storage.buckets where id = 'job-media'), 'the bucket accepts the voice note types the app records');
+select ok ((select 'image/jpeg' = any (allowed_mime_types) and not ('video/mp4' = any (allowed_mime_types)) from storage.buckets where id = 'job-media'), 'photos are still accepted and video is not yet');
 
 select * from finish ();
 rollback;

@@ -126,6 +126,7 @@ describe('PostJobScreen', () => {
     mockAuth.current = { session: { user: { id: 'c1' } }, role: 'customer' };
     const u = wrap(<PostJobScreen />);
     expect(await u.findByText('Add photo')).toBeTruthy();
+    expect(await u.findByText('Record voice note')).toBeTruthy();
     expect(u.queryByText(/budget/i)).toBeNull();
   });
 
@@ -134,6 +135,7 @@ describe('PostJobScreen', () => {
     const u = wrap(<PostJobScreen />);
     expect(await u.findByText('Sign in to add photos to your job.')).toBeTruthy();
     expect(u.queryByText('Add photo')).toBeNull();
+    expect(u.queryByText('Record voice note')).toBeNull();
   });
 
   it('hides the photo picker while the media flag is off', async () => {
@@ -141,6 +143,7 @@ describe('PostJobScreen', () => {
     const u = wrap(<PostJobScreen />);
     await u.findByText('Post job');
     expect(u.queryByText('Add photo')).toBeNull();
+    expect(u.queryByText('Record voice note')).toBeNull();
   });
 
   it('shows the server error', async () => {

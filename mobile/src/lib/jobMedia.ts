@@ -1,4 +1,5 @@
 import { supabase } from './supabase';
+import { audioContentType, audioExtension, type VoiceNote } from './voiceNote';
 import { readBody } from './workerUploads';
 
 /**
@@ -72,6 +73,40 @@ export async function uploadJobPhoto(userId: string, jobId: string, uri: string)
     // The file is not registered, so nobody can read it; delete it so it does not linger.
     await supabase.storage.from('job-media').remove([path]);
     throw new Error(error.message);
+  }
+}
+
+/** Uploads a recorded voice note for a job and registers it. Throws with a readable message on failure. */
+export async function uploadJobAudio(userId: string, jobId: string, note: VoiceNote): Promise<void> {
+  const body = await readBody(note.uri);
+  const size = body instanceof Uint8Array ? body.byteLength : body.size;
+  if (!size) throw new Error('The recording could not be read.');
+  const path = `${userId}/${jobId}/${randomName()}.${audioExtension(note.uri)}`;
+  const { error: upError } = await supabase.storage
+    .from('job-media')
+    .upload(path, body, { contentType: audioContentType(note.uri) });
+  if (upError) throw new Error(upError.message);
+  const { error } = await supabase.rpc('add_job_media', {
+    p_job_id: jobId,
+    p_kind: 'audio',
+    p_path: path,
+    p_bytes: size,
+    p_duration_s: note.seconds,
+  });
+  if (error) {
+    await supabase.storage.from('job-media').remove([path]);
+    throw new Error(error.message);
+  }
+}
+
+/** Uploads a voice note; returns how many failed (0 or 1). The job itself is never lost. */
+export async function uploadJobVoice(userId: string, jobId: string, note: VoiceNote): Promise<{ failed: number }> {
+  try {
+    await uploadJobAudio(userId, jobId, note);
+    return { failed: 0 };
+  } catch (e) {
+    console.warn('[jobMedia] voice note upload failed', e);
+    return { failed: 1 };
   }
 }
 

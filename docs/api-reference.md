@@ -142,7 +142,7 @@ Signed-in customers can attach up to 4 photos to an open job they posted (guests
 | `admin_job_media_to_purge` | admin | `p_limit` | Files of removed media, of jobs cancelled or expired over 7 days ago, and of closed jobs over 30 days ago |
 | `admin_mark_job_media_purged` | admin | `p_ids` | Count. Call after deleting the files from Storage; the admin Posted jobs page has a button that does both |
 
-Only photos are wired into the app so far; audio and video reuse these functions in later phases.
+Photos and one voice note (up to 60 s) are wired into the app; video reuses these functions in a later phase. Allowed file types in the bucket: JPEG/PNG/WebP images and AAC/M4A, 3GP, WebM, MP3 audio.
 
 ```ts
 const { data } = await supabase.rpc('post_job', { p_title: 'Fix tap', p_description: 'Kitchen tap leaking', p_category: 'plumber' });

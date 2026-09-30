@@ -1,6 +1,8 @@
 # Job media plan: photos, audio and video on job posts
 
-**Status: Phase 1 (foundation, photos, budget removal) built, tested and deployed; flag `job_media_enabled` is still off. Phases 2 (audio) and 3 (video) not started.** Estimate: 6–9 working days over three phases.
+**Status: Phase 1 (foundation, photos, budget removal) built, tested and deployed; flag `job_media_enabled` is still off. Phase 2 (audio) built and tested, not pushed or built into an APK yet. Phase 3 (video) not started.** Estimate: 6–9 working days over three phases.
+
+Phase 2 notes: voice notes (up to 60 s, mono AAC about 0.4 MB per minute) with Record, Pause/Resume, Stop, listen and re-record; the recording is uploaded after the job is posted, and a failed upload never loses the job. Workers and the owner play it in the job's media card. Needs `expo-audio` (native), so it needs a new APK (`app.config.ts` gains the microphone permission text). The bucket's allowed types gained AAC/M4A, 3GP and WebM. Not tested on a real device or on real Supabase storage: check recording on a low-end Android, and the WebM path on the web app, before enabling.
 
 Phase 1 notes: photos, admin view and removal, and clean-up (admin button on the Posted jobs page: the database cannot delete stored files itself) are done. Not built: an automatic scheduled clean-up, and sweeping uploads that were never registered (rare, when both the registration and the follow-up delete fail). The bucket's storage policies were not tested on a real Supabase project (the local test setup stubs storage); check one real upload before enabling the flag.
 

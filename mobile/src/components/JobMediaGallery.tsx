@@ -7,11 +7,14 @@ import {
   loadJobMedia,
   removeJobMedia,
   uploadJobPhotos,
+  uploadJobVoice,
   type JobMediaItem,
 } from '../lib/jobMedia';
+import type { VoiceNote } from '../lib/voiceNote';
 import { colors, radius, spacing } from '../theme/tokens';
 
 import { PhotoAttach } from './PhotoAttach';
+import { VoicePlayer, VoiceRecorder } from './VoiceRecorder';
 import { Banner } from './ui/Banner';
 import { BiText } from './ui/BiText';
 import { Button } from './ui/Button';
@@ -20,18 +23,19 @@ import { Icon } from './ui/Icon';
 
 type Props = {
   jobId: string;
-  /** Set for the customer who owns the job: they can add and remove photos while it is open. */
+  /** Set for the customer who owns the job: they can add and remove photos and a voice note while it is open. */
   ownerId?: string | null;
   /** Bump to reload after the parent changed something. */
   refreshKey?: number;
 };
 
-/** Photos on a job. Renders nothing when the feature is off or there is nothing to show (and nothing to add). */
+/** Photos and the voice note on a job. Renders nothing when the feature is off or there is nothing to show (and nothing to add). */
 export function JobMediaGallery({ jobId, ownerId = null, refreshKey = 0 }: Props) {
   const { t } = useT();
   const [enabled, setEnabled] = useState<boolean | null>(null);
   const [items, setItems] = useState<JobMediaItem[]>([]);
   const [pending, setPending] = useState<string[]>([]);
+  const [pendingVoice, setPendingVoice] = useState<VoiceNote | null>(null);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [viewing, setViewing] = useState<string | null>(null);
@@ -50,7 +54,8 @@ export function JobMediaGallery({ jobId, ownerId = null, refreshKey = 0 }: Props
 
   if (!enabled) return null;
   const photos = items.filter((i) => i.kind === 'photo');
-  if (photos.length === 0 && !ownerId) return null;
+  const voice = items.find((i) => i.kind === 'audio') ?? null;
+  if (items.length === 0 && !ownerId) return null;
 
   const remove = async (id: string) => {
     setError(null);
@@ -58,20 +63,35 @@ export function JobMediaGallery({ jobId, ownerId = null, refreshKey = 0 }: Props
       await removeJobMedia(id);
       await load();
     } catch (e) {
-      setError(e instanceof Error ? e.message : 'Could not remove the photo.');
+      setError(e instanceof Error ? e.message : 'Could not remove the file.');
     }
   };
 
   const upload = async () => {
-    if (!ownerId || pending.length === 0) return;
+    if (!ownerId || (pending.length === 0 && !pendingVoice)) return;
     setBusy(true);
     setError(null);
-    const { failed } = await uploadJobPhotos(ownerId, jobId, pending);
+    const photoResult = pending.length > 0 ? await uploadJobPhotos(ownerId, jobId, pending) : { failed: 0 };
+    const voiceResult = pendingVoice ? await uploadJobVoice(ownerId, jobId, pendingVoice) : { failed: 0 };
     setBusy(false);
     setPending([]);
-    if (failed > 0) setError(t('media.uploadFailed').en);
+    setPendingVoice(null);
+    if (photoResult.failed + voiceResult.failed > 0) setError(t('media.uploadFailed').en);
     await load();
   };
+
+  const removeButton = (id: string) =>
+    ownerId ? (
+      <Pressable
+        onPress={() => remove(id)}
+        accessibilityRole="button"
+        accessibilityLabel={t('media.remove').en}
+        style={styles.remove}
+        hitSlop={8}
+      >
+        <Icon name="x" size={14} color="#fff" />
+      </Pressable>
+    ) : null;
 
   return (
     <Card padding="lg">
@@ -92,26 +112,37 @@ export function JobMediaGallery({ jobId, ownerId = null, refreshKey = 0 }: Props
                 </View>
               )}
             </Pressable>
-            {ownerId ? (
-              <Pressable
-                onPress={() => remove(p.id)}
-                accessibilityRole="button"
-                accessibilityLabel={t('media.remove').en}
-                style={styles.remove}
-                hitSlop={8}
-              >
-                <Icon name="x" size={14} color="#fff" />
-              </Pressable>
-            ) : null}
+            {removeButton(p.id)}
           </View>
         ))}
       </View>
-      {photos.length === 0 ? <BiText id="media.none" variant="body" tone="muted" /> : null}
+      {photos.length === 0 ? <BiText id="media.none" variant="body" tone="muted" style={styles.gap} /> : null}
+
+      <BiText id="media.voice" variant="label" tone="body" style={styles.gap} />
+      {voice ? (
+        <View style={styles.voiceRow}>
+          {voice.url ? <VoicePlayer uri={voice.url} seconds={voice.duration_s} /> : <BiText id="media.recordFailed" variant="caption" tone="muted" />}
+          {ownerId ? (
+            <Pressable
+              onPress={() => remove(voice.id)}
+              accessibilityRole="button"
+              accessibilityLabel={t('media.remove').en}
+              hitSlop={8}
+              style={styles.voiceRemove}
+            >
+              <Icon name="trash-2" size={18} color={colors.danger} />
+            </Pressable>
+          ) : null}
+        </View>
+      ) : (
+        <BiText id="media.voiceNone" variant="body" tone="muted" style={styles.gap} />
+      )}
 
       {ownerId ? (
         <>
           <PhotoAttach uris={pending} onChange={setPending} alreadyAttached={photos.length} />
-          {pending.length > 0 ? (
+          {!voice ? <VoiceRecorder value={pendingVoice} onChange={setPendingVoice} /> : null}
+          {pending.length > 0 || pendingVoice ? (
             <Button labelId="media.upload" onPress={upload} iconLeft="upload" fullWidth disabled={busy} loading={busy} />
           ) : null}
         </>
@@ -144,6 +175,8 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
+  voiceRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: spacing.md },
+  voiceRemove: { padding: spacing.sm },
   viewer: { flex: 1, backgroundColor: 'rgba(0,0,0,0.92)', justifyContent: 'center' },
   full: { width: '100%', height: '100%' },
 });

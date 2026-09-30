@@ -1,4 +1,4 @@
-import { describeMediaCounts, uploadJobPhoto, uploadJobPhotos } from './jobMedia';
+import { describeMediaCounts, uploadJobAudio, uploadJobPhoto, uploadJobPhotos, uploadJobVoice } from './jobMedia';
 
 const mockUpload = jest.fn();
 const mockRemove = jest.fn();
@@ -10,6 +10,7 @@ jest.mock('./supabase', () => ({
     storage: { from: () => ({ upload: (...a: unknown[]) => mockUpload(...a), remove: (...a: unknown[]) => mockRemove(...a) }) },
   },
 }));
+jest.mock('./voiceNote', () => jest.requireActual('./voiceNote'));
 jest.mock('./workerUploads', () => ({ readBody: jest.fn(() => Promise.resolve(new Uint8Array([1, 2, 3]))) }));
 
 beforeEach(() => {
@@ -48,6 +49,32 @@ describe('uploadJobPhoto', () => {
     mockUpload.mockResolvedValue({ error: { message: 'network' } });
     await expect(uploadJobPhoto('u1', 'j1', 'file:///a.jpg')).rejects.toThrow('network');
     expect(mockRpc).not.toHaveBeenCalled();
+  });
+});
+
+describe('uploadJobAudio', () => {
+  it('uploads with the right type and registers the length', async () => {
+    mockUpload.mockResolvedValue({ error: null });
+    mockRpc.mockResolvedValue({ data: 'm1', error: null });
+    await uploadJobAudio('u1', 'j1', { uri: 'file:///rec.m4a', seconds: 42 });
+    const [path, , options] = mockUpload.mock.calls[0] as [string, unknown, { contentType: string }];
+    expect(path).toMatch(/^u1\/j1\/.+\.m4a$/);
+    expect(options.contentType).toBe('audio/mp4');
+    expect(mockRpc).toHaveBeenCalledWith('add_job_media', expect.objectContaining({ p_kind: 'audio', p_bytes: 3, p_duration_s: 42, p_path: path }));
+  });
+
+  it('deletes the stored file when registering fails', async () => {
+    mockUpload.mockResolvedValue({ error: null });
+    mockRpc.mockResolvedValue({ data: null, error: { message: 'limit reached for this media type' } });
+    await expect(uploadJobAudio('u1', 'j1', { uri: 'file:///rec.m4a', seconds: 5 })).rejects.toThrow('limit reached');
+    expect(mockRemove).toHaveBeenCalledWith([mockUpload.mock.calls[0][0]]);
+  });
+
+  it('reports a failure instead of throwing when used for a post', async () => {
+    mockUpload.mockResolvedValue({ error: { message: 'network' } });
+    const warn = jest.spyOn(console, 'warn').mockImplementation(() => {});
+    expect(await uploadJobVoice('u1', 'j1', { uri: 'file:///rec.m4a', seconds: 5 })).toEqual({ failed: 1 });
+    warn.mockRestore();
   });
 });
 

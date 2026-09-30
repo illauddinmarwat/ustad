@@ -69,6 +69,12 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
     'expo-font',
     'expo-notifications',
     [
+      'expo-audio',
+      {
+        microphonePermission: 'Ustad needs the microphone so you can record a voice note describing your job.',
+      },
+    ],
+    [
       'expo-image-picker',
       {
         photosPermission: 'Ustad needs your photos so you can upload your profile picture and CNIC.',
