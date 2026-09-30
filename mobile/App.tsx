@@ -50,7 +50,6 @@ import PostedJobScreen from './src/screens/app/PostedJobScreen';
 import PostJobScreen from './src/screens/app/PostJobScreen';
 import RequestWorkerScreen from './src/screens/app/RequestWorkerScreen';
 import ServicesScreen from './src/screens/app/ServicesScreen';
-import WorkerOnboardingScreen from './src/screens/app/WorkerOnboardingScreen';
 import AuthScreen from './src/screens/auth/AuthScreen';
 import RegisterChoiceScreen from './src/screens/auth/RegisterChoiceScreen';
 import RegisterCustomerScreen from './src/screens/auth/RegisterCustomerScreen';
@@ -295,11 +294,6 @@ function RootNavigator() {
       <Stack.Screen name="BoardJob" component={BoardJobScreen} options={{ title: en('nav.boardJob') }} />
       <Stack.Screen name="Notifications" component={NotificationsScreen} options={{ title: en('nav.notifications') }} />
       <Stack.Screen name="RequestWorker" component={RequestWorkerScreen} options={{ title: en('nav.requestWorker') }} />
-      <Stack.Screen
-        name="WorkerOnboarding"
-        component={WorkerOnboardingScreen}
-        options={{ title: en('nav.documentVerification') }}
-      />
       <Stack.Screen name="Faq" component={FaqScreen} options={{ title: en('nav.faq') }} />
       <Stack.Screen name="FaqChat" component={FaqChatScreen} options={{ title: en('nav.faqChat') }} />
       <Stack.Screen name="CommunityTips" component={CommunityTipsScreen} options={{ title: en('nav.communityTips') }} />

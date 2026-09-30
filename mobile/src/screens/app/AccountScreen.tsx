@@ -190,20 +190,6 @@ export default function AccountScreen() {
 
       {role === 'worker' && (
         <Card padding="lg">
-          <BiText id="account.verifyDocs" variant="title" tone="strong" style={styles.cardTitle} />
-          <BiText id="account.verifyDocs.subtitle" variant="body" tone="muted" style={styles.cardSubtitle} />
-          <Button
-            labelId="account.verifyDocs.cta"
-            onPress={() => navigation.navigate('WorkerOnboarding')}
-            iconLeft="shield"
-            variant="success"
-            fullWidth
-          />
-        </Card>
-      )}
-
-      {role === 'worker' && (
-        <Card padding="lg">
           <BiText id="account.location.title" variant="title" tone="strong" style={styles.cardTitle} />
           <BiText id="account.location.subtitle" variant="body" tone="muted" style={styles.cardSubtitle} />
           {locationMsg ? (

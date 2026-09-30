@@ -24,7 +24,6 @@ export type RootStackParamList = {
   JobBoard: undefined;
   BoardJob: { jobId: string };
   RequestWorker: { workerId: string; workerName?: string | null; category?: string | null };
-  WorkerOnboarding: undefined;
   Faq: undefined;
   FaqChat: undefined;
   CommunityTips: undefined;
