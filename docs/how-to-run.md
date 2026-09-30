@@ -57,6 +57,7 @@ Each new flow is behind a flag in `app_settings` and ships **off**. Turn them on
 update app_settings set value = 'true' where key = 'direct_requests_enabled';  -- send a request from Nearby
 update app_settings set value = 'true' where key = 'job_posting_enabled';      -- post a job, job board, quotes
 update app_settings set value = 'true' where key = 'job_media_enabled';       -- photos on job posts (private bucket job-media)
+update app_settings set value = 'true' where key = 'quote_upgrades_enabled';   -- quote price type, start date, sorting
 ```
 Tunable settings (numbers): `direct_request_timeout_hours`, `direct_request_daily_limit`, `job_post_daily_limit`, `guest_job_hourly_cap`, `job_expiry_days`, `payment_confirm_days`, `commission_rate_pct`. `helpline_number` is text and is a placeholder until you set it.
 

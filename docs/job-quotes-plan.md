@@ -1,6 +1,8 @@
 # Job quotes plan: quotes without a customer budget
 
-**Status: planned, nothing built.** Estimate: 6–8 working days over three phases. Depends on `docs/job-media-plan.md` (Phase 1 and Phase 2 there: storage bucket, audio recorder).
+**Status: Phase 1 (price type, start date, comparison and sorting) built and tested, behind `quote_upgrades_enabled` (off). Not pushed yet: see the note below. Phases 2 and 3 not started.** Estimate: 6–8 working days over three phases.
+
+Phase 1 deviations: the new function is `worker_send_quote`, which calls the existing `worker_quote_job` and then records the details (so it does not depend on how the price is computed). Start dates are chosen from Today, Tomorrow, In 2 days, In 3 days, In a week, and stored as a date. "Nearest" sorting is not built because jobs carry a city, not coordinates; sorting is by lowest price, best rated, or starts soonest. Quote cards show jobs done, an Estimate badge and the start day. Push order: `20260930190000_quote_commission_markup.sql` (another session) sorts before this phase's `20260930200000_quote_details.sql`; `supabase db push` rejects a migration older than one already applied, so push the earlier one first or both together. Depends on `docs/job-media-plan.md` (Phase 1 and Phase 2 there: storage bucket, audio recorder).
 
 ## Flow
 

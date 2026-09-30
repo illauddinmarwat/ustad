@@ -114,9 +114,20 @@ A customer, or a **guest with no account**, posts a job. Approved workers see it
 | `cancel_posted_job` | job owner or guest with token | `p_job_id`, `p_token` | void, while `open`/`quoted` |
 | `expire_posted_jobs` | scheduled (every 30 min, if `pg_cron`) | none | Cancels open customer jobs older than `job_expiry_days` (default 7) |
 
-New columns on `jobs`: `city`, `budget_min_pkr`, `budget_max_pkr` (kept for jobs posted before budgets were removed; new jobs leave them empty), `expires_at`. New tables (no client access): `quote_events`, `job_thread_messages`. Settings: `job_posting_enabled` (default `false`), `job_media_enabled` (default `false`), `job_post_daily_limit`, `guest_job_hourly_cap`, `job_expiry_days`.
+New columns on `jobs`: `city`, `budget_min_pkr`, `budget_max_pkr` (kept for jobs posted before budgets were removed; new jobs leave them empty), `expires_at`. New tables (no client access): `quote_events`, `job_thread_messages`. Settings: `job_posting_enabled` (default `false`), `job_media_enabled` (default `false`), `quote_upgrades_enabled` (default `false`), `job_post_daily_limit`, `guest_job_hourly_cap`, `job_expiry_days`.
 
 Not yet built: phone OTP and SMS for guests (a guest signs in or registers to accept instead), voice notes and video on jobs (see `docs/job-media-plan.md`), distance filtering on the board (jobs carry a city, not coordinates), and per-IP rate limits for guests.
+
+#### Quote details
+
+Behind `quote_upgrades_enabled` (default `false`). A quote can carry a price type and the day the worker can start; the customer's quote list returns them for comparison.
+
+| Function | Who | Input | Result |
+|----------|-----|-------|--------|
+| `worker_send_quote` | approved worker | `p_job_id`, `p_amount_pkr`, `p_message`, `p_price_type` (`fixed` or `estimate`), `p_available_from` (a date, yesterday up to 30 days ahead) | Quote id. Same rules and errors as `worker_quote_job`, then records the details. `estimate` means the final price is confirmed after the worker inspects the job (final-price confirmation comes in a later phase) |
+| `job_quotes` | job owner or guest with token | `p_job_id`, `p_token` | Adds `price_type`, `available_from` and `completed_jobs` (jobs this worker has finished) to the earlier columns |
+
+`quotes` gains `price_type` (default `fixed`) and `available_from`. Quotes sent the old way stay fixed with no date.
 
 #### Job media (photos)
 
