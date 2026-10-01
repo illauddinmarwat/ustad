@@ -114,7 +114,7 @@ A customer, or a **guest with no account**, posts a job. Approved workers see it
 | `cancel_posted_job` | job owner or guest with token | `p_job_id`, `p_token` | void, while `open`/`quoted` |
 | `expire_posted_jobs` | scheduled (every 30 min, if `pg_cron`) | none | Cancels open customer jobs older than `job_expiry_days` (default 7) |
 
-New columns on `jobs`: `city`, `budget_min_pkr`, `budget_max_pkr` (kept for jobs posted before budgets were removed; new jobs leave them empty), `expires_at`. New tables (no client access): `quote_events`, `job_thread_messages`. Settings: `job_posting_enabled` (default `false`), `job_media_enabled` (default `false`), `quote_upgrades_enabled` (default `false`), `job_post_daily_limit`, `guest_job_hourly_cap`, `job_expiry_days`.
+New columns on `jobs`: `city`, `budget_min_pkr`, `budget_max_pkr` (kept for jobs posted before budgets were removed; new jobs leave them empty), `expires_at`. New tables (no client access): `quote_events`, `job_thread_messages`. Settings: `job_posting_enabled` (default `false`), `job_media_enabled` (default `false`), `quote_upgrades_enabled` (default `false`), `typical_price_min_jobs` (default 10), `job_post_daily_limit`, `guest_job_hourly_cap`, `job_expiry_days`.
 
 Not yet built: phone OTP and SMS for guests (a guest signs in or registers to accept instead), voice notes and video on jobs (see `docs/job-media-plan.md`), distance filtering on the board (jobs carry a city, not coordinates), and per-IP rate limits for guests.
 
@@ -136,6 +136,18 @@ Behind `quote_upgrades_enabled` (default `false`). A quote can carry a price typ
 | `worker_set_final_price` | the assigned Ustad | `p_job_id`, `p_amount_pkr` (their own price) | The customer price. Only for an accepted estimate quote, while the job is `assigned` or `completed`; replaces a proposed or declined price; refused once confirmed or after three declined proposals |
 | `customer_respond_final_price` | the customer | `p_job_id`, `p_accept` | `confirmed` or `declined`. Notifies the Ustad |
 | `job_final_price` | customer, assigned Ustad, admin | `p_job_id` | `is_estimate`, `status` (`none`, `proposed`, `confirmed`, `declined`), `amount_pkr` (the viewer's own number), `customer_price_pkr` (what is paid in cash), `attempts`, `viewer` |
+
+**Voice notes on quotes and in the thread, and typical price.** Voice notes are up to 30 seconds, stored in the private `quote-voice` bucket at `{sender_id}/{job_id}/{file}` and readable only by the Ustad, the job's signed-in owner and admins (a guest poster cannot upload or hear them). Still behind `quote_upgrades_enabled`.
+
+| Function | Who | Input | Result |
+|----------|-----|-------|--------|
+| `worker_attach_quote_voice` | the quoting Ustad | `p_quote_id`, `p_path`, `p_seconds` (1 to 30) | void. Only on their own pending quote, path in their own job folder |
+| `post_thread_voice` | the job's signed-in owner, or the Ustad in that thread | `p_job_id`, `p_worker_id`, `p_path`, `p_seconds` | void. A thread message with no text. Notifies the other side |
+| `list_thread` | as before | `p_job_id`, `p_worker_id`, `p_token` | Adds `audio_path` and `audio_seconds`; `body` is empty for a voice note |
+| `job_quotes` | as before | `p_job_id`, `p_token` | Adds `audio_path` and `audio_seconds` |
+| `typical_price` | anyone | `p_category`, `p_city` | One row `scope` (`city` or `category`), `sample_size`, `low_pkr`, `median_pkr`, `high_pkr` (25th, 50th, 75th percentile of paid jobs in the last 90 days, rounded to Rs 10), or no row when fewer than `typical_price_min_jobs` (default 10) jobs |
+
+A thread message needs text or a voice note.
 
 `mark_job_paid` on an estimate job fails with `agree the final price before paying` until the price is confirmed, and the amount must equal it. Notifications: `final_price_proposed`, `final_price_confirmed`, `final_price_declined`.
 
@@ -256,6 +268,7 @@ await supabase.rpc('admin_set_worker_approval', { p_user_id: id, p_status: 'reje
 |--------|---------|--------|
 | `worker-documents` | CNIC front/back | Private. Admin views them through a signed URL (5 min) |
 | `worker-photos` | Worker profile photos | See the migrations for the policy |
+| `quote-voice` | Voice notes on quotes and in the thread (private) | Upload into your own folder for a job you take part in; read only by the Ustad, the job's owner and admins |
 | `job-media` | Photos on job posts (private) | Owner uploads into their own job folder; reads only through registered files for the owner, admins and matching workers |
 
 ## External services

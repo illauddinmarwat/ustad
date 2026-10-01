@@ -5,6 +5,8 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { JobMediaGallery } from '../../components/JobMediaGallery';
 import { QuoteFields } from '../../components/QuoteFields';
+import { TypicalPriceHint } from '../../components/TypicalPriceHint';
+import { VoiceRecorder } from '../../components/VoiceRecorder';
 import { JobThread } from '../../components/JobThread';
 import { QuotePricePreview } from '../../components/QuotePricePreview';
 import { Banner } from '../../components/ui/Banner';
@@ -24,7 +26,9 @@ import {
   type AvailabilityKey,
   type PriceType,
 } from '../../lib/quoteDetails';
+import { attachQuoteVoice, QUOTE_VOICE_SECONDS } from '../../lib/quoteVoice';
 import { supabase } from '../../lib/supabase';
+import type { VoiceNote } from '../../lib/voiceNote';
 import type { RootStackParamList } from '../../navigation/types';
 import { colors, spacing } from '../../theme/tokens';
 import { typography } from '../../theme/typography';
@@ -45,6 +49,7 @@ export default function BoardJobScreen() {
   const [amount, setAmount] = useState('');
   const [message, setMessage] = useState('');
   const [detailed, setDetailed] = useState(false);
+  const [voice, setVoice] = useState<VoiceNote | null>(null);
   const [priceType, setPriceType] = useState<PriceType>('fixed');
   const [availability, setAvailability] = useState<AvailabilityKey | null>(null);
   const [msg, setMsg] = useState<{ id?: StringId; text?: string; tone?: 'success' | 'warning' } | null>(null);
@@ -79,7 +84,7 @@ export default function BoardJobScreen() {
       setMsg({ id: 'quote.needDate', tone: 'warning' });
       return;
     }
-    const { error } = detailed
+    const { data: quoteId, error } = detailed
       ? await supabase.rpc('worker_send_quote', {
           p_job_id: jobId,
           p_amount_pkr: value,
@@ -96,7 +101,16 @@ export default function BoardJobScreen() {
       setMsg({ text: error.message, tone: 'warning' });
       return;
     }
-    void trackEvent('job_quote_sent', uid, { job_id: jobId, amount_pkr: value });
+    void trackEvent('job_quote_sent', uid, { job_id: jobId, amount_pkr: value, voice: !!voice });
+    if (detailed && voice && uid && typeof quoteId === 'string') {
+      const voiceError = await attachQuoteVoice(uid, jobId, quoteId, voice);
+      if (voiceError) {
+        setMsg({ id: 'quote.voiceFailed', tone: 'warning' });
+        await load();
+        return;
+      }
+      setVoice(null);
+    }
     setMsg({ id: 'requests.done.quoted', tone: 'success' });
     await load();
   };
@@ -143,6 +157,7 @@ export default function BoardJobScreen() {
             tone="info"
           />
         ) : null}
+        <TypicalPriceHint category={job.category} city={job.city} />
         <Input labelId="requests.quoteAmount" value={amount} onChangeText={setAmount} keyboardType="numeric" iconLeft="dollar-sign" />
         <QuotePricePreview amount={amount} />
         <Input labelId="board.quoteMessage" value={message} onChangeText={setMessage} multiline />
@@ -153,6 +168,9 @@ export default function BoardJobScreen() {
             availability={availability}
             onAvailability={setAvailability}
           />
+        ) : null}
+        {detailed ? (
+          <VoiceRecorder value={voice} onChange={setVoice} maxSeconds={QUOTE_VOICE_SECONDS} hintId="quote.voiceHint" />
         ) : null}
         <Button labelId="requests.sendQuote" onPress={sendQuote} iconLeft="send" fullWidth />
         {msg ? msg.id ? <Banner id={msg.id} tone={msg.tone ?? 'info'} /> : <Banner text={msg.text} tone="warning" /> : null}

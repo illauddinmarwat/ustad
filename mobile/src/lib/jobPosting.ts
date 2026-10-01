@@ -170,6 +170,17 @@ export type JobQuote = {
   price_type?: 'fixed' | 'estimate';
   available_from?: string | null;
   completed_jobs?: number | null;
+  /** A voice note recorded with the quote (30 s at most), in the private quote-voice bucket. */
+  audio_path?: string | null;
+  audio_seconds?: number | null;
 };
 
-export type ThreadMessage = { id: string; sender_role: 'worker' | 'customer'; body: string; created_at: string };
+export type ThreadMessage = {
+  id: string;
+  sender_role: 'worker' | 'customer';
+  /** Empty for a voice note. */
+  body: string | null;
+  created_at: string;
+  audio_path?: string | null;
+  audio_seconds?: number | null;
+};

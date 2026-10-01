@@ -30,6 +30,20 @@ jest.mock('../../lib/jobPosting', () => ({
   addGuestJob: (...a: unknown[]) => mockAddGuestJob(...a),
   removeGuestJob: (...a: unknown[]) => mockRemoveGuestJob(...a),
 }));
+const mockTypical: { current: unknown } = { current: null };
+jest.mock('../../lib/typicalPrice', () => ({
+  ...jest.requireActual('../../lib/typicalPrice'),
+  fetchTypicalPrice: () => Promise.resolve(mockTypical.current),
+}));
+const mockAttachVoice = jest.fn();
+jest.mock('../../lib/quoteVoice', () => ({
+  QUOTE_VOICE_SECONDS: 30,
+  attachQuoteVoice: (...a: unknown[]) => mockAttachVoice(...a),
+  sendThreadVoice: jest.fn(),
+  signedVoiceUrl: () => Promise.resolve('https://x/voice.m4a'),
+}));
+// eslint-disable-next-line @typescript-eslint/no-require-imports
+const audio = require('expo-audio');
 const mockDetailed = { current: false };
 jest.mock('../../lib/quoteDetails', () => ({
   ...jest.requireActual('../../lib/quoteDetails'),
@@ -69,6 +83,10 @@ beforeEach(() => {
   mockParams.current = {};
   mockMediaEnabled.current = false;
   mockDetailed.current = false;
+  mockTypical.current = null;
+  mockAttachVoice.mockReset();
+  audio.__state.recorderMillis = 0;
+  audio.__state.calls.length = 0;
 });
 
 const fillPost = (utils: ReturnType<typeof wrap>, description = 'The kitchen tap is leaking badly') => {
@@ -240,6 +258,29 @@ describe('PostedJobScreen', () => {
     expect(names()).toEqual(['Usman', 'Zaid']);
   });
 
+  it('plays a quote voice note for a signed-in customer and shows the typical price', async () => {
+    mockDetailed.current = true;
+    mockTypical.current = { scope: 'city', sampleSize: 12, low: 1000, median: 1500, high: 2000 };
+    mockAuth.current = { session: { user: { id: 'c1' } }, role: 'customer' };
+    mockParams.current = { jobId: 'j1' };
+    const withVoice = { ...quote, audio_path: 'w1/j1/a.m4a', audio_seconds: 7 };
+    rpcFor({ job_quotes: { data: [withVoice] } });
+    fromJob();
+    const u = wrap(<PostedJobScreen />);
+    expect(await u.findByText('0:00 / 0:07')).toBeTruthy();
+    expect(await u.findByText('Rs 1,000 - 2,000')).toBeTruthy();
+    expect(u.getByText('Usually around Rs 1,500')).toBeTruthy();
+  });
+
+  it('does not try to play a voice note for a guest', async () => {
+    mockDetailed.current = true;
+    mockParams.current = { jobId: 'j1', token: 'tok-1' };
+    rpcFor({ job_quotes: { data: [{ ...quote, audio_path: 'w1/j1/a.m4a', audio_seconds: 7 }] } });
+    const u = wrap(<PostedJobScreen />);
+    await u.findByText('Usman');
+    expect(u.queryByText('0:00 / 0:07')).toBeNull();
+  });
+
   it('lets a signed-in customer accept a quote', async () => {
     mockAuth.current = { session: { user: { id: 'c1' } }, role: 'customer' };
     mockParams.current = { jobId: 'j1' };
@@ -297,6 +338,66 @@ describe('BoardJobScreen', () => {
       ),
     );
     expect(mockRpc).not.toHaveBeenCalledWith('worker_quote_job', expect.anything());
+  });
+
+  it('shows the typical price and a voice note recorder when quote details are on', async () => {
+    mockDetailed.current = true;
+    mockTypical.current = { scope: 'category', sampleSize: 20, low: 800, median: 1100, high: 1500 };
+    rpcBoard();
+    const u = wrap(<BoardJobScreen />);
+    expect(await u.findByText('Rs 800 - 1,500')).toBeTruthy();
+    expect(u.getAllByText('Record voice note').length).toBeGreaterThan(0);
+  });
+
+  it('hides the typical price and the recorder while quote details are off', async () => {
+    mockTypical.current = { scope: 'category', sampleSize: 20, low: 800, median: 1100, high: 1500 };
+    rpcBoard();
+    const u = wrap(<BoardJobScreen />);
+    await u.findByText('New wiring for two bedrooms');
+    expect(u.queryByText('Rs 800 - 1,500')).toBeNull();
+    expect(u.queryByText('Record voice note')).toBeNull();
+  });
+
+  it('sends the quote first and then attaches the voice note to it', async () => {
+    mockDetailed.current = true;
+    mockAttachVoice.mockResolvedValue(null);
+    mockRpc.mockImplementation((name: string) => {
+      if (name === 'get_board_job') return Promise.resolve({ data: [boardJob] });
+      if (name === 'worker_send_quote') return Promise.resolve({ data: 'q9', error: null });
+      return Promise.resolve({ data: [], error: null });
+    });
+    const u = wrap(<BoardJobScreen />);
+    await u.findByText('New wiring for two bedrooms');
+    fireEvent.changeText(u.UNSAFE_getAllByType(TextInput)[0], '9500');
+    await u.findAllByLabelText('Record voice note');
+    fireEvent.press(u.getAllByLabelText('Record voice note')[0]);
+    await waitFor(() => expect(audio.__state.calls).toContain('record'));
+    audio.__state.recorderMillis = 9_000;
+    fireEvent.press(await u.findByLabelText('Stop'));
+    fireEvent.press(await u.findByText('Tomorrow'));
+    fireEvent.press(u.getByText('Send quote'));
+    await waitFor(() => expect(mockAttachVoice).toHaveBeenCalledWith('w1', 'j9', 'q9', { uri: 'file:///rec.m4a', seconds: 9 }));
+  });
+
+  it('says the quote was sent but the voice note failed to attach', async () => {
+    mockDetailed.current = true;
+    mockAttachVoice.mockResolvedValue('quote is not pending');
+    mockRpc.mockImplementation((name: string) => {
+      if (name === 'get_board_job') return Promise.resolve({ data: [boardJob] });
+      if (name === 'worker_send_quote') return Promise.resolve({ data: 'q9', error: null });
+      return Promise.resolve({ data: [], error: null });
+    });
+    const u = wrap(<BoardJobScreen />);
+    await u.findByText('New wiring for two bedrooms');
+    fireEvent.changeText(u.UNSAFE_getAllByType(TextInput)[0], '9500');
+    await u.findAllByLabelText('Record voice note');
+    fireEvent.press(u.getAllByLabelText('Record voice note')[0]);
+    await waitFor(() => expect(audio.__state.calls).toContain('record'));
+    audio.__state.recorderMillis = 4_000;
+    fireEvent.press(await u.findByLabelText('Stop'));
+    fireEvent.press(await u.findByText('Tomorrow'));
+    fireEvent.press(u.getByText('Send quote'));
+    expect(await u.findByText(/quote was sent, but the voice note could not be attached/)).toBeTruthy();
   });
 
   it('shows full details and sends a quote', async () => {

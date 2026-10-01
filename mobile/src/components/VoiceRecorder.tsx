@@ -9,6 +9,7 @@ import {
 import { useEffect, useRef, useState } from 'react';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 
+import type { StringId } from '../i18n/strings';
 import { useT } from '../i18n/useT';
 import {
   MAX_AUDIO_SECONDS,
@@ -29,6 +30,10 @@ type Phase = 'idle' | 'recording' | 'paused' | 'recorded';
 type Props = {
   value: VoiceNote | null;
   onChange: (note: VoiceNote | null) => void;
+  /** Longest note in seconds (default 60; quotes and thread messages use 30). */
+  maxSeconds?: number;
+  /** Hint text under the controls. */
+  hintId?: StringId;
 };
 
 function RoundButton({
@@ -89,7 +94,7 @@ export function VoicePlayer({ uri, seconds }: { uri: string; seconds?: number | 
  * Record a voice note of up to 60 seconds: record, pause and resume, stop, listen, and record again.
  * Nothing is uploaded here; the parent receives the local file and uploads it with the job.
  */
-export function VoiceRecorder({ value, onChange }: Props) {
+export function VoiceRecorder({ value, onChange, maxSeconds = MAX_AUDIO_SECONDS, hintId = 'media.voiceHint' }: Props) {
   const { t } = useT();
   const recorder = useAudioRecorder(VOICE_RECORDING_OPTIONS);
   const state = useAudioRecorderState(recorder, 250);
@@ -110,7 +115,7 @@ export function VoiceRecorder({ value, onChange }: Props) {
       await setAudioModeAsync({ allowsRecording: false, playsInSilentMode: true });
       const uri = recorder.uri;
       if (uri) {
-        onChange({ uri, seconds: secondsFromMillis(ms) });
+        onChange({ uri, seconds: Math.min(maxSeconds, secondsFromMillis(ms)) });
         setPhase('recorded');
       } else {
         setPhase('idle');
@@ -126,7 +131,7 @@ export function VoiceRecorder({ value, onChange }: Props) {
 
   // Stop by itself at the limit.
   useEffect(() => {
-    if (phase === 'recording' && state.durationMillis >= MAX_AUDIO_SECONDS * 1000) void finish();
+    if (phase === 'recording' && state.durationMillis >= maxSeconds * 1000) void finish();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [phase, state.durationMillis]);
 
@@ -180,7 +185,7 @@ export function VoiceRecorder({ value, onChange }: Props) {
         <View style={styles.playerRow}>
           <View style={[styles.dot, phase === 'recording' && styles.dotLive]} />
           <Text style={[typography.body, styles.clock]}>
-            {formatClock(seconds)} / {formatClock(MAX_AUDIO_SECONDS)}
+            {formatClock(seconds)} / {formatClock(maxSeconds)}
           </Text>
           {phase === 'recording' ? (
             <RoundButton icon="pause" label={t('media.pause').en} onPress={pause} tone="muted" />
@@ -201,7 +206,7 @@ export function VoiceRecorder({ value, onChange }: Props) {
         </View>
       ) : null}
 
-      <BiText id="media.voiceHint" variant="caption" tone="muted" />
+      <BiText id={hintId} variant="caption" tone="muted" />
       {error === 'denied' ? <Banner id="media.micDenied" tone="warning" /> : null}
       {error === 'failed' ? <Banner id="media.recordFailed" tone="warning" /> : null}
     </View>

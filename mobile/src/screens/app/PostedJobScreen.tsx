@@ -7,6 +7,8 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { JobMediaGallery } from '../../components/JobMediaGallery';
 import { JobThread } from '../../components/JobThread';
 import { QuoteSortBar } from '../../components/QuoteSortBar';
+import { SignedVoicePlayer } from '../../components/SignedVoicePlayer';
+import { TypicalPriceHint } from '../../components/TypicalPriceHint';
 import { Avatar } from '../../components/ui/Avatar';
 import { Banner } from '../../components/ui/Banner';
 import { BiText } from '../../components/ui/BiText';
@@ -158,6 +160,7 @@ export default function PostedJobScreen() {
             <BiText id="posted.noQuotes" variant="body" tone="muted" />
           ) : (
             <>
+              <TypicalPriceHint category={job.category} city={job.city} />
               {quotes.length > 1 ? <QuoteSortBar value={sort} onChange={setSort} /> : null}
               {sortQuotes(quotes, sort).map((q) => (
               <View key={q.quote_id} style={styles.quote}>
@@ -179,6 +182,7 @@ export default function PostedJobScreen() {
                   <Text style={styles.qAmount}>Rs {q.amount_pkr}</Text>
                 </View>
                 {q.message ? <Text style={styles.meta}>{q.message}</Text> : null}
+                {q.audio_path && uid ? <SignedVoicePlayer path={q.audio_path} seconds={q.audio_seconds} /> : null}
                 <View style={styles.row}>
                   <Button labelId="posted.accept" onPress={() => accept(q.quote_id)} variant="success" iconLeft="check" size="sm" hideUrdu />
                   <Button
