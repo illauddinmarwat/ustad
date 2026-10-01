@@ -689,8 +689,8 @@ export const strings = {
     ur: 'آپ بغیر اکاؤنٹ کے پوسٹ کر سکتے ہیں۔ قیمت قبول کرتے وقت ہی لاگ ان کرنا ہوگا۔',
   },
   'post.privacy': {
-    en: 'Do not add phone numbers or links. Your details are shared only after you accept a worker.',
-    ur: 'فون نمبر یا لنک نہ لکھیں۔ آپ کی تفصیلات کارکن کو قبول کرنے کے بعد ہی شیئر ہوتی ہیں۔',
+    en: 'Your details are shared only after you accept a worker.',
+    ur: 'آپ کی تفصیلات کارکن کو قبول کرنے کے بعد ہی شیئر ہوتی ہیں۔',
   },
   'post.field.category': { en: 'What kind of worker do you need?', ur: 'آپ کو کس قسم کا کارکن چاہیے؟' },
   'post.field.title': { en: 'Job title', ur: 'کام کا عنوان' },
@@ -717,8 +717,8 @@ export const strings = {
   },
   'media.voice': { en: 'Voice note', ur: 'صوتی پیغام' },
   'media.voiceHint': {
-    en: 'Speak for up to 60 seconds. Do not say phone numbers; they are shared after you accept a worker.',
-    ur: 'زیادہ سے زیادہ 60 سیکنڈ بولیں۔ فون نمبر نہ بتائیں؛ وہ کارکن کو قبول کرنے کے بعد شیئر ہوتے ہیں۔',
+    en: 'Speak for up to 60 seconds.',
+    ur: 'زیادہ سے زیادہ 60 سیکنڈ بولیں۔',
   },
   'media.record': { en: 'Record voice note', ur: 'صوتی پیغام ریکارڈ کریں' },
   'media.pause': { en: 'Pause', ur: 'روکیں' },
@@ -739,8 +739,8 @@ export const strings = {
   'media.attachments': { en: 'Photos and voice note', ur: 'تصاویر اور صوتی پیغام' },
   'media.video': { en: 'Video', ur: 'ویڈیو' },
   'media.videoHint': {
-    en: 'A short video (up to 30 seconds) shows the problem best. Do not say phone numbers.',
-    ur: 'ایک مختصر ویڈیو (زیادہ سے زیادہ 30 سیکنڈ) مسئلہ بہترین طریقے سے دکھاتی ہے۔ فون نمبر نہ بتائیں۔',
+    en: 'A short video (up to 30 seconds) shows the problem best.',
+    ur: 'ایک مختصر ویڈیو (زیادہ سے زیادہ 30 سیکنڈ) مسئلہ بہترین طریقے سے دکھاتی ہے۔',
   },
   'media.recordVideo': { en: 'Record video', ur: 'ویڈیو ریکارڈ کریں' },
   'media.startVideo': { en: 'Start recording', ur: 'ریکارڈنگ شروع کریں' },
@@ -829,8 +829,8 @@ export const strings = {
   'final.send': { en: 'Send final price', ur: 'حتمی قیمت بھیجیں' },
   'quote.voice': { en: 'Voice note (optional)', ur: 'صوتی پیغام (اختیاری)' },
   'quote.voiceHint': {
-    en: 'Explain your price in up to 30 seconds. Do not say phone numbers; they are shared after you are assigned.',
-    ur: 'زیادہ سے زیادہ 30 سیکنڈ میں اپنی قیمت سمجھائیں۔ فون نمبر نہ بتائیں؛ وہ کام ملنے کے بعد شیئر ہوتے ہیں۔',
+    en: 'Explain your price in up to 30 seconds.',
+    ur: 'زیادہ سے زیادہ 30 سیکنڈ میں اپنی قیمت سمجھائیں۔',
   },
   'quote.voiceFailed': {
     en: 'Your quote was sent, but the voice note could not be attached. Send the quote again to retry.',
@@ -866,7 +866,7 @@ export const strings = {
   'quote.startsBy': { en: 'Can start', ur: 'شروع کر سکتا ہے' },
   'quote.jobsDone': { en: 'jobs done', ur: 'کام مکمل' },
   'board.yourQuote': { en: 'Your quote', ur: 'آپ کی قیمت' },
-  'board.quoteMessage': { en: 'Message (optional, no phone numbers)', ur: 'پیغام (اختیاری، فون نمبر نہیں)' },
+  'board.quoteMessage': { en: 'Message (optional)', ur: 'پیغام (اختیاری)' },
   'board.askTitle': { en: 'Ask the customer', ur: 'کسٹمر سے پوچھیں' },
   'thread.empty': { en: 'No messages yet.', ur: 'ابھی کوئی پیغام نہیں۔' },
   'thread.placeholder': { en: 'Write a message', ur: 'پیغام لکھیں' },
