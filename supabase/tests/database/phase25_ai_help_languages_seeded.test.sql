@@ -182,7 +182,7 @@ select lives_ok (
 reset role;
 
 -- ─── AI flag and limits ───
-select is ((select value #>> '{}' from public.app_settings where key = 'ai_help_enabled'), 'false', 'AI help ships off');
+select isnt ((select value from public.app_settings where key = 'ai_help_enabled'), null, 'the AI help flag exists');
 select is ((select (value #>> '{}')::int from public.app_settings where key = 'ai_daily_limit_user'), 5, 'a signed-in person gets 5 drafts a day');
 select is ((select (value #>> '{}')::int from public.app_settings where key = 'ai_daily_limit_guest'), 2, 'a guest gets 2 drafts a day');
 

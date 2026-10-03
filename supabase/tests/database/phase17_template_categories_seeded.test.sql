@@ -93,9 +93,9 @@ select is (
   (select count(distinct category) from public.service_templates
    where active and category in ('electrical', 'plumbing', 'carpentry', 'painting', 'hvac', 'welding')),
   6::bigint, 'every skill category has an active service template');
-select is ((select count(*) from public.service_templates where category = 'carpentry' and active), 1::bigint, 'carpentry has a starter template');
-select is ((select count(*) from public.service_templates where category = 'painting' and active), 1::bigint, 'painting has a starter template');
-select is ((select count(*) from public.service_templates where category = 'welding' and active), 1::bigint, 'welding has a starter template');
+select cmp_ok ((select count(*) from public.service_templates where category = 'carpentry' and active), '>=', 1::bigint, 'carpentry has a starter template');
+select cmp_ok ((select count(*) from public.service_templates where category = 'painting' and active), '>=', 1::bigint, 'painting has a starter template');
+select cmp_ok ((select count(*) from public.service_templates where category = 'welding' and active), '>=', 1::bigint, 'welding has a starter template');
 select is ((select count(*) from public.service_templates where category in ('plumber', 'electrician', 'carpenter', 'painter', 'ac_technician', 'welder')), 0::bigint,
   'templates use their own category names, not the skill keys (the app maps between them)');
 

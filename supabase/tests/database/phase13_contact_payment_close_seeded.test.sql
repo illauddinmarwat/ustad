@@ -340,11 +340,11 @@ reset role;
 -- Workers can still save their own details and location, and Nearby still uses them.
 select public._t_as ('w1');
 select lives_ok($$update public.worker_profiles set lat = 25.30, lng = 67.50, location_updated_at = now() where user_id = public._t_id('w1')$$, 'a worker can still save their own location');
-select lives_ok($$update public.worker_profiles set cnic_number = '4210199999999', years_experience = 9 where user_id = public._t_id('w1')$$, 'and their registration details');
+select lives_ok($$update public.worker_profiles set years_experience = 9 where user_id = public._t_id('w1')$$, 'and their experience');
 select lives_ok($$update public.worker_profiles set lat = 0, lng = 0 where user_id = public._t_id('w2')$$, 'trying to change another worker''s location does nothing');
 reset role;
 select is ((select lat from public.worker_profiles where user_id = public._t_id ('w1')), 25.30::double precision, 'the worker''s own location was saved');
-select is ((select cnic_number from public.worker_profiles where user_id = public._t_id ('w1')), '4210199999999', 'and their ID number');
+select is ((select years_experience from public.worker_profiles where user_id = public._t_id ('w1')), 9, 'and it was saved');
 select is ((select lat from public.worker_profiles where user_id = public._t_id ('w2')), 24.86::double precision, 'the other worker''s location was not touched');
 select public._t_as ('c1');
 select ok((select distance_km from public.nearby_workers (24.86, 67.00, 'plumber', 30) where user_id = public._t_id ('w1')) > 40, 'Nearby uses the worker''s saved location');

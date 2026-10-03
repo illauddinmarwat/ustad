@@ -103,6 +103,7 @@ reset role;
 select is ((select budget_min_pkr from public.jobs where id = current_setting ('t.j')::uuid), null::numeric, 'a posted job has no budget');
 
 -- ─── Flag ────────────────────────────────────────────────────────────────
+select public._t_setting ('job_media_enabled', 'false'::jsonb);
 select public._t_as ('c1');
 select throws_ok(format ($$select public.add_job_media (%L, 'photo', %L, 1000)$$, current_setting ('t.j'), public._t_id ('c1') || '/' || current_setting ('t.j') || '/a.jpg'),
   'job media is not enabled', 'media is blocked while the flag is off');

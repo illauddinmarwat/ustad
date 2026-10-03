@@ -112,6 +112,7 @@ select is ((select price_pkr from public.worker_service_listings where id = '400
   null::numeric, 'the stored listing has no price');
 
 -- ─── Request a quote: gates ───
+select public._t_setting ('listing_quote_requests_enabled', 'false'::jsonb);
 select public._t_as ('c1');
 select throws_ok (
   $$ select public.create_listing_request ('40000000-0000-0000-0000-000000000001', 'Fix tap', 'Tap is leaking') $$,

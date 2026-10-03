@@ -207,4 +207,13 @@ The hosted project is not touched. A local Supabase stack runs from a scratch fo
 - **Several trades:** `worker_set_trades` saves the list (pgTAP `phase27`, 19 assertions). The app has a **My trades** card in Account (Ustads) and an **Add another trade** link on step 1 of Add a service; after saving, that trade's services appear. Registration still asks for one trade; the rest are added afterwards.
 - **Help me write picks the service itself:** if no service is chosen yet, the chat starts by asking "What kind of work do you do?" with the services to tap. The chosen service goes back to the wizard with the draft, so nothing is asked twice.
 - **Not done:** more than one trade at registration; an admin page to add or edit service types.
-- **Worth fixing:** `worker_profiles` has a policy that lets a worker update their own row, with no column limits, so a worker could in principle change their own `approval_status`. Not changed here.
+- **Fixed the same day:** see "Profile guards" below.
+
+## Profile guards (2026-10-03)
+
+Tested on a copy of the database, and both were real: a worker could approve themselves (`worker_profiles.approval_status`), and **any signed-in person could make themselves an admin** (`profiles.role`). Migration `20261003130000_profile_guards.sql` adds two triggers that refuse these changes when they come straight from the app:
+- `profiles`: the role may only switch between customer and worker (never to or from admin), and the account status cannot be changed by the person.
+- `worker_profiles`: approval status and review fields, verification, ratings and signals, commission suspension, the CNIC number and the trades cannot be edited directly, and a new row must start as pending with no rating.
+Name, language, city, bio, rate, photo, location, availability and the uploaded files are still theirs to change. Admin functions and system functions (approve, reject, reviews, signals, resubmit, trades, availability, Hisab) run with owner rights, and an admin may change anything, so they are unaffected. pgTAP `phase28` (25 assertions); the whole suite passes (45 files, 1,375 assertions). Three older tests were adjusted: they set flags that are now on, expected one service type per trade, or edited the CNIC as the worker.
+
+**To check on the live project:** the holes were open, so look for unexpected admins (Admin panel, Users) and for workers approved without a review.
