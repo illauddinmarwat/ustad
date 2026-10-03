@@ -145,7 +145,10 @@ function WorkerTabs() {
       <Tab.Screen
         name="Services"
         component={ServicesScreen}
-        options={{ tabBarItemStyle: { display: 'none' } }}
+        options={{
+          tabBarLabel: ({ focused }) => <TabBarLabel id="tabs.myServices" focused={focused} />,
+          tabBarIcon: tabIcon('grid'),
+        }}
       />
       <Tab.Screen
         name="Applications"

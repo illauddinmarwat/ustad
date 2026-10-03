@@ -19,6 +19,22 @@ jest.mock('@react-navigation/native', () => ({
   useNavigation: () => ({ replace: mockReplace, navigate: mockNavigate, goBack: jest.fn() }),
   useRoute: () => ({ params: mockParams.current }),
 }));
+jest.mock('../../lib/locations', () => ({
+  useCities: () => ({ items: [{ id: 'c1', name: 'Karachi' }], loading: false, failed: false, reload: jest.fn() }),
+  useAreas: (cityId: string | null) => ({
+    items: cityId
+      ? [
+          { id: 'a1', name: 'Gulshan' },
+          { id: 'a2', name: 'North Nazimabad' },
+          { id: 'a3', name: 'DHA' },
+        ]
+      : [],
+    loading: false,
+    failed: false,
+    reload: jest.fn(),
+  }),
+}));
+jest.mock('../../lib/myLocation', () => ({ getMyLocation: () => Promise.resolve(null) }));
 jest.mock('../../lib/analytics', () => ({ trackEvent: jest.fn() }));
 jest.mock('../../components/PhotoAttach', () => ({ PhotoAttach: () => null }));
 jest.mock('../../lib/listings', () => ({
@@ -41,6 +57,9 @@ jest.mock('../../lib/supabase', () => ({
             }),
           }),
         };
+      }
+      if (table === 'profiles') {
+        return { select: () => ({ eq: () => ({ maybeSingle: () => Promise.resolve({ data: { city: 'Karachi' }, error: null }) }) }) };
       }
       if (table === 'worker_profiles') {
         return { select: () => ({ eq: () => ({ maybeSingle: () => Promise.resolve({ data: { categories: ['plumber'] }, error: null }) }) }) };

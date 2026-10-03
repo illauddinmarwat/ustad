@@ -22,6 +22,22 @@ jest.mock('@react-navigation/native', () => ({
   useNavigation: () => ({ replace: mockReplace, navigate: jest.fn(), goBack: jest.fn(), setOptions: mockSetOptions }),
   useRoute: () => ({ params: mockParams.current }),
 }));
+jest.mock('../../lib/locations', () => ({
+  useCities: () => ({ items: [{ id: 'c1', name: 'Karachi' }], loading: false, failed: false, reload: jest.fn() }),
+  useAreas: (cityId: string | null) => ({
+    items: cityId
+      ? [
+          { id: 'a1', name: 'Gulshan' },
+          { id: 'a2', name: 'North Nazimabad' },
+          { id: 'a3', name: 'DHA' },
+        ]
+      : [],
+    loading: false,
+    failed: false,
+    reload: jest.fn(),
+  }),
+}));
+jest.mock('../../lib/myLocation', () => ({ getMyLocation: () => Promise.resolve(null) }));
 jest.mock('../../lib/analytics', () => ({ trackEvent: jest.fn() }));
 jest.mock('../../components/PhotoAttach', () => {
   const { Text } = require('react-native');
@@ -62,6 +78,9 @@ jest.mock('../../lib/supabase', () => ({
             }),
           }),
         };
+      }
+      if (table === 'profiles') {
+        return { select: () => ({ eq: () => ({ maybeSingle: () => Promise.resolve({ data: { city: 'Karachi' }, error: null }) }) }) };
       }
       return { select: () => ({ eq: () => ({ maybeSingle: () => Promise.resolve({ data: { categories: ['plumber'] }, error: null }) }) }) };
     },
@@ -120,7 +139,9 @@ describe('ListingWizardScreen: editing a service', () => {
     const inputs = u.UNSAFE_getAllByType(TextInput);
     expect(inputs[0].props.value).toBe('Leak and tap repair');
     expect(inputs[1].props.value).toBe('Mixers, pipes and flush tanks.');
-    expect(inputs[2].props.value).toBe('Gulshan, DHA');
+    expect(u.getAllByText('Gulshan').length).toBeGreaterThan(0);
+    expect(u.getAllByText('DHA').length).toBeGreaterThan(0);
+    expect(u.getByText('Your areas (2/10)')).toBeTruthy();
     expect(mockSetOptions).toHaveBeenCalledWith({ title: 'Edit service' });
   });
 
@@ -136,7 +157,8 @@ describe('ListingWizardScreen: editing a service', () => {
     fireEvent.press(u.getByText('Next'));
     await u.findByText('Headline');
     fireEvent.changeText(u.UNSAFE_getAllByType(TextInput)[0], 'Leak and tap repair at home');
-    fireEvent.changeText(u.UNSAFE_getAllByType(TextInput)[2], 'Gulshan, North Nazimabad');
+    fireEvent.press(u.getByLabelText('Remove DHA'));
+    fireEvent.press(await u.findByText('North Nazimabad'));
     fireEvent.press(u.getByText('Next'));
     await u.findByText('Save changes');
     fireEvent.press(u.getByText('Save changes'));

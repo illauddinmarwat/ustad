@@ -41,6 +41,22 @@ jest.mock('../../components/PhotoAttach', () => {
     ),
   };
 });
+jest.mock('../../lib/locations', () => ({
+  useCities: () => ({ items: [{ id: 'c1', name: 'Karachi' }], loading: false, failed: false, reload: jest.fn() }),
+  useAreas: (cityId: string | null) => ({
+    items: cityId
+      ? [
+          { id: 'a1', name: 'Gulshan' },
+          { id: 'a2', name: 'North Nazimabad' },
+          { id: 'a3', name: 'DHA' },
+        ]
+      : [],
+    loading: false,
+    failed: false,
+    reload: jest.fn(),
+  }),
+}));
+jest.mock('../../lib/myLocation', () => ({ getMyLocation: () => Promise.resolve(null) }));
 jest.mock('../../lib/analytics', () => ({ trackEvent: jest.fn() }));
 jest.mock('../../lib/listings', () => ({
   ...jest.requireActual('../../lib/listings'),
@@ -51,6 +67,9 @@ jest.mock('../../lib/supabase', () => ({
     from: (table: string) => {
       if (table === 'service_templates') {
         return { select: () => ({ eq: () => ({ limit: () => Promise.resolve({ data: mockTemplates.current, error: null }) }) }) };
+      }
+      if (table === 'profiles') {
+        return { select: () => ({ eq: () => ({ maybeSingle: () => Promise.resolve({ data: { city: 'Karachi' }, error: null }) }) }) };
       }
       if (table === 'worker_profiles') {
         return {
@@ -93,12 +112,17 @@ const fillDetails = (u: ReturnType<typeof wrap>, about = 'Mixers, pipes and flus
   const inputs = u.UNSAFE_getAllByType(TextInput);
   fireEvent.changeText(inputs[0], 'Leak and tap repair');
   fireEvent.changeText(inputs[1], about);
-  fireEvent.changeText(inputs[2], 'Gulshan, North Nazimabad');
+};
+
+const pickAreas = async (u: ReturnType<typeof wrap>) => {
+  fireEvent.press(await u.findByText('Gulshan'));
+  fireEvent.press(u.getByText('North Nazimabad'));
 };
 
 const toReview = async (u: ReturnType<typeof wrap>) => {
   await toDetails(u);
   fillDetails(u);
+  await pickAreas(u);
   fireEvent.press(u.getByText('Next'));
   await u.findByText('Publish listing');
 };

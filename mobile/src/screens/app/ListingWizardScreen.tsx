@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react';
 import { Image, Pressable, StyleSheet, Switch, Text, View } from 'react-native';
 
 import { AiHelpButton } from '../../components/ai/AiHelpButton';
+import { AreaPicker } from '../../components/AreaPicker';
 import { BilingualReview, type ReviewField } from '../../components/ai/BilingualReview';
 import { PhotoAttach } from '../../components/PhotoAttach';
 import { Banner } from '../../components/ui/Banner';
@@ -90,6 +91,7 @@ export default function ListingWizardScreen() {
   const [published, setPublished] = useState(false);
   const [busy, setBusy] = useState(false);
   const [loaded, setLoaded] = useState(false);
+  const [profileCity, setProfileCity] = useState<string | null>(null);
   const [aiEnabled, setAiEnabled] = useState(false);
   const bi = useBilingual('listing', LISTING_FIELDS);
   const draft = route.params?.draft;
@@ -163,6 +165,15 @@ export default function ListingWizardScreen() {
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [editId, uid]);
+
+  // The Ustad's own city pre-selects the city in the area picker.
+  useEffect(() => {
+    if (!uid) return;
+    void (async () => {
+      const { data } = await supabase.from('profiles').select('city').eq('id', uid).maybeSingle();
+      setProfileCity(((data as { city?: string | null } | null)?.city ?? null) || null);
+    })();
+  }, [uid]);
 
   useEffect(() => {
     let cancelled = false;
@@ -414,7 +425,7 @@ export default function ListingWizardScreen() {
               style={styles.multiline}
               error={errors.about}
             />
-            <Input labelId="listing.field.areas" value={areas} onChangeText={setAreas} iconLeft="map-pin" />
+            <AreaPicker value={areaList} onChange={(list) => setAreas(list.join(', '))} defaultCity={profileCity} />
           </Card>
           {isEdit ? (
             <Card padding="lg">

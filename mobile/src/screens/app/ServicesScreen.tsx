@@ -3,17 +3,18 @@ import type { CompositeNavigationProp } from '@react-navigation/native';
 import { useNavigation, useRoute, type RouteProp } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { useEffect, useMemo, useState } from 'react';
-import { Image, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { Pressable, ScrollView, StyleSheet, Text, useWindowDimensions, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { LocalizedText } from '../../components/LocalizedText';
-import { Avatar } from '../../components/ui/Avatar';
+import { ServiceCard } from '../../components/ServiceCard';
 import { Banner } from '../../components/ui/Banner';
 import { BiText } from '../../components/ui/BiText';
 import { Button } from '../../components/ui/Button';
 import { Card } from '../../components/ui/Card';
 import { Chip } from '../../components/ui/Chip';
 import { Icon } from '../../components/ui/Icon';
+import { Input } from '../../components/ui/Input';
 import { ScreenHeader } from '../../components/ui/ScreenHeader';
 import { useAuth } from '../../context/AuthContext';
 import type { StringId } from '../../i18n/strings';
@@ -25,7 +26,15 @@ import { buildDiscoverySubtitle, resolveDiscoveryCityCode, shouldUseCityAwareDis
 import { assignCohort, RANKING_EXPERIMENT } from '../../lib/experiments';
 import { templateCategoryFor } from '../../lib/categoryMap';
 import { fetchPhase3Flags } from '../../lib/featureFlags';
-import { loadListingExtras, loadListingPhotos, loadMyListings, type ListingExtras, type MyListing } from '../../lib/listings';
+import {
+  loadListingCards,
+  loadListingExtras,
+  loadListingPhotos,
+  loadMyListings,
+  type ListingCardInfo,
+  type ListingExtras,
+  type MyListing,
+} from '../../lib/listings';
 import { fetchPhase4Flags } from '../../lib/phase4Flags';
 import { fetchPhase5Flags } from '../../lib/phase5Flags';
 import { applyRanking, type RankableListing, type ScoredListing } from '../../lib/ranking';
@@ -82,6 +91,9 @@ export default function ServicesScreen() {
   const [photos, setPhotos] = useState<Record<string, string[]>>({});
   const [extras, setExtras] = useState<Record<string, ListingExtras>>({});
   const [mine, setMine] = useState<MyListing[]>([]);
+  const [cards, setCards] = useState<Record<string, ListingCardInfo>>({});
+  const [search, setSearch] = useState('');
+  const { width } = useWindowDimensions();
   const [msg, setMsg] = useState<Msg | null>(null);
   const [rankingEnabled, setRankingEnabled] = useState(false);
   const [boostsEnabled, setBoostsEnabled] = useState(false);
@@ -251,9 +263,10 @@ export default function ServicesScreen() {
     const ranked = applyRanking(rows, phase3.rankingEnabled);
     setListings(ranked);
     const ids = ranked.map((l) => l.id);
-    void Promise.all([loadListingPhotos(ids), loadListingExtras(ids)]).then(([p, x]) => {
+    void Promise.all([loadListingPhotos(ids), loadListingExtras(ids), loadListingCards(ids)]).then(([p, x, c]) => {
       setPhotos(p);
       setExtras(x);
+      setCards(c);
     });
 
     if (phase5.cityCampaignsEnabled) {
@@ -340,6 +353,19 @@ export default function ServicesScreen() {
     navigation.navigate('ListingDetail', { listingId: listing.id });
   };
 
+  const wide = width >= 720;
+  const needle = search.trim().toLowerCase();
+  const shown = listings
+    .map((l, idx) => ({ l, idx }))
+    .filter(({ l }) => {
+      if (!needle) return true;
+      const hay = [l.headline, extras[l.id]?.headlineI18n?.en, extras[l.id]?.headlineI18n?.ur, cards[l.id]?.workerName, ...(extras[l.id]?.areas ?? [])]
+        .filter(Boolean)
+        .join(' ')
+        .toLowerCase();
+      return hay.includes(needle);
+    });
+
   const discoverySubtitle = buildDiscoverySubtitle(rankingEnabled, boostsEnabled, cityCode, cityAwareDiscovery);
 
   return (
@@ -407,16 +433,26 @@ export default function ServicesScreen() {
         msg.kind === 'id' ? <Banner id={msg.id} tone="info" /> : <Banner text={msg.text} tone="warning" />
       ) : null}
 
-      <Card padding="lg">
-        <View style={styles.listingsHead}>
-          <BiText id="services.list.title" variant="title" tone="strong" />
-          <Pressable accessibilityRole="button" onPress={() => load().catch(() => setMsgId('services.error.load'))}>
-            <Icon name="refresh-cw" size={16} color={colors.primary} />
-          </Pressable>
-        </View>
-        <Text style={styles.discoverySubtitle}>{discoverySubtitle}</Text>
+      <View style={styles.listingsHead}>
+        <BiText id="services.list.title" variant="title" tone="strong" />
+        <Pressable accessibilityRole="button" onPress={() => load().catch(() => setMsgId('services.error.load'))}>
+          <Icon name="refresh-cw" size={16} color={colors.primary} />
+        </Pressable>
+      </View>
+      <Input
+        value={search}
+        onChangeText={setSearch}
+        placeholderId="services.search"
+        iconLeft="search"
+        containerStyle={styles.searchBox}
+        hideUrduHint
+      />
+      <Text style={styles.discoverySubtitle}>
+        {shown.length} {t('services.count').en} · {discoverySubtitle}
+      </Text>
 
-        {listings.length === 0 ? (
+      {listings.length === 0 ? (
+        <Card padding="lg">
           <View style={styles.empty}>
             <BiText id="services.list.empty" variant="body" tone="muted" align="center" />
             <Button
@@ -428,50 +464,45 @@ export default function ServicesScreen() {
               style={styles.emptyCta}
             />
           </View>
-        ) : (
-          listings.map((l, idx) => (
-            <Pressable key={l.id} style={styles.listingItem} onPress={() => openListing(l, idx)}>
-              {photos[l.id]?.[0] ? (
-                <Image source={{ uri: photos[l.id][0] }} style={styles.cover} accessibilityIgnoresInvertColors />
-              ) : (
-                <Avatar name={l.headline} tone="primary" />
-              )}
-              <View style={styles.listingBody}>
-                <LocalizedText original={l.headline} i18n={extras[l.id]?.headlineI18n} style={styles.listingHeadline} numberOfLines={2} compact />
-                {extras[l.id]?.areas.length ? (
-                  <Text style={styles.listingAreas} numberOfLines={1}>{extras[l.id].areas.join(' · ')}</Text>
-                ) : null}
-                {l.explanations.length > 0 || boostChipLabel({ is_boosted: l.is_boosted, boost_weight: l.boost_weight }) ? (
-                  <View style={styles.chipRow}>
-                    {boostChipLabel({ is_boosted: l.is_boosted, boost_weight: l.boost_weight }) ? (
-                      <Chip label="Featured" tone="warning" icon="star" />
-                    ) : null}
-                    {l.explanations.map((label) => (
-                      <Chip key={label} label={label} tone="primary" />
-                    ))}
-                  </View>
-                ) : null}
-              </View>
-              <View style={styles.chevron}>
-                <Icon name="chevron-right" size={20} color={colors.textMuted} />
-              </View>
-            </Pressable>
-          ))
-        )}
+        </Card>
+      ) : shown.length === 0 ? (
+        <Card padding="lg">
+          <BiText id="services.noMatch" variant="body" tone="muted" align="center" />
+        </Card>
+      ) : (
+        <View style={styles.grid}>
+          {shown.map(({ l, idx }) => (
+            <View key={l.id} style={wide ? styles.cellWide : styles.cell}>
+              <ServiceCard
+                headline={l.headline}
+                headlineI18n={extras[l.id]?.headlineI18n}
+                workerName={cards[l.id]?.workerName}
+                rating={cards[l.id]?.rating}
+                reviewCount={cards[l.id]?.reviewCount}
+                verified={cards[l.id]?.verified}
+                jobsDone={cards[l.id]?.jobsDone}
+                areas={extras[l.id]?.areas}
+                photos={photos[l.id]}
+                featured={!!boostChipLabel({ is_boosted: l.is_boosted, boost_weight: l.boost_weight })}
+                onPress={() => openListing(l, idx)}
+              />
+            </View>
+          ))}
+        </View>
+      )}
 
-        {!session?.user.id && (
-          <View style={styles.guestHint}>
-            <Banner id="services.guest.inlineHint" tone="info" icon="user-plus" />
-            <Button
-              labelId="common.signInOrCreate"
-              onPress={() => navigation.navigate('Auth')}
-              variant="secondary"
-              iconLeft="log-in"
-              fullWidth
-            />
-          </View>
-        )}
-      </Card>
+      {!session?.user.id && (
+        <View style={styles.guestHint}>
+          <Banner id="services.guest.inlineHint" tone="info" icon="user-plus" />
+          <Button
+            labelId="common.signInOrCreate"
+            onPress={() => navigation.navigate('Auth')}
+            variant="secondary"
+            iconLeft="log-in"
+            fullWidth
+          />
+        </View>
+      )}
     </ScrollView>
   );
 }
@@ -487,7 +518,11 @@ function CategoryPill({ label, active, onPress }: { label: string; active: boole
 const styles = StyleSheet.create({
   root: { padding: spacing.lg, backgroundColor: colors.bg, flexGrow: 1 },
   cardTitle: { marginBottom: spacing.md },
-  listingsHead: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 4 },
+  listingsHead: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginTop: spacing.md, marginBottom: spacing.sm },
+  searchBox: { marginBottom: spacing.xs },
+  grid: { flexDirection: 'row', flexWrap: 'wrap', gap: spacing.md },
+  cell: { width: '100%' },
+  cellWide: { width: '48.8%' },
   discoverySubtitle: { ...typography.caption, color: colors.textMuted, marginBottom: spacing.md },
   empty: { paddingVertical: spacing.lg, alignItems: 'center' },
   emptyCta: { marginTop: spacing.md },

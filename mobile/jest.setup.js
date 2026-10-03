@@ -7,6 +7,9 @@ jest.mock('@react-native-async-storage/async-storage', () =>
   require('@react-native-async-storage/async-storage/jest/async-storage-mock'),
 );
 
+// The native WebView (used by the map picker) is plain ESM that jest cannot load; a blank stand-in is enough.
+jest.mock('react-native-webview', () => ({ WebView: () => null }));
+
 jest.mock('@expo/vector-icons', () => {
   const React = require('react');
   const { Text } = require('react-native');

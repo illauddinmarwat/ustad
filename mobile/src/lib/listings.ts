@@ -179,3 +179,36 @@ export async function loadMyListings(workerId: string): Promise<MyListing[]> {
   if (error || !Array.isArray(data)) return [];
   return data as MyListing[];
 }
+
+export type ListingCardInfo = {
+  workerName: string | null;
+  rating: number | null;
+  reviewCount: number;
+  verified: boolean;
+  jobsDone: number;
+};
+
+/** Who offers each listing and how they are rated (public, for the Services cards). */
+export async function loadListingCards(listingIds: string[]): Promise<Record<string, ListingCardInfo>> {
+  if (listingIds.length === 0) return {};
+  const { data, error } = await supabase.rpc('listing_card_info', { p_listing_ids: listingIds });
+  if (error || !Array.isArray(data)) return {};
+  const out: Record<string, ListingCardInfo> = {};
+  for (const row of data as Array<{
+    listing_id: string;
+    worker_name: string | null;
+    rating: number | string | null;
+    review_count: number | null;
+    verified: boolean | null;
+    jobs_done: number | null;
+  }>) {
+    out[row.listing_id] = {
+      workerName: row.worker_name,
+      rating: row.rating == null ? null : Number(row.rating),
+      reviewCount: row.review_count ?? 0,
+      verified: !!row.verified,
+      jobsDone: row.jobs_done ?? 0,
+    };
+  }
+  return out;
+}

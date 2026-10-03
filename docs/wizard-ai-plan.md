@@ -192,3 +192,11 @@ The hosted project is not touched. A local Supabase stack runs from a scratch fo
 ## Phase 0 done (2026-10-03)
 
 `.github/workflows/deploy-functions.yml` sets `GROQ_API_KEY` and `GROQ_MODEL` as Supabase function secrets and deploys `ai-draft`, using the GitHub secrets that are already there (`SUPABASE_ACCESS_TOKEN`, `GROQ_API_KEY`) and reading the project reference from `NEXT_PUBLIC_SUPABASE_URL`. Decision D-A: GitHub workflow. It has not run yet: a workflow can only run once it is on `master`. After the first run, turn on `ai_help_enabled` and `listing_quote_requests_enabled` (Admin, Settings) and check AI Usage.
+
+## Services cards, area picker, Nearby without location (2026-10-03)
+
+- **Services list** is now cards: cover photo (or the Ustad's initials), headline in the reader's language, Ustad name with a verified tick, rating and review count, jobs done, up to three areas, and a Request a quote prompt. A search box filters by service, Ustad or area; two columns on a wide screen. Data comes from `listing_card_info` (migration `20261003110000_listing_card_info.sql`, pgTAP `phase26`, 9 assertions).
+- **Ustads see the Services tab** (My services) in the bottom bar; it was a hidden tab.
+- **Areas in the listing wizard** are picked, not typed: city list and area chips from the admin-managed lists (`cities`, `city_areas`), several cities allowed, an "other area" box, selected areas as removable chips (up to 10). **Use my location** reads the device position and ticks the matching area; with no device location (a PC) it opens a map to pin instead. The Ustad's own city is pre-selected.
+- **Nearby on a PC**: when the device location is not available there is now a city list and **Pick on the map** instead of a dead end, plus a note on switching location on in Windows. A chosen city is turned into coordinates with OpenStreetMap (no key) and the usual nearby search runs around it; "Showing Ustads near ..." with Change goes back to device location.
+- **Hourly rate removed from Nearby cards**, as decided earlier.

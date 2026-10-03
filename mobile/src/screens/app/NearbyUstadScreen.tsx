@@ -2,7 +2,6 @@ import type { BottomTabNavigationProp } from '@react-navigation/bottom-tabs';
 import type { CompositeNavigationProp } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { useNavigation, useRoute, type RouteProp } from '@react-navigation/native';
-import * as Location from 'expo-location';
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { ActivityIndicator, Alert, Image, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -11,6 +10,7 @@ import { Avatar } from '../../components/ui/Avatar';
 import { Banner } from '../../components/ui/Banner';
 import { BiText } from '../../components/ui/BiText';
 import { Button } from '../../components/ui/Button';
+import { LocationPickerModal } from '../../components/LocationPickerModal';
 import { Card } from '../../components/ui/Card';
 import { Chip } from '../../components/ui/Chip';
 import { EmptyState } from '../../components/ui/EmptyState';
@@ -19,6 +19,9 @@ import { Input } from '../../components/ui/Input';
 import { ScreenHeader } from '../../components/ui/ScreenHeader';
 import { useT } from '../../i18n/useT';
 import { fetchDirectRequestFlags } from '../../lib/directRequests';
+import { forwardGeocode } from '../../lib/geocode';
+import { useCities } from '../../lib/locations';
+import { getMyLocation } from '../../lib/myLocation';
 import { fetchJobPostingEnabled } from '../../lib/jobPosting';
 import { skillNameFor, useSkillCategories } from '../../lib/skillCategories';
 import { supabase } from '../../lib/supabase';
@@ -60,6 +63,10 @@ export default function NearbyUstadScreen() {
 
   const [locState, setLocState] = useState<LocState>('idle');
   const [coords, setCoords] = useState<Coords | null>(null);
+  const [manualLabel, setManualLabel] = useState<string | null>(null);
+  const [mapOpen, setMapOpen] = useState(false);
+  const [pickFailed, setPickFailed] = useState(false);
+  const cities = useCities();
   const [category, setCategory] = useState<string | null>(route.params?.category ?? null);
   useEffect(() => {
     setCategory(route.params?.category ?? null);
@@ -79,19 +86,36 @@ export default function NearbyUstadScreen() {
   const requestLocation = useCallback(async () => {
     setLocState('requesting');
     setError(null);
-    try {
-      const permission = await Location.requestForegroundPermissionsAsync();
-      if (!permission.granted) {
-        setLocState('denied');
-        return;
-      }
-      const position = await Location.getCurrentPositionAsync({ accuracy: Location.Accuracy.Balanced });
-      setCoords({ lat: position.coords.latitude, lng: position.coords.longitude });
-      setLocState('granted');
-    } catch {
+    const pos = await getMyLocation();
+    if (!pos) {
       setLocState('denied');
+      return;
     }
+    setManualLabel(null);
+    setCoords(pos);
+    setLocState('granted');
   }, []);
+
+  // Where to look when the device cannot say (a PC with location off): a city from the list, or a pin on the map.
+  const chooseCity = async (name: string) => {
+    setPickFailed(false);
+    const hit = await forwardGeocode(`${name}, Pakistan`);
+    if (!hit) {
+      setPickFailed(true);
+      return;
+    }
+    setCoords({ lat: hit.lat, lng: hit.lng });
+    setManualLabel(name);
+    setLocState('granted');
+  };
+
+  const choosePin = (loc: Coords) => {
+    setMapOpen(false);
+    setPickFailed(false);
+    setCoords(loc);
+    setManualLabel('');
+    setLocState('granted');
+  };
 
   useEffect(() => {
     requestLocation();
@@ -183,16 +207,49 @@ export default function NearbyUstadScreen() {
         ) : null}
 
         {locState !== 'granted' && (
-          <Card padding="lg">
-            <EmptyState
-              icon="map-pin"
-              titleId="nearby.locate.title"
-              subtitleId={locState === 'denied' ? 'nearby.locate.denied' : 'nearby.locate.subtitle'}
-              ctaLabelId="nearby.locate.cta"
-              onCta={requestLocation}
-            />
-          </Card>
+          <>
+            <Card padding="lg">
+              <EmptyState
+                icon="map-pin"
+                titleId="nearby.locate.title"
+                subtitleId={locState === 'denied' ? 'nearby.locate.denied' : 'nearby.locate.subtitle'}
+                ctaLabelId="nearby.locate.cta"
+                onCta={requestLocation}
+              />
+            </Card>
+            {locState === 'denied' ? (
+              <Card padding="lg">
+                <BiText id="nearby.pick.title" variant="title" tone="strong" style={styles.pickTitle} />
+                <BiText id="nearby.pick.hint" variant="bodySm" tone="muted" style={styles.pickHint} />
+                <View style={styles.cityRow}>
+                  {cities.items.map((c) => (
+                    <CategoryPill key={c.id} label={c.name} active={false} onPress={() => chooseCity(c.name)} />
+                  ))}
+                </View>
+                <Button
+                  labelId="nearby.pick.map"
+                  onPress={() => setMapOpen(true)}
+                  variant="secondary"
+                  iconLeft="map"
+                  fullWidth
+                  style={styles.emptyCta}
+                />
+                {pickFailed ? <Banner id="nearby.pick.failed" tone="warning" /> : null}
+              </Card>
+            ) : null}
+          </>
         )}
+
+        {locState === 'granted' && manualLabel !== null ? (
+          <View style={styles.nearRow}>
+            <Text style={styles.nearText}>
+              {t('nearby.near').en} {manualLabel || t('nearby.near.pinned').en}
+            </Text>
+            <Pressable onPress={requestLocation} accessibilityRole="button" hitSlop={8}>
+              <Text style={styles.nearChange}>{t('nearby.change').en}</Text>
+            </Pressable>
+          </View>
+        ) : null}
 
         {loading && (
           <View style={styles.loadingRow}>
@@ -227,6 +284,7 @@ export default function NearbyUstadScreen() {
           />
         ))}
       </ScrollView>
+      <LocationPickerModal visible={mapOpen} initial={null} onConfirm={choosePin} onClose={() => setMapOpen(false)} />
     </View>
   );
 }
@@ -263,7 +321,6 @@ function WorkerCard({
 }) {
   const { t } = useT();
   const skillText = skillNameFor(worker.categories?.[0])?.en ?? null;
-  const rateUnitLabel = worker.rate_unit === 'hour' ? t('nearby.card.perHour').en : t('nearby.card.perDay').en;
 
   return (
     <Card padding="lg">
@@ -308,9 +365,6 @@ function WorkerCard({
       </View>
 
       <View style={styles.chipRow}>
-        {worker.rate_pkr != null && (
-          <Chip label={`Rs ${worker.rate_pkr}${rateUnitLabel}`} tone="primary" icon="dollar-sign" />
-        )}
         {worker.is_verified && <Chip label={t('nearby.card.verified').en} tone="accent" icon="check-circle" />}
         {worker.is_available === false ? (
           <Chip label={t('nearby.card.busy').en} tone="neutral" icon="clock" />
@@ -371,6 +425,19 @@ const styles = StyleSheet.create({
   actionRow: { flexDirection: 'row', gap: spacing.sm, marginTop: spacing.md },
   actionBtn: { flex: 1 },
   emptyCta: { marginTop: spacing.md },
+  pickTitle: { marginBottom: spacing.xs },
+  pickHint: { marginBottom: spacing.md },
+  cityRow: { flexDirection: 'row', flexWrap: 'wrap', gap: spacing.sm },
+  nearRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    backgroundColor: colors.primarySoft,
+    borderRadius: radius.md,
+    padding: spacing.md,
+  },
+  nearText: { ...typography.label, color: colors.primaryDeep, flex: 1 },
+  nearChange: { ...typography.label, color: colors.primary },
   crossLink: { flexDirection: 'row', alignItems: 'center', gap: 6, marginBottom: spacing.md },
   crossLinkText: { color: colors.primary },
 });

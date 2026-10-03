@@ -1,4 +1,4 @@
-import { loadListingPhotos, parseAreas, uploadListingPhoto, uploadListingPhotos, validateListing } from './listings';
+import { loadListingCards, loadListingPhotos, parseAreas, uploadListingPhoto, uploadListingPhotos, validateListing } from './listings';
 
 const mockUpload = jest.fn();
 const mockRemove = jest.fn();
@@ -118,5 +118,29 @@ describe('loadListingPhotos', () => {
     expect(await loadListingPhotos([])).toEqual({});
     mockRpc.mockResolvedValue({ data: null, error: { message: 'x' } });
     expect(await loadListingPhotos(['l1'])).toEqual({});
+  });
+});
+
+describe('loadListingCards', () => {
+  it('maps the card info by listing, turning the rating into a number', async () => {
+    mockRpc.mockResolvedValue({
+      data: [{ listing_id: 'l1', worker_name: 'Usman Khan', rating: '4.70', review_count: 12, verified: true, jobs_done: 25 }],
+      error: null,
+    });
+    expect(await loadListingCards(['l1'])).toEqual({
+      l1: { workerName: 'Usman Khan', rating: 4.7, reviewCount: 12, verified: true, jobsDone: 25 },
+    });
+    expect(mockRpc).toHaveBeenCalledWith('listing_card_info', { p_listing_ids: ['l1'] });
+  });
+
+  it('copes with a Ustad who has no rating yet', async () => {
+    mockRpc.mockResolvedValue({ data: [{ listing_id: 'l2', worker_name: null, rating: null, review_count: null, verified: null, jobs_done: null }], error: null });
+    expect(await loadListingCards(['l2'])).toEqual({ l2: { workerName: null, rating: null, reviewCount: 0, verified: false, jobsDone: 0 } });
+  });
+
+  it('returns nothing for no ids or a failed call', async () => {
+    expect(await loadListingCards([])).toEqual({});
+    mockRpc.mockResolvedValue({ data: null, error: { message: 'x' } });
+    expect(await loadListingCards(['l1'])).toEqual({});
   });
 });

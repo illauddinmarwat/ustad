@@ -98,9 +98,11 @@ jest.mock('../../lib/supabase', () => {
 const mockAreas: { current: Record<string, string[]> } = { current: {} };
 const mockHeadlineI18n: { current: unknown } = { current: null };
 const mockPhotos: { current: Record<string, string[]> } = { current: {} };
+const mockCards: { current: Record<string, unknown> } = { current: {} };
 const mockMine: { current: Array<{ id: string; headline: string; status: string }> } = { current: [] };
 jest.mock('../../lib/listings', () => ({
   loadMyListings: () => Promise.resolve(mockMine.current),
+  loadListingCards: () => Promise.resolve(mockCards.current),
   loadListingExtras: () =>
     Promise.resolve(Object.fromEntries(Object.entries(mockAreas.current).map(([id, areas]) => [id, { areas, headlineI18n: mockHeadlineI18n.current, detailI18n: null }]))),
   loadListingPhotos: () => Promise.resolve(mockPhotos.current),
@@ -161,6 +163,7 @@ beforeEach(() => {
   mockAuth.current = { role: null, session: null };
   mockAreas.current = {};
   mockMine.current = [];
+  mockCards.current = {};
   mockHeadlineI18n.current = null;
   mockPhotos.current = {};
 });
@@ -176,7 +179,8 @@ describe('ServicesScreen', () => {
     mockAreas.current = { 'listing-1': ['Gulshan', 'DHA'] };
     const { findByText, queryByText } = wrap(<ServicesScreen />);
     await findByText('AC service — DHA');
-    expect(await findByText('Gulshan · DHA')).toBeTruthy();
+    expect(await findByText('Gulshan')).toBeTruthy();
+    expect(await findByText('DHA')).toBeTruthy();
     expect(queryByText(/From Rs/)).toBeNull();
     expect(queryByText(/3500/)).toBeNull();
   });
@@ -219,6 +223,40 @@ describe('ServicesScreen', () => {
     const { findByText, queryByText } = wrap(<ServicesScreen />);
     await findByText('AC service — DHA');
     expect(queryByText('My services')).toBeNull();
+  });
+
+  it('shows who offers the service, their rating, jobs done and a Request a quote prompt', async () => {
+    mockCards.current = { 'listing-1': { workerName: 'Usman Khan', rating: 4.7, reviewCount: 12, verified: true, jobsDone: 25 } };
+    const { findByText, getByText } = wrap(<ServicesScreen />);
+    expect(await findByText('Usman Khan')).toBeTruthy();
+    expect(getByText('4.7')).toBeTruthy();
+    expect(getByText('(12)')).toBeTruthy();
+    expect(getByText('25 jobs done')).toBeTruthy();
+    expect(getByText('Request a quote')).toBeTruthy();
+  });
+
+  it('marks a Ustad with no reviews yet as new', async () => {
+    mockCards.current = { 'listing-1': { workerName: 'Bilal', rating: null, reviewCount: 0, verified: false, jobsDone: 0 } };
+    const { findByText } = wrap(<ServicesScreen />);
+    expect(await findByText('New')).toBeTruthy();
+  });
+
+  it('counts the services and filters them by what is typed in the search box', async () => {
+    mockCards.current = { 'listing-1': { workerName: 'Usman Khan', rating: 4.7, reviewCount: 12, verified: true, jobsDone: 3 } };
+    const { findByText, getByPlaceholderText, queryByText, getByText } = wrap(<ServicesScreen />);
+    await findByText('AC service — DHA');
+    expect(getByText(/^1 services/)).toBeTruthy();
+    fireEvent.changeText(getByPlaceholderText('Search services or Ustads'), 'usman');
+    expect(await findByText('AC service — DHA')).toBeTruthy();
+    fireEvent.changeText(getByPlaceholderText('Search services or Ustads'), 'electrician');
+    expect(await findByText('No service matches your search.')).toBeTruthy();
+    expect(queryByText('AC service — DHA')).toBeNull();
+  });
+
+  it('opens the listing when its card is tapped', async () => {
+    const { findByLabelText } = wrap(<ServicesScreen />);
+    fireEvent.press(await findByLabelText('AC service — DHA'));
+    expect(mockNavigate).toHaveBeenCalledWith('ListingDetail', { listingId: 'listing-1' });
   });
 
   it('shows the first photo of a listing as its cover', async () => {
