@@ -146,7 +146,49 @@ describe('AiHelperScreen (job)', () => {
     expect(await u.findByText(/used all of your AI help/)).toBeTruthy();
     expect(u.queryByText('Continue')).toBeNull();
     fireEvent.press(u.getByText('Write it myself'));
-    expect(mockGoBack).toHaveBeenCalled();
+    // What they typed goes into the form, so nothing is lost.
+    expect(mockNavigate).toHaveBeenCalledWith('PostJob', { prefill: { description: 'Kitchen tap leaking' } });
+  });
+
+  it('keeps the typed words for the form when the draft was refused', async () => {
+    mockAsk.mockResolvedValue({ ok: true, data: [] });
+    mockJobDraft.mockResolvedValue({ ok: false, error: 'blocked' });
+    const u = wrap();
+    say(u, 'Kitchen tap leaking, the mixer drips all day');
+    expect(await u.findByText(/Your words are saved/)).toBeTruthy();
+    fireEvent.press(u.getByText('Write it myself'));
+    expect(mockNavigate).toHaveBeenCalledWith('PostJob', {
+      prefill: { description: 'Kitchen tap leaking, the mixer drips all day' },
+    });
+  });
+
+  it('tells people they can speak instead of typing, on the typing step only', async () => {
+    mockAsk.mockResolvedValue({ ok: true, data: QUESTIONS });
+    const u = wrap();
+    expect(u.getByText('Tip: you can speak. Tap the microphone on your keyboard.')).toBeTruthy();
+    say(u, 'Kitchen tap leaking');
+    await u.findByText('Tap spout');
+    expect(u.queryByText('Tip: you can speak. Tap the microphone on your keyboard.')).toBeNull();
+  });
+
+  it('asks in Urdu when the person writes Roman Urdu, whatever their setting', async () => {
+    mockAsk.mockResolvedValue({ ok: true, data: QUESTIONS });
+    mockJobDraft.mockResolvedValue({ ok: true, data: JOB_DRAFT });
+    const u = wrap();
+    say(u, 'nal se pani tapak raha hai kitchen ka');
+    await u.findByText('Tap spout');
+    expect(mockAsk).toHaveBeenCalledWith(expect.objectContaining({ lang: 'ur' }));
+    fireEvent.press(u.getByText('Create my draft'));
+    await waitFor(() => expect(mockJobDraft).toHaveBeenCalled());
+    expect(mockJobDraft.mock.calls[0][0].lang).toBe('ur');
+  });
+
+  it('keeps the setting language for plain English', async () => {
+    mockAsk.mockResolvedValue({ ok: true, data: QUESTIONS });
+    const u = wrap();
+    say(u, 'Kitchen tap leaking');
+    await u.findByText('Tap spout');
+    expect(mockAsk).toHaveBeenCalledWith(expect.objectContaining({ lang: 'en' }));
   });
 
   it('lets a person try again after a failure and uses the same text', async () => {
@@ -166,7 +208,7 @@ describe('AiHelperScreen (job)', () => {
     say(u, 'Kitchen tap leaking');
     fireEvent.press(await u.findByText('Tap spout'));
     fireEvent.press(u.getByText('Create my draft'));
-    expect(await u.findByText(/could not prepare a safe draft/)).toBeTruthy();
+    expect(await u.findByText(/Your words are saved/)).toBeTruthy();
     fireEvent.press(u.getByText('Continue'));
     expect(await u.findByText('Review my draft')).toBeTruthy();
     expect(mockAsk).toHaveBeenCalledTimes(1);

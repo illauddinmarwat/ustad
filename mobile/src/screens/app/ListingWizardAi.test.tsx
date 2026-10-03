@@ -143,6 +143,16 @@ describe('ListingWizardScreen: Help me write', () => {
   });
 });
 
+describe('ListingWizardScreen: when the helper could not write a draft', () => {
+  it('puts what the Ustad typed into the About field on Details, so nothing is lost', async () => {
+    mockParams.current = { prefill: { about: 'Main ek painter hun, ghar paint krta hun' } };
+    const u = wrap();
+    expect(await u.findByText('Step 2 of 3')).toBeTruthy();
+    expect(u.UNSAFE_getAllByType(TextInput)[1].props.value).toBe('Main ek painter hun, ghar paint krta hun');
+    expect(mockTranslate).not.toHaveBeenCalled();
+  });
+});
+
 describe('ListingWizardScreen: English and Urdu', () => {
   it('prepares the other language, shows both with the AI badge, and needs the tick before Publish', async () => {
     const u = wrap();

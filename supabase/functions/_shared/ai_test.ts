@@ -5,7 +5,9 @@ import {
   buildMessages,
   containsContact,
   type Deps,
+  amountsIn,
   mentionsAmount,
+  numbersIn,
   mentionsMoney,
   parseDraft,
   parseModelJson,
@@ -356,4 +358,55 @@ Deno.test('callGroq gives up after the timeout', async () => {
       init.signal?.addEventListener('abort', () => rej(new DOMException('aborted', 'AbortError')));
     })) as unknown as typeof fetch;
   await assertRejects(() => callGroq([], { apiKey: 'k', model: 'm', timeoutMs: 20 }, slow), Error, 'timed out');
+});
+
+Deno.test('amountsIn and numbersIn read figures, including Urdu digits', () => {
+  assertEquals([...amountsIn('Rs 1,500 per day or 800 rupees')].sort(), ['1500', '800']);
+  assertEquals([...amountsIn('قیمت ۵۰۰ روپے')], ['500']);
+  assertEquals([...numbersIn(['din ka 500', 'kam 3 ghante', 'x'])].sort(), ['3', '500']);
+  assertEquals(amountsIn('no money here').size, 0);
+});
+
+Deno.test('a price the person typed may stay in the draft, one they did not may not', () => {
+  const given = okReq({ kind: 'listing', text: 'Main painter hun, din ka 800 rupay lagata hun' });
+  const withPrice = {
+    source: 'ur',
+    headline: { en: 'Painter', ur: 'پینٹر' },
+    about: { en: 'I paint homes. I charge Rs 800 per day.', ur: 'میں گھر پینٹ کرتا ہوں۔ دن کے 800 روپے لیتا ہوں۔' },
+  };
+  assertEquals((parseDraft(withPrice, given) as { about: { en: string } }).about.en, 'I paint homes. I charge Rs 800 per day.');
+  // The same words with a figure the person never gave are refused.
+  const none = okReq({ kind: 'listing', text: 'Main painter hun' });
+  assertThrows(() => parseDraft(withPrice, none), Blocked);
+});
+
+Deno.test('a price in Urdu digits matches the same price written in Latin digits', () => {
+  const req = okReq({ kind: 'listing', text: 'rate ۵۰۰ rs' });
+  const d = parseDraft({ source: 'ur', headline: { en: 'Painter', ur: 'پینٹر' }, about: { en: 'I charge Rs 500.', ur: 'میں ۵۰۰ روپے لیتا ہوں۔' } }, req);
+  assert((d as { about: { en: string } }).about.en.includes('500'));
+});
+
+Deno.test('a translation keeps the price that was in the text', () => {
+  const p = parseRequest({ action: 'translate', kind: 'listing', from: 'en', fields: { about: 'I paint rooms for Rs 3000.' } });
+  assert(p.ok);
+  assertEquals(parseTranslation({ fields: { about: 'میں کمرے ۳۰۰۰ روپے میں پینٹ کرتا ہوں۔' } }, p.req), {
+    about: 'میں کمرے ۳۰۰۰ روپے میں پینٹ کرتا ہوں۔',
+  });
+  assertThrows(() => parseTranslation({ fields: { about: 'میں کمرے ۹۰۰۰ روپے میں پینٹ کرتا ہوں۔' } }, p.req), Blocked);
+});
+
+Deno.test('listing questions talk to the worker about their own work; job questions talk to the customer', () => {
+  const l = buildMessages(okReq({ kind: 'listing', action: 'questions', text: 'Service: Room painting. main painter hun' }))[0].content;
+  assert(l.includes('talking to a worker'));
+  assert(l.includes('Never ask what a customer would be asked'));
+  const j = buildMessages(okReq({ action: 'questions' }))[0].content;
+  assert(j.includes('needs work done'));
+});
+
+Deno.test('prompts ask for very simple words and for spelling to be fixed quietly', () => {
+  const m = buildMessages(okReq({ kind: 'listing' }))[0].content;
+  assert(m.includes('very short, simple, everyday words'));
+  assert(m.includes('fix the spelling'));
+  assert(m.includes('only if the person gave it'));
+  assert(!m.includes('Do not advertise prices'));
 });

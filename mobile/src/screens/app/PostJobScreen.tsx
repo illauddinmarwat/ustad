@@ -70,6 +70,7 @@ export default function PostJobScreen() {
   const [aiEnabled, setAiEnabled] = useState(false);
   const bi = useBilingual('job', POST_FIELDS);
   const draft = route.params?.draft;
+  const prefill = route.params?.prefill;
 
   useEffect(() => {
     fetchJobPostingEnabled().then(setEnabled);
@@ -91,6 +92,13 @@ export default function PostJobScreen() {
     setStep(3);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [draft]);
+
+  // The helper could not write a draft: keep what the person typed in the description.
+  useEffect(() => {
+    if (!prefill?.description) return;
+    setDescription((cur) => cur || prefill.description);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [prefill]);
 
   // Editing the original text keeps the prepared versions but marks the other language out of date.
   const editOriginal = (key: string, setter: (v: string) => void) => (v: string) => {

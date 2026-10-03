@@ -95,6 +95,7 @@ export default function ListingWizardScreen() {
   const [aiEnabled, setAiEnabled] = useState(false);
   const bi = useBilingual('listing', LISTING_FIELDS);
   const draft = route.params?.draft;
+  const prefill = route.params?.prefill;
 
   useEffect(() => {
     fetchAiHelpEnabled().then(setAiEnabled);
@@ -117,6 +118,14 @@ export default function ListingWizardScreen() {
     setStep(2);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [draft]);
+
+  // The helper could not write a draft: keep what the Ustad typed and let them finish it by hand.
+  useEffect(() => {
+    if (!prefill?.about) return;
+    setAbout((cur) => cur || prefill.about);
+    setStep(2);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [prefill]);
 
   // Editing the original text keeps the prepared versions but marks the other language out of date.
   const editOriginal = (key: string, setter: (v: string) => void) => (v: string) => {

@@ -56,7 +56,7 @@ export default function AiUsagePage() {
         ))}
       </div>
 
-      <div className="mb-6 grid grid-cols-1 gap-3 sm:grid-cols-3">
+      <div className="mb-6 grid grid-cols-1 gap-3 sm:grid-cols-4">
         <div className="rounded-xl2 border border-border bg-surface p-4">
           <div className="text-xs text-ink-muted">Calls</div>
           <div className="text-2xl font-bold text-ink-strong">{total.calls}</div>
@@ -68,6 +68,10 @@ export default function AiUsagePage() {
         <div className="rounded-xl2 border border-border bg-surface p-4">
           <div className="text-xs text-ink-muted">Tokens</div>
           <div className="text-2xl font-bold text-ink-strong">{total.tokens.toLocaleString()}</div>
+        </div>
+        <div className="rounded-xl2 border border-border bg-surface p-4">
+          <div className="text-xs text-ink-muted">Tokens per call</div>
+          <div className="text-2xl font-bold text-ink-strong">{total.calls > 0 ? Math.round(total.tokens / total.calls).toLocaleString() : '-'}</div>
         </div>
       </div>
 

@@ -28,3 +28,24 @@ export function localized(original: string | null | undefined, i18n: I18n, lang:
   const translated = i18n?.source ? i18n.source !== lang : version !== orig;
   return { text: version, translated: translated && version !== orig, original: orig };
 }
+
+// Everyday Roman Urdu words. Two or more of them in Latin letters means the person is writing Urdu.
+const ROMAN_URDU = new Set([
+  'hun', 'hoon', 'hai', 'hain', 'ho', 'ka', 'ke', 'ki', 'ko', 'se', 'say', 'mein', 'main', 'me', 'kaam', 'kam', 'karta', 'krta',
+  'karte', 'krte', 'karna', 'krna', 'nahi', 'nahin', 'aur', 'ek', 'wala', 'wali', 'lagata', 'lagana', 'leta', 'lete', 'ghar',
+  'dukan', 'din', 'saal', 'rate', 'pani', 'nal', 'bijli', 'mera', 'meri', 'apna', 'apni', 'hum', 'tak', 'bhi', 'b', 'sab', 'kuch',
+  'kitna', 'kab', 'kal', 'aaj', 'abhi', 'theek', 'thik', 'kharab', 'chahiye', 'chahye', 'raha', 'rahi', 'tapak',
+]);
+
+/** Roman Urdu: Urdu written in Latin letters, which people type a lot. */
+export function isRomanUrdu(text: string): boolean {
+  if (URDU.test(text)) return false;
+  const words = text.toLowerCase().match(/[a-z]+/g) ?? [];
+  const hits = new Set(words.filter((w) => ROMAN_URDU.has(w)));
+  return hits.size >= 2;
+}
+
+/** The language to talk to a person in: what they wrote in (Urdu script or Roman Urdu means Urdu), else their setting. */
+export function chooseLang(text: string, setting: Lang): Lang {
+  return URDU.test(text) || isRomanUrdu(text) ? 'ur' : setting;
+}

@@ -847,8 +847,12 @@ export const strings = {
     ur: 'براہ کرم فون نمبر اور لنک ہٹا دیں۔ یہ قیمت قبول ہونے کے بعد شیئر ہوتے ہیں۔',
   },
   'ai.error.blocked': {
-    en: 'I could not prepare a safe draft. Please write it yourself.',
-    ur: 'میں محفوظ ڈرافٹ نہیں بنا سکا۔ براہ کرم خود لکھیں۔',
+    en: 'I could not turn that into a draft. Your words are saved. Tap below to finish it yourself.',
+    ur: 'میں اسے ڈرافٹ نہیں بنا سکا۔ آپ کے الفاظ محفوظ ہیں۔ نیچے دبا کر خود مکمل کریں۔',
+  },
+  'ai.tip.speak': {
+    en: 'Tip: you can speak. Tap the microphone on your keyboard.',
+    ur: 'مشورہ: آپ بول کر بھی لکھ سکتے ہیں۔ کی بورڈ پر مائیکروفون دبائیں۔',
   },
   'ai.error.failed': {
     en: 'Something went wrong. Please try again, or write it yourself.',

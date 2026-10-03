@@ -1,4 +1,4 @@
-import { buildI18n, detectLang, localized } from './i18nText';
+import { buildI18n, chooseLang, detectLang, isRomanUrdu, localized } from './i18nText';
 
 describe('detectLang', () => {
   it('says Urdu for Urdu script and English otherwise', () => {
@@ -40,5 +40,31 @@ describe('localized', () => {
   it('works without a source by comparing with the original', () => {
     expect(localized('Leaking tap', { en: 'Leaking tap', ur: 'نل لیک' }, 'ur').translated).toBe(true);
     expect(localized('Leaking tap', { en: 'Leaking tap', ur: 'نل لیک' }, 'en').translated).toBe(false);
+  });
+});
+
+describe('isRomanUrdu and chooseLang', () => {
+  it('spots Urdu typed in Latin letters', () => {
+    expect(isRomanUrdu('Main ek painter hun Dukan ghar sab kuch paint krta hun')).toBe(true);
+    expect(isRomanUrdu('nal se pani tapak raha hai')).toBe(true);
+    expect(isRomanUrdu('main bijli ka kaam krta hun, fan lagane ka 500 rupay leta hun')).toBe(true);
+  });
+
+  it('does not take plain English, or one stray word, for Roman Urdu', () => {
+    expect(isRomanUrdu('Kitchen tap leaking, water drips from the mixer')).toBe(false);
+    expect(isRomanUrdu('I am a painter')).toBe(false);
+    expect(isRomanUrdu('Please fix it in the kitchen')).toBe(false);
+  });
+
+  it('does not call Urdu script Roman Urdu', () => {
+    expect(isRomanUrdu('میں پینٹر ہوں')).toBe(false);
+  });
+
+  it('talks to a person in the language they wrote, and in their setting otherwise', () => {
+    expect(chooseLang('Main ek painter hun Dukan ghar sab kuch paint krta hun', 'en')).toBe('ur');
+    expect(chooseLang('میں پینٹر ہوں', 'en')).toBe('ur');
+    expect(chooseLang('Kitchen tap leaking', 'en')).toBe('en');
+    expect(chooseLang('Kitchen tap leaking', 'ur')).toBe('ur');
+    expect(chooseLang('', 'ur')).toBe('ur');
   });
 });

@@ -185,6 +185,17 @@ describe('PostJobScreen: Help me write', () => {
   });
 });
 
+describe('PostJobScreen: when the helper could not write a draft', () => {
+  it('puts what the person typed into the description, so nothing is lost', async () => {
+    mockParams.current = { prefill: { description: 'nal se pani tapak raha hai' } };
+    const u = wrap();
+    fireEvent.press(await u.findByText('Plumber'));
+    fireEvent.press(u.getByText('Next'));
+    await u.findByText('Job title');
+    expect(u.UNSAFE_getAllByType(TextInput)[1].props.value).toBe('nal se pani tapak raha hai');
+  });
+});
+
 describe('PostJobScreen: English and Urdu for text the author wrote', () => {
   it('prepares the other language on the review and sends both', async () => {
     mockTranslate.mockResolvedValue({ ok: true, data: { title: UR_TITLE, description: UR_DESC } });

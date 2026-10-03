@@ -20,9 +20,9 @@ export type RootStackParamList = {
   JobDetail: { jobId: string };
   JobTracking: { jobId: string };
   ListingDetail: { listingId: string };
-  ListingWizard: { draft?: import('../lib/aiDraft').ListingDraft; listingId?: string } | undefined;
+  ListingWizard: { draft?: import('../lib/aiDraft').ListingDraft; listingId?: string; prefill?: { about: string } } | undefined;
   Notifications: undefined;
-  PostJob: { draft?: import('../lib/aiDraft').JobDraft } | undefined;
+  PostJob: { draft?: import('../lib/aiDraft').JobDraft; prefill?: { description: string } } | undefined;
   AiHelper: { mode: 'job' | 'listing'; serviceTitle?: string; categories?: string[] };
   PostedJob: { jobId?: string; token?: string; mediaFailed?: boolean };
   JobBoard: undefined;

@@ -21,6 +21,7 @@ import {
   type QA,
 } from '../../lib/aiDraft';
 import { looksLikeContact } from '../../lib/contactCheck';
+import { chooseLang } from '../../lib/i18nText';
 import type { RootStackParamList } from '../../navigation/types';
 import { colors, radius, spacing } from '../../theme/tokens';
 import { typography, urduTypography } from '../../theme/typography';
@@ -64,7 +65,7 @@ export default function AiHelperScreen() {
     setError(null);
     setStage('questions');
     setPhase('thinking');
-    const res = await askQuestions({ kind: mode, lang, text: baseText(text), categories });
+    const res = await askQuestions({ kind: mode, lang: chooseLang(text, lang), text: baseText(text), categories });
     if (!res.ok) return fail(res.error);
     if (res.data.length === 0) return createDraft(text, []);
     setQuestions(res.data);
@@ -94,8 +95,8 @@ export default function AiHelperScreen() {
     setPhase('drafting');
     const res =
       mode === 'job'
-        ? await makeJobDraft({ lang, text: baseText(text), categories, answers })
-        : await makeListingDraft({ lang, text: baseText(text), answers });
+        ? await makeJobDraft({ lang: chooseLang(text, lang), text: baseText(text), categories, answers })
+        : await makeListingDraft({ lang: chooseLang(text, lang), text: baseText(text), answers });
     if (!res.ok) return fail(res.error);
     setDraft(res.data);
     setPhase('ready');
@@ -104,6 +105,17 @@ export default function AiHelperScreen() {
   const useDraft = () => {
     if (mode === 'job') navigation.navigate('PostJob', { draft: draft as never });
     else navigation.navigate('ListingWizard', { draft: draft as never });
+  };
+
+  // Nothing they typed is lost: when the helper cannot help, their own words go into the form.
+  const writeMyself = () => {
+    const mine = said.trim();
+    if (!mine) {
+      navigation.goBack();
+      return;
+    }
+    if (mode === 'job') navigation.navigate('PostJob', { prefill: { description: mine } });
+    else navigation.navigate('ListingWizard', { prefill: { about: mine } });
   };
 
   const bot = (text: string, key: string, ur?: string) => (
@@ -135,6 +147,15 @@ export default function AiHelperScreen() {
         </View>
 
         {bot(t(introId).en, 'intro', t(introId).ur)}
+        {phase === 'intro' ? (
+          <View style={styles.tipRow}>
+            <Icon name="mic" size={14} color={colors.primary} />
+            <View style={styles.tipText}>
+              <Text style={styles.tip}>{t('ai.tip.speak').en}</Text>
+              <Text style={styles.tipUr}>{t('ai.tip.speak').ur}</Text>
+            </View>
+          </View>
+        ) : null}
 
         {said ? (
           <View style={styles.meRow}>
@@ -191,7 +212,7 @@ export default function AiHelperScreen() {
                   variant="secondary"
                 />
               ) : null}
-              <Button labelId="ai.writeMyself" onPress={() => navigation.goBack()} variant="secondary" />
+              <Button labelId="ai.writeMyself" onPress={writeMyself} variant="secondary" />
             </View>
           </>
         ) : null}
@@ -260,6 +281,10 @@ const styles = StyleSheet.create({
     padding: spacing.md,
     gap: spacing.xs,
   },
+  tipRow: { flexDirection: 'row', gap: spacing.sm, alignItems: 'flex-start', marginLeft: 34 },
+  tipText: { flex: 1, gap: 2 },
+  tip: { ...typography.caption, color: colors.textMuted },
+  tipUr: { ...urduTypography.caption, color: colors.textMuted, textAlign: 'right' },
   botText: { ...typography.body, color: colors.textStrong },
   botUr: { ...urduTypography.bodySm, color: colors.textMuted, textAlign: 'right' },
   meRow: { alignItems: 'flex-end' },
