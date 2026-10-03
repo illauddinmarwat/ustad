@@ -5,6 +5,7 @@ import {
   buildMessages,
   containsContact,
   type Deps,
+  mentionsAmount,
   mentionsMoney,
   parseDraft,
   parseModelJson,
@@ -56,6 +57,28 @@ Deno.test('mentionsMoney catches prices in English and Urdu', () => {
   assert(mentionsMoney('قیمت 500 روپے'));
   assert(!mentionsMoney('Water drips from the mixer'));
   assert(!mentionsMoney('پانی ٹپک رہا ہے'));
+});
+
+Deno.test('mentionsAmount only catches figures, not the word rate', () => {
+  assert(mentionsAmount('It will cost Rs 500'));
+  assert(mentionsAmount('1,500 rupees'));
+  assert(mentionsAmount('قیمت 500 روپے'));
+  assert(!mentionsAmount('I set rates based on the job'));
+  assert(!mentionsAmount('میں کام کے حساب سے ریٹ لگاتا ہوں'));
+  assert(!mentionsAmount('Free quote, fair charges'));
+});
+
+Deno.test('parseDraft allows a Ustad to say they set rates by the job, but not a figure', () => {
+  const r = okReq({ kind: 'listing' });
+  const ok = parseDraft(
+    { source: 'ur', headline: { en: 'Room painter', ur: 'کمرے کا پینٹر' }, about: { en: 'I set rates based on the job.', ur: 'میں کام کے حساب سے ریٹ لگاتا ہوں۔' } },
+    r,
+  );
+  assertEquals((ok as { about: { en: string } }).about.en, 'I set rates based on the job.');
+  assertThrows(
+    () => parseDraft({ source: 'en', headline: { en: 'Painter', ur: 'پینٹر' }, about: { en: 'Rooms from Rs 3000.', ur: 'کمرے' } }, r),
+    Blocked,
+  );
 });
 
 Deno.test('parseRequest accepts a good request and normalises it', () => {
