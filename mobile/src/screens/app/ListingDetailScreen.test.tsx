@@ -145,4 +145,25 @@ describe('ListingDetailScreen', () => {
     expect(await u.findByText('Leak and tap repair')).toBeTruthy();
     expect(u.queryByText('Show original')).toBeNull();
   });
+
+  it('lets an Ustad look but not request, and offers to switch to Customer', async () => {
+    const setRole = jest.fn(() => Promise.resolve());
+    mockAuth.current = { role: 'worker', session: { user: { id: 'w9' } }, setRole } as never;
+    const u = wrap();
+    await u.findByText('Leak and tap repair');
+    expect(u.queryByText('Request a quote')).toBeNull();
+    expect(u.queryByText('Apply for service')).toBeNull();
+    expect(u.getByText(/switch to Customer first/)).toBeTruthy();
+    fireEvent.press(u.getByText('Switch to Customer'));
+    expect(setRole).toHaveBeenCalledWith('customer');
+  });
+
+  it('shows the Ustad an Edit button on their own service', async () => {
+    mockAuth.current = { role: 'worker', session: { user: { id: 'w1' } } } as never;
+    const u = wrap();
+    await u.findByText('Leak and tap repair');
+    expect(u.queryByText('Switch to Customer')).toBeNull();
+    fireEvent.press(u.getByText('Edit'));
+    expect(mockNavigate).toHaveBeenCalledWith('ListingWizard', { listingId: 'l1' });
+  });
 });

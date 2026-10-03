@@ -79,4 +79,18 @@ describe('ServiceCard', () => {
     fireEvent.press(u.getByLabelText('Leak and tap repair'));
     expect(onPress).toHaveBeenCalledTimes(1);
   });
+
+  it('shows an own service with its status and an Edit prompt, not Request a quote', () => {
+    const onEdit = jest.fn();
+    const u = render(<ServiceCard {...base} status="paused" onEdit={onEdit} />);
+    expect(u.getByText('Paused')).toBeTruthy();
+    expect(u.getByText('Edit')).toBeTruthy();
+    expect(u.queryByText('Request a quote')).toBeNull();
+  });
+
+  it('says View instead of Request a quote to someone who cannot request it', () => {
+    const u = render(<ServiceCard {...base} viewOnly />);
+    expect(u.getByText('View')).toBeTruthy();
+    expect(u.queryByText('Request a quote')).toBeNull();
+  });
 });

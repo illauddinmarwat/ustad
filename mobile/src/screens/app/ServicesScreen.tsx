@@ -85,7 +85,7 @@ export default function ServicesScreen() {
   const route = useRoute<RouteProp<TabParamList, 'Services'>>();
   const { t } = useT();
   const categories = useSkillCategories();
-  const { role, session, workerApprovalStatus } = useAuth();
+  const { role, session, workerApprovalStatus, setRole } = useAuth();
   const insets = useSafeAreaInsets();
   const [listings, setListings] = useState<Array<ScoredListing<Listing>>>([]);
   const [photos, setPhotos] = useState<Record<string, string[]>>({});
@@ -93,6 +93,7 @@ export default function ServicesScreen() {
   const [mine, setMine] = useState<MyListing[]>([]);
   const [cards, setCards] = useState<Record<string, ListingCardInfo>>({});
   const [search, setSearch] = useState('');
+  const [tab, setTab] = useState<'mine' | 'others'>('mine');
   const { width } = useWindowDimensions();
   const [msg, setMsg] = useState<Msg | null>(null);
   const [rankingEnabled, setRankingEnabled] = useState(false);
@@ -259,10 +260,14 @@ export default function ServicesScreen() {
           ? await loadRankedWithBoosts()
           : await loadRanked()
       : await loadFallback();
-    if (userId && role === 'worker') setMine(await loadMyListings(userId));
+    let myList: MyListing[] = [];
+    if (userId && role === 'worker') {
+      myList = await loadMyListings(userId);
+      setMine(myList);
+    }
     const ranked = applyRanking(rows, phase3.rankingEnabled);
     setListings(ranked);
-    const ids = ranked.map((l) => l.id);
+    const ids = Array.from(new Set([...ranked.map((l) => l.id), ...myList.map((m) => m.id)]));
     void Promise.all([loadListingPhotos(ids), loadListingExtras(ids), loadListingCards(ids)]).then(([p, x, c]) => {
       setPhotos(p);
       setExtras(x);
@@ -354,9 +359,13 @@ export default function ServicesScreen() {
   };
 
   const wide = width >= 720;
+  const isWorker = role === 'worker';
+  const showMine = isWorker && tab === 'mine';
+  const showOthers = !isWorker || tab === 'others';
   const needle = search.trim().toLowerCase();
   const shown = listings
     .map((l, idx) => ({ l, idx }))
+    .filter(({ l }) => l.worker_id !== userId)
     .filter(({ l }) => {
       if (!needle) return true;
       const hay = [l.headline, extras[l.id]?.headlineI18n?.en, extras[l.id]?.headlineI18n?.ur, cards[l.id]?.workerName, ...(extras[l.id]?.areas ?? [])]
@@ -375,64 +384,99 @@ export default function ServicesScreen() {
         { paddingTop: insets.top + spacing.md, paddingBottom: insets.bottom + spacing.xl },
       ]}
     >
-      <ScreenHeader titleId="services.title" subtitleId="services.subtitle" />
+      {isWorker ? (
+        <ScreenHeader titleId="services.worker.title" subtitleId="services.worker.subtitle" />
+      ) : (
+        <ScreenHeader titleId="services.title" subtitleId="services.subtitle" />
+      )}
 
-      <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.filterRow}>
-        <CategoryPill label="All" active={category === null} onPress={() => setCategory(null)} />
-        {categories.map((c) => (
-          <CategoryPill key={c.key} label={c.en} active={category === c.key} onPress={() => setCategory(c.key)} />
-        ))}
-      </ScrollView>
+      {isWorker ? (
+        <View style={styles.tabs} accessibilityRole="tablist">
+          {(['mine', 'others'] as const).map((k) => (
+            <Pressable
+              key={k}
+              onPress={() => setTab(k)}
+              accessibilityRole="tab"
+              accessibilityState={{ selected: tab === k }}
+              style={[styles.tab, tab === k && styles.tabOn]}
+            >
+              <Text style={[typography.label, tab === k ? styles.tabTextOn : styles.tabText]}>{t(`services.tab.${k}` as StringId).en}</Text>
+            </Pressable>
+          ))}
+        </View>
+      ) : null}
 
-      {role === 'worker' && (
-        <Card padding="lg">
-          <BiText id="services.publish.title" variant="title" tone="strong" style={styles.cardTitle} />
-          {workerApprovalStatus !== 'approved' && (
-            <Banner
-              id={workerApprovalStatus === 'pending' || workerApprovalStatus === null ? 'services.approval.pendingBanner' : undefined}
-              text={workerApprovalStatus === 'rejected' ? 'Your registration was rejected. Contact support to appeal.' : undefined}
-              tone={workerApprovalStatus === 'rejected' ? 'danger' : 'warning'}
+      {showOthers ? (
+        <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.filterRow}>
+          <CategoryPill label="All" active={category === null} onPress={() => setCategory(null)} />
+          {categories.map((c) => (
+            <CategoryPill key={c.key} label={c.en} active={category === c.key} onPress={() => setCategory(c.key)} />
+          ))}
+        </ScrollView>
+      ) : null}
+
+      {showMine && (
+        <>
+          <Card padding="lg">
+            <BiText id="services.publish.title" variant="title" tone="strong" style={styles.cardTitle} />
+            {workerApprovalStatus !== 'approved' && (
+              <Banner
+                id={workerApprovalStatus === 'pending' || workerApprovalStatus === null ? 'services.approval.pendingBanner' : undefined}
+                text={workerApprovalStatus === 'rejected' ? 'Your registration was rejected. Contact support to appeal.' : undefined}
+                tone={workerApprovalStatus === 'rejected' ? 'danger' : 'warning'}
+              />
+            )}
+            <BiText id="listing.noPrice" variant="bodySm" tone="muted" style={styles.cardTitle} />
+            <Button
+              labelId="listing.addService"
+              onPress={() => navigation.navigate('ListingWizard')}
+              iconLeft="plus"
+              fullWidth
+              disabled={workerApprovalStatus !== 'approved'}
             />
-          )}
-          <BiText id="listing.noPrice" variant="bodySm" tone="muted" style={styles.cardTitle} />
-          <Button
-            labelId="listing.addService"
-            onPress={() => navigation.navigate('ListingWizard')}
-            iconLeft="plus"
-            fullWidth
-            disabled={workerApprovalStatus !== 'approved'}
-          />
-          {mine.length > 0 ? (
-            <View style={styles.mine}>
-              <BiText id="listing.myServices" variant="label" tone="body" />
+          </Card>
+
+          {mine.length === 0 ? (
+            <Card padding="lg">
+              <BiText id="services.mine.empty" variant="body" tone="muted" align="center" />
+            </Card>
+          ) : (
+            <View style={styles.grid}>
               {mine.map((m) => (
-                <View key={m.id} style={styles.mineRow}>
-                  <View style={styles.mineBody}>
-                    <Text style={styles.mineTitle} numberOfLines={2}>{m.headline}</Text>
-                    <Chip
-                      label={t(`listing.status.${m.status === 'active' || m.status === 'paused' ? m.status : 'draft'}` as StringId).en}
-                      tone={m.status === 'active' ? 'accent' : 'warning'}
-                    />
-                  </View>
-                  <Button
-                    labelId="listing.edit"
+                <View key={m.id} style={wide ? styles.cellWide : styles.cell}>
+                  <ServiceCard
+                    headline={m.headline}
+                    headlineI18n={extras[m.id]?.headlineI18n}
+                    workerName={cards[m.id]?.workerName}
+                    rating={cards[m.id]?.rating}
+                    reviewCount={cards[m.id]?.reviewCount}
+                    verified={cards[m.id]?.verified}
+                    jobsDone={cards[m.id]?.jobsDone}
+                    areas={extras[m.id]?.areas}
+                    photos={photos[m.id]}
+                    status={m.status === 'active' || m.status === 'paused' ? m.status : 'draft'}
+                    onEdit={() => navigation.navigate('ListingWizard', { listingId: m.id })}
                     onPress={() => navigation.navigate('ListingWizard', { listingId: m.id })}
-                    variant="secondary"
-                    iconLeft="edit-2"
-                    size="sm"
-                    hideUrdu
                   />
                 </View>
               ))}
             </View>
-          ) : null}
-        </Card>
+          )}
+        </>
       )}
 
       {msg ? (
         msg.kind === 'id' ? <Banner id={msg.id} tone="info" /> : <Banner text={msg.text} tone="warning" />
       ) : null}
 
+      {showOthers ? (
+        <>
+      {isWorker ? (
+        <View style={styles.switchBox}>
+          <Banner id="services.worker.switchHint" tone="info" icon="repeat" />
+          <Button labelId="services.switchToCustomer" onPress={() => void setRole('customer')} variant="secondary" iconLeft="user" fullWidth />
+        </View>
+      ) : null}
       <View style={styles.listingsHead}>
         <BiText id="services.list.title" variant="title" tone="strong" />
         <Pressable accessibilityRole="button" onPress={() => load().catch(() => setMsgId('services.error.load'))}>
@@ -484,12 +528,15 @@ export default function ServicesScreen() {
                 areas={extras[l.id]?.areas}
                 photos={photos[l.id]}
                 featured={!!boostChipLabel({ is_boosted: l.is_boosted, boost_weight: l.boost_weight })}
+                viewOnly={isWorker}
                 onPress={() => openListing(l, idx)}
               />
             </View>
           ))}
         </View>
       )}
+        </>
+      ) : null}
 
       {!session?.user.id && (
         <View style={styles.guestHint}>
@@ -548,6 +595,12 @@ const styles = StyleSheet.create({
   },
   listingBody: { flex: 1, marginLeft: spacing.md, marginRight: spacing.sm },
   listingHeadline: { ...typography.subtitle, color: colors.textStrong },
+  switchBox: { gap: spacing.sm, marginBottom: spacing.sm },
+  tabs: { flexDirection: 'row', backgroundColor: colors.surfaceAlt, borderRadius: radius.pill, padding: 4, marginBottom: spacing.md },
+  tab: { flex: 1, alignItems: 'center', paddingVertical: spacing.sm, borderRadius: radius.pill },
+  tabOn: { backgroundColor: colors.primary },
+  tabText: { color: colors.textBody },
+  tabTextOn: { color: colors.primaryInk },
   mine: { gap: spacing.sm, marginTop: spacing.md },
   mineRow: { flexDirection: 'row', alignItems: 'center', gap: spacing.md, paddingVertical: spacing.xs },
   mineBody: { flex: 1, gap: 4, alignItems: 'flex-start' },

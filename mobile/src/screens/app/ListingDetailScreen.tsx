@@ -49,7 +49,7 @@ type Msg = { kind: 'id'; id: StringId; tone: 'info' | 'success' | 'warning' | 'd
 
 export default function ListingDetailScreen({ route, navigation }: Props) {
   const { listingId } = route.params;
-  const { role, session } = useAuth();
+  const { role, session, setRole } = useAuth();
   const { t } = useT();
   const insets = useSafeAreaInsets();
   const [listing, setListing] = useState<ListingRow | null>(null);
@@ -305,6 +305,24 @@ export default function ListingDetailScreen({ route, navigation }: Props) {
             onCta={() => navigation.navigate('Auth')}
           />
         </Card>
+      )}
+
+      {role === 'worker' && listing.worker_id === session?.user.id && (
+        <View style={styles.actionsCol}>
+          <Button
+            labelId="listing.edit"
+            onPress={() => navigation.navigate('ListingWizard', { listingId: listing.id })}
+            iconLeft="edit-2"
+            fullWidth
+          />
+        </View>
+      )}
+
+      {role === 'worker' && listing.worker_id !== session?.user.id && (
+        <View style={styles.actionsCol}>
+          <Banner id="services.worker.switchHint" tone="info" icon="repeat" />
+          <Button labelId="services.switchToCustomer" onPress={() => void setRole('customer')} variant="secondary" iconLeft="user" fullWidth />
+        </View>
       )}
 
       {role === 'customer' && (

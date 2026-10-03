@@ -12,6 +12,7 @@ const mockAuth: {
     session: { user: { id: string; email?: string } } | null;
     workerApprovalStatus?: 'approved' | 'pending' | null;
     language?: 'en' | 'ur';
+    setRole?: (r: string) => Promise<void>;
   };
 } = {
   current: { role: null, session: null },
@@ -272,10 +273,85 @@ describe('ServicesScreen', () => {
   it('lets an approved Ustad add a service through the wizard, with no price field', async () => {
     mockAuth.current = { role: 'worker', session: { user: { id: 'worker-1' } }, workerApprovalStatus: 'approved' };
     const { findByText, queryByText } = wrap(<ServicesScreen />);
-    await findByText('AC service — DHA');
+    await findByText('Add a service');
     expect(queryByText(/Price \(PKR\)/)).toBeNull();
     fireEvent.press(await findByText('Add a service'));
     expect(mockNavigate).toHaveBeenCalledWith('ListingWizard');
+  });
+
+  describe('for an Ustad', () => {
+    const mockSetRole = jest.fn(() => Promise.resolve());
+    beforeEach(() => {
+      mockSetRole.mockClear();
+      mockAuth.current = {
+        role: 'worker',
+        session: { user: { id: 'worker-9' } },
+        workerApprovalStatus: 'approved',
+        setRole: mockSetRole,
+      };
+      mockMine.current = [{ id: 'm1', headline: 'My own leak repair', status: 'active' }];
+    });
+
+    it('is called Services, with My services and Other services tabs, and opens on My services', async () => {
+      const { findByText, queryByText, getByText } = wrap(<ServicesScreen />);
+      expect(await findByText('Services')).toBeTruthy();
+      expect(queryByText('Browse services')).toBeNull();
+      expect(getByText('My services')).toBeTruthy();
+      expect(getByText('Other services')).toBeTruthy();
+      expect(await findByText('My own leak repair')).toBeTruthy();
+      expect(getByText('Add a service')).toBeTruthy();
+      // Other people's services are on the other tab.
+      expect(queryByText('AC service — DHA')).toBeNull();
+    });
+
+    it('shows other Ustads services on the Other services tab, to look at only', async () => {
+      const { findByText, getByText, queryByText, getAllByText } = wrap(<ServicesScreen />);
+      fireEvent.press(await findByText('Other services'));
+      expect(await findByText('AC service — DHA')).toBeTruthy();
+      expect(queryByText('My own leak repair')).toBeNull();
+      expect(queryByText('Add a service')).toBeNull();
+      expect(getByText('View')).toBeTruthy();
+      expect(queryByText('Request a quote')).toBeNull();
+      expect(getAllByText('Switch to Customer').length).toBe(1);
+    });
+
+    it('never lists an Ustad own service among the others', async () => {
+      mockAuth.current = { ...mockAuth.current, session: { user: { id: 'worker-1' } } };
+      const { findByText, queryByText } = wrap(<ServicesScreen />);
+      fireEvent.press(await findByText('Other services'));
+      await findByText('Switch to Customer');
+      expect(queryByText('AC service — DHA')).toBeNull();
+    });
+
+    it('asks to switch to Customer before requesting anything, and does so on request', async () => {
+      const { findByText } = wrap(<ServicesScreen />);
+      fireEvent.press(await findByText('Other services'));
+      expect(await findByText(/switch to Customer first/)).toBeTruthy();
+      fireEvent.press(await findByText('Switch to Customer'));
+      expect(mockSetRole).toHaveBeenCalledWith('customer');
+    });
+
+    it('edits an own service from its card', async () => {
+      const { findByText } = wrap(<ServicesScreen />);
+      fireEvent.press(await findByText('My own leak repair'));
+      expect(mockNavigate).toHaveBeenCalledWith('ListingWizard', { listingId: 'm1' });
+    });
+
+    it('says what to do when the Ustad has no service yet', async () => {
+      mockMine.current = [];
+      const { findByText } = wrap(<ServicesScreen />);
+      expect(await findByText(/You have not published a service yet/)).toBeTruthy();
+    });
+  });
+
+  it('keeps a customer on one list, called Browse services, with Request a quote', async () => {
+    mockAuth.current = { role: 'customer', session: { user: { id: 'c1' } } };
+    const { findByText, queryByText } = wrap(<ServicesScreen />);
+    expect(await findByText('Browse services')).toBeTruthy();
+    expect(await findByText('AC service — DHA')).toBeTruthy();
+    expect(queryByText('Other services')).toBeNull();
+    expect(queryByText('My services')).toBeNull();
+    expect(queryByText('Switch to Customer')).toBeNull();
   });
 
   it('shows the inline sign-in hint at the bottom of the listings card for guests', async () => {

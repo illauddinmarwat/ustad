@@ -217,3 +217,7 @@ Tested on a copy of the database, and both were real: a worker could approve the
 Name, language, city, bio, rate, photo, location, availability and the uploaded files are still theirs to change. Admin functions and system functions (approve, reject, reviews, signals, resubmit, trades, availability, Hisab) run with owner rights, and an admin may change anything, so they are unaffected. pgTAP `phase28` (25 assertions); the whole suite passes (45 files, 1,375 assertions). Three older tests were adjusted: they set flags that are now on, expected one service type per trade, or edited the CNIC as the worker.
 
 **To check on the live project:** the holes were open, so look for unexpected admins (Admin panel, Users) and for workers approved without a review.
+
+## Services screen for Ustads: two tabs (2026-10-03)
+
+An Ustad's bottom bar says **Services** and the screen has two tabs: **My services** (Add a service, and your own services as cards with status and Edit) and **Other services** (everyone else's, never your own, to look at). While signed in as an Ustad, other services say View instead of Request a quote and the screen asks to **Switch to Customer** first; the same on a service's detail page, which shows Edit on your own. Customers and guests still get one list called Browse services.

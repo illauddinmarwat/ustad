@@ -19,6 +19,11 @@ export type ServiceCardProps = {
   areas?: string[];
   photos?: string[];
   featured?: boolean;
+  /** Your own service: shows its status and an Edit prompt instead of Request a quote. */
+  status?: 'active' | 'paused' | 'draft';
+  onEdit?: () => void;
+  /** Seen by someone who cannot request it (an Ustad): the prompt says View. */
+  viewOnly?: boolean;
   onPress: () => void;
 };
 
@@ -44,6 +49,9 @@ export function ServiceCard({
   areas = [],
   photos = [],
   featured,
+  status,
+  onEdit,
+  viewOnly,
   onPress,
 }: ServiceCardProps) {
   const { t } = useT();
@@ -134,8 +142,23 @@ export function ServiceCard({
         ) : null}
 
         <View style={styles.foot}>
-          <Text style={styles.cta}>{t('listing.cta.requestQuote').en}</Text>
-          <Icon name="arrow-right" size={16} color={colors.primary} />
+          {status ? (
+            <View style={[styles.statusChip, status === 'active' ? styles.statusOn : styles.statusOff]}>
+              <Text style={[styles.statusText, status === 'active' ? styles.statusTextOn : styles.statusTextOff]}>
+                {t(`listing.status.${status}`).en}
+              </Text>
+            </View>
+          ) : (
+            <Text style={styles.cta}>{t(viewOnly ? 'services.card.view' : 'listing.cta.requestQuote').en}</Text>
+          )}
+          {onEdit ? (
+            <View style={styles.editRow}>
+              <Text style={styles.cta}>{t('listing.edit').en}</Text>
+              <Icon name="edit-2" size={15} color={colors.primary} />
+            </View>
+          ) : (
+            <Icon name="arrow-right" size={16} color={colors.primary} />
+          )}
         </View>
       </View>
     </Pressable>
@@ -212,4 +235,11 @@ const styles = StyleSheet.create({
     marginTop: spacing.xs,
   },
   cta: { ...typography.label, color: colors.primary },
+  editRow: { flexDirection: 'row', alignItems: 'center', gap: 6 },
+  statusChip: { borderRadius: radius.pill, paddingHorizontal: spacing.sm, paddingVertical: 3 },
+  statusOn: { backgroundColor: colors.accentSoft },
+  statusOff: { backgroundColor: colors.warningSoft },
+  statusText: { ...typography.caption, fontWeight: '700' },
+  statusTextOn: { color: '#065F46' },
+  statusTextOff: { color: '#92400E' },
 });

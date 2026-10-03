@@ -361,6 +361,23 @@ export const strings = {
     en: 'Find a trusted Ustad and ask for a quote.',
     ur: 'کوئی قابل اعتماد استاد تلاش کریں اور قیمت کی درخواست کریں۔',
   },
+  'services.worker.title': { en: 'Services', ur: 'سروسز' },
+  'services.worker.subtitle': {
+    en: 'Publish your own services and see what other Ustads offer.',
+    ur: 'اپنی سروسز شائع کریں اور دیکھیں دوسرے استاد کیا پیش کرتے ہیں۔',
+  },
+  'services.tab.mine': { en: 'My services', ur: 'میری سروسز' },
+  'services.tab.others': { en: 'Other services', ur: 'دوسروں کی سروسز' },
+  'services.mine.empty': {
+    en: 'You have not published a service yet. Tap Add a service to start.',
+    ur: 'آپ نے ابھی کوئی سروس شائع نہیں کی۔ شروع کرنے کے لیے سروس شامل کریں دبائیں۔',
+  },
+  'services.worker.switchHint': {
+    en: 'You are using the app as an Ustad. To ask another Ustad for a quote, switch to Customer first.',
+    ur: 'آپ ایپ استاد کے طور پر استعمال کر رہے ہیں۔ کسی اور استاد سے قیمت مانگنے کے لیے پہلے گاہک بنیں۔',
+  },
+  'services.switchToCustomer': { en: 'Switch to Customer', ur: 'گاہک بنیں' },
+  'services.card.view': { en: 'View', ur: 'دیکھیں' },
   'services.search': { en: 'Search services or Ustads', ur: 'سروسز یا استاد تلاش کریں' },
   'services.card.new': { en: 'New', ur: 'نیا' },
   'services.jobsDone': { en: 'jobs done', ur: 'کام مکمل' },
