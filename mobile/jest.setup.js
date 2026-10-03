@@ -2,6 +2,11 @@
 // unit tests; this keeps tests fast and avoids pulling in `expo-font` /
 // `expo-asset` which require a real native runtime.
 
+// Default in-memory AsyncStorage; a test that needs its own mock still overrides this.
+jest.mock('@react-native-async-storage/async-storage', () =>
+  require('@react-native-async-storage/async-storage/jest/async-storage-mock'),
+);
+
 jest.mock('@expo/vector-icons', () => {
   const React = require('react');
   const { Text } = require('react-native');

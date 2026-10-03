@@ -208,6 +208,14 @@ export default function PostedJobScreen() {
       {job?.status === 'assigned' && uid && !token ? (
         <Button labelId="posted.openJob" onPress={() => navigation.navigate('JobDetail', { jobId: job.id })} iconLeft="arrow-right" fullWidth />
       ) : null}
+
+      <Button
+        labelId="posted.goHome"
+        onPress={() => navigation.navigate('Tabs', { screen: 'Dashboard' })}
+        variant="secondary"
+        iconLeft="home"
+        fullWidth
+      />
     </ScrollView>
   );
 }

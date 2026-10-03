@@ -4,6 +4,9 @@ import { useEffect, useState } from 'react';
 import { ScrollView, StyleSheet, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
+import { PhotoAttach } from '../../components/PhotoAttach';
+import { VideoRecorder } from '../../components/VideoRecorder';
+import { VoiceRecorder } from '../../components/VoiceRecorder';
 import { Banner } from '../../components/ui/Banner';
 import { Button } from '../../components/ui/Button';
 import { Card } from '../../components/ui/Card';
@@ -16,7 +19,11 @@ import {
   validateRequestForm,
   type RequestFormErrors,
 } from '../../lib/directRequests';
+import { fetchJobMediaEnabled, uploadJobPhotos, uploadJobVideoClip, uploadJobVoice } from '../../lib/jobMedia';
+import { fetchListingRequestsEnabled } from '../../lib/listings';
 import { supabase } from '../../lib/supabase';
+import type { VideoClip } from '../../lib/videoNote';
+import type { VoiceNote } from '../../lib/voiceNote';
 import type { RootStackParamList } from '../../navigation/types';
 import { colors, spacing } from '../../theme/tokens';
 import { typography } from '../../theme/typography';
@@ -26,7 +33,7 @@ type Nav = NativeStackNavigationProp<RootStackParamList, 'RequestWorker'>;
 export default function RequestWorkerScreen() {
   const navigation = useNavigation<Nav>();
   const route = useRoute<RouteProp<RootStackParamList, 'RequestWorker'>>();
-  const { workerId, workerName, category } = route.params;
+  const { workerId, workerName, category, listingId } = route.params;
   const { session } = useAuth();
   const insets = useSafeAreaInsets();
 
@@ -40,13 +47,21 @@ export default function RequestWorkerScreen() {
   const [errors, setErrors] = useState<RequestFormErrors>({});
   const [serverError, setServerError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
+  const [mediaEnabled, setMediaEnabled] = useState(false);
+  const [listingEnabled, setListingEnabled] = useState(true);
+  const [photos, setPhotos] = useState<string[]>([]);
+  const [voice, setVoice] = useState<VoiceNote | null>(null);
+  const [video, setVideo] = useState<VideoClip | null>(null);
+  const [uploadPct, setUploadPct] = useState<number | null>(null);
 
   useEffect(() => {
     fetchDirectRequestFlags().then((f) => {
       setEnabled(f.enabled);
       setQuoteMarkup(f.quoteMarkup === true);
     });
-  }, []);
+  fetchJobMediaEnabled().then(setMediaEnabled);
+    if (listingId) fetchListingRequestsEnabled().then(setListingEnabled);
+  }, [listingId]);
 
   const submit = async () => {
     setServerError(null);
@@ -61,21 +76,46 @@ export default function RequestWorkerScreen() {
     }
     setErrors({});
     setBusy(true);
-    const { data, error } = await supabase.rpc('create_direct_request', {
-      p_worker_id: workerId,
-      p_title: result.title,
-      p_description: result.description,
-      p_category: category ?? '',
-      p_budget_pkr: quoteMarkup ? null : result.budgetPkr,
-      p_preferred_time: result.preferredTime,
-      p_location_text: area.trim() || null,
-    });
-    setBusy(false);
+    const { data, error } = listingId
+      ? await supabase.rpc('create_listing_request', {
+          p_listing_id: listingId,
+          p_title: result.title,
+          p_description: result.description,
+          p_location_text: area.trim() || null,
+          p_preferred_time: result.preferredTime,
+        })
+      : await supabase.rpc('create_direct_request', {
+          p_worker_id: workerId,
+          p_title: result.title,
+          p_description: result.description,
+          p_category: category ?? '',
+          p_budget_pkr: quoteMarkup ? null : result.budgetPkr,
+          p_preferred_time: result.preferredTime,
+          p_location_text: area.trim() || null,
+        });
     if (error) {
+      setBusy(false);
       setServerError(error.message);
       return;
     }
-    void trackEvent('direct_request_created', session.user.id, { job_id: data, worker_id: workerId });
+    void trackEvent('direct_request_created', session.user.id, {
+      job_id: data,
+      worker_id: workerId,
+      listing_id: listingId ?? null,
+      photos: photos.length,
+      voice: !!voice,
+      video: !!video,
+    });
+    if (mediaEnabled && typeof data === 'string' && (photos.length > 0 || voice || video)) {
+      // The request exists already, so a failed upload never loses it.
+      await Promise.all([
+        photos.length > 0 ? uploadJobPhotos(session.user.id, data, photos) : null,
+        voice ? uploadJobVoice(session.user.id, data, voice) : null,
+        video ? uploadJobVideoClip(session.user.id, data, video, (f) => setUploadPct(Math.round(f * 100))) : null,
+      ]);
+      setUploadPct(null);
+    }
+    setBusy(false);
     navigation.navigate('Tabs', { screen: 'Applications' });
   };
 
@@ -84,9 +124,13 @@ export default function RequestWorkerScreen() {
       contentContainerStyle={[styles.root, { paddingBottom: insets.bottom + spacing.xl }]}
       keyboardShouldPersistTaps="handled"
     >
-      <ScreenHeader titleId="request.title" subtitleId="request.subtitle" />
+      <ScreenHeader
+        titleId={listingId ? 'request.listing.title' : 'request.title'}
+        subtitleId={listingId ? 'request.listing.subtitle' : 'request.subtitle'}
+      />
 
-      {enabled === false && <Banner id="request.disabled" tone="warning" />}
+      {(enabled === false || (listingId && !listingEnabled)) && <Banner id="request.disabled" tone="warning" />}
+      {uploadPct != null ? <Banner text={`Uploading video… ${uploadPct}%`} tone="info" /> : null}
       {!session?.user.id && <Banner id="request.signIn" tone="info" />}
       {serverError ? <Banner text={serverError} tone="warning" /> : null}
 
@@ -108,7 +152,7 @@ export default function RequestWorkerScreen() {
           style={styles.multiline}
           error={errors.description}
         />
-        {quoteMarkup ? null : (
+        {quoteMarkup || listingId ? null : (
           <Input
             labelId="request.field.budget"
             value={budget}
@@ -126,6 +170,14 @@ export default function RequestWorkerScreen() {
         />
         <Input labelId="request.field.area" value={area} onChangeText={setArea} iconLeft="map-pin" />
 
+        {mediaEnabled && session?.user.id ? (
+          <>
+            <PhotoAttach uris={photos} onChange={setPhotos} />
+            <VoiceRecorder value={voice} onChange={setVoice} />
+            <VideoRecorder value={video} onChange={setVideo} />
+          </>
+        ) : null}
+
         <Banner id="request.privacy" tone="info" icon="lock" />
         <View style={styles.submit}>
           <Button
@@ -133,7 +185,7 @@ export default function RequestWorkerScreen() {
             onPress={submit}
             iconLeft="send"
             fullWidth
-            disabled={busy || enabled === false}
+            disabled={busy || enabled === false || (!!listingId && !listingEnabled)}
           />
         </View>
       </Card>

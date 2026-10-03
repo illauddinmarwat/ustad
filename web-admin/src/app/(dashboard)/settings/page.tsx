@@ -14,6 +14,8 @@ const OPS_NUMBERS: Array<{ key: string; label: string; hint: string; fallback: n
   { key: 'commission_deactivate_days', label: 'Deactivate after (days overdue)', hint: 'Suspend the worker this many days after the due date until they settle.', fallback: 14 },
   { key: 'direct_request_timeout_hours', label: 'Direct request timeout (hours)', hint: 'How long a worker has to answer before the request opens up.', fallback: 2 },
   { key: 'nearby_radius_km', label: 'Nearby radius (km)', hint: 'Customers only see Ustads within this distance (straight line) of them.', fallback: 100 },
+  { key: 'ai_daily_limit_user', label: 'AI help per signed-in person per day', hint: 'How many Help me write calls (questions, drafts, translations) a signed-in person gets each day.', fallback: 5 },
+  { key: 'ai_daily_limit_guest', label: 'AI help per guest per day', hint: 'The same for guests without an account, counted by device and network.', fallback: 2 },
   { key: 'payment_confirm_days', label: 'Payment receipt window (days)', hint: 'After a customer marks a job paid, the worker has this long to confirm before it becomes a dispute.', fallback: 3 },
 ];
 
@@ -27,6 +29,7 @@ export default function SettingsPage() {
   const [helpline, setHelpline] = useState('');
   const [respectHours, setRespectHours] = useState(true);
   const [markupOn, setMarkupOn] = useState(false);
+  const [aiOn, setAiOn] = useState(false);
   const [audit, setAudit] = useState<SettingAuditRow[]>([]);
   const [error, setError] = useState<string | null>(null);
 
@@ -54,6 +57,8 @@ export default function SettingsPage() {
       if (typeof rh.data === 'boolean') setRespectHours(rh.data);
       const mk = await supabase.rpc('get_app_setting', { p_key: 'quote_commission_markup_enabled' });
       if (typeof mk.data === 'boolean') setMarkupOn(mk.data);
+      const ai = await supabase.rpc('get_app_setting', { p_key: 'ai_help_enabled' });
+      if (typeof ai.data === 'boolean') setAiOn(ai.data);
       const au = await supabase.rpc('admin_list_setting_audit', { p_limit: 20 });
       if (!au.error) setAudit((au.data ?? []) as SettingAuditRow[]);
       setLoading(false);
@@ -142,6 +147,24 @@ export default function SettingsPage() {
               onClick={() => save('quote_commission_markup_enabled', markupOn)}
               saved={savedKey === 'quote_commission_markup_enabled'}
             />
+          </div>
+
+          <div className="mt-5 border-t border-border pt-4">
+            <label className="flex items-center justify-between text-sm font-medium text-ink-body">
+              Help me write (AI) for posts and listings
+              <input
+                type="checkbox"
+                checked={aiOn}
+                onChange={(e) => setAiOn(e.target.checked)}
+                className="h-5 w-5 accent-primary"
+              />
+            </label>
+            <p className="mt-1 text-xs text-ink-muted">
+              On: customers and Ustads can have the AI ask a few questions and write their post or listing in English and Urdu, which they
+              check before it goes out. It never suggests a price. Needs the AI key set on the server first. Daily limits are below under
+              operations. See AI Usage for calls and failures.
+            </p>
+            <SaveButton onClick={() => save('ai_help_enabled', aiOn)} saved={savedKey === 'ai_help_enabled'} />
           </div>
         </section>
 

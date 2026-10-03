@@ -1,11 +1,24 @@
 import { Session } from '@supabase/supabase-js';
 import React, { createContext, useContext, useEffect, useMemo, useState } from 'react';
 
+import { getLocales } from 'expo-localization';
+
 import { useFixtureMode } from '../config/env';
 import { FIXTURE_CUSTOMER_ID, FIXTURE_WORKER_ID } from '../dev/fixtures';
 import { supabase } from '../lib/supabase';
 import { unregisterPush } from '../lib/notifications';
 import { flushPendingUploads } from '../lib/workerUploads';
+
+export type AppLanguage = 'en' | 'ur';
+
+/** Guests have no profile, so the phone's language decides. */
+function deviceLanguage(): AppLanguage {
+  try {
+    return getLocales()[0]?.languageCode === 'ur' ? 'ur' : 'en';
+  } catch {
+    return 'en';
+  }
+}
 
 export type SignUpResult = { requiresConfirmation: boolean };
 
@@ -16,6 +29,9 @@ type AuthCtx = {
   loading: boolean;
   role: 'customer' | 'worker' | 'admin' | null;
   workerApprovalStatus: WorkerApprovalStatus | null;
+  /** The language the person reads posts in (`profiles.preferred_language`). */
+  language: AppLanguage;
+  setLanguage: (l: AppLanguage) => Promise<void>;
   /** The admin's remark when the registration was rejected. */
   rejectionReason: string | null;
   signIn: (email: string, password: string) => Promise<void>;
@@ -58,9 +74,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [workerApprovalStatus, setWorkerApprovalStatus] = useState<WorkerApprovalStatus | null>(null);
   const [registering, setRegistering] = useState(false);
   const [rejectionReason, setRejectionReason] = useState<string | null>(null);
+  const [language, setLanguageState] = useState<AppLanguage>(deviceLanguage);
 
   const applyRoleForUser = async (userId: string, email?: string): Promise<WorkerApprovalStatus | null> => {
-    const { data } = await supabase.from('profiles').select('role').eq('id', userId).maybeSingle();
+    const { data } = await supabase.from('profiles').select('role,preferred_language').eq('id', userId).maybeSingle();
+    if (data?.preferred_language === 'ur' || data?.preferred_language === 'en') setLanguageState(data.preferred_language);
     const resolvedRole = (data?.role as 'customer' | 'worker' | 'admin') ?? 'customer';
     let approval: WorkerApprovalStatus | null = null;
     let reason: string | null = null;
@@ -196,12 +214,21 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     else setWorkerApprovalStatus(null);
   };
 
+  const setLanguage = async (l: AppLanguage) => {
+    setLanguageState(l);
+    if (useFixtureMode || !session?.user?.id) return;
+    const { error } = await supabase.from('profiles').update({ preferred_language: l }).eq('id', session.user.id);
+    if (error) throw error;
+  };
+
   const value = useMemo<AuthCtx>(
     () => ({
       session,
       loading,
       role,
       workerApprovalStatus,
+      language,
+      setLanguage,
       rejectionReason,
       signIn,
       signUp,
@@ -211,7 +238,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       setRegistering,
       setRole,
     }),
-    [session, loading, role, workerApprovalStatus, rejectionReason, registering]
+    [session, loading, role, workerApprovalStatus, rejectionReason, registering, language]
   );
 
   return <Ctx.Provider value={value}>{children}</Ctx.Provider>;

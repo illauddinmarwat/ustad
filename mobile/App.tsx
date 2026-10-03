@@ -52,6 +52,8 @@ import JobBoardScreen from './src/screens/app/JobBoardScreen';
 import NotificationsScreen from './src/screens/app/NotificationsScreen';
 import PostedJobScreen from './src/screens/app/PostedJobScreen';
 import PostJobScreen from './src/screens/app/PostJobScreen';
+import AiHelperScreen from './src/screens/app/AiHelperScreen';
+import ListingWizardScreen from './src/screens/app/ListingWizardScreen';
 import RequestWorkerScreen from './src/screens/app/RequestWorkerScreen';
 import ServicesScreen from './src/screens/app/ServicesScreen';
 import AuthScreen from './src/screens/auth/AuthScreen';
@@ -305,6 +307,8 @@ function RootNavigator() {
         }}
       />
       <Stack.Screen name="ListingDetail" component={ListingDetailScreen} options={{ title: en('nav.service') }} />
+      <Stack.Screen name="AiHelper" component={AiHelperScreen} options={{ title: en('nav.aiHelper') }} />
+      <Stack.Screen name="ListingWizard" component={ListingWizardScreen} options={{ title: en('nav.listingWizard') }} />
       <Stack.Screen name="PostJob" component={PostJobScreen} options={{ title: en('nav.postJob') }} />
       <Stack.Screen name="PostedJob" component={PostedJobScreen} options={{ title: en('nav.postedJob') }} />
       <Stack.Screen name="JobBoard" component={JobBoardScreen} options={{ title: en('nav.jobBoard') }} />

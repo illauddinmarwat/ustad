@@ -37,7 +37,7 @@ select ok(not has_table_privilege ('authenticated', 'public.job_thread_messages'
 
 -- Guest-callable functions are token checked inside; everything else needs a session.
 select ok(
-  has_function_privilege ('anon', 'public.post_job(text,text,text,text,text,text)', 'execute')
+  has_function_privilege ('anon', 'public.post_job(text,text,text,text,text,text,jsonb,jsonb)', 'execute')
   and has_function_privilege ('anon', 'public.get_guest_job(uuid)', 'execute')
   and has_function_privilege ('anon', 'public.job_quotes(uuid,uuid)', 'execute')
   and has_function_privilege ('anon', 'public.post_thread_message(uuid,uuid,text,uuid)', 'execute')

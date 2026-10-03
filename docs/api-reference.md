@@ -101,7 +101,7 @@ A customer, or a **guest with no account**, posts a job. Approved workers see it
 
 | Function | Who | Input | Result |
 |----------|-----|-------|--------|
-| `post_job` | customer or guest (anon) | `p_title`, `p_description`, `p_category`, `p_city`, `p_location_text`, `p_preferred_time` (no customer budget: workers name their own price) | One row: `job_id`, `guest_token` (only for guests). Rejects phone numbers and links in the text. Limits: `job_post_daily_limit` (default 10) per customer per day; `guest_job_hourly_cap` (default 30) for all guests per hour |
+| `post_job` | customer or guest (anon) | `p_title`, `p_description`, `p_category`, `p_city`, `p_location_text`, `p_preferred_time`, optional `p_title_i18n`, `p_description_i18n` (see Help me write; no customer budget: workers name their own price) | One row: `job_id`, `guest_token` (only for guests). Rejects phone numbers and links in the text. Limits: `job_post_daily_limit` (default 10) per customer per day; `guest_job_hourly_cap` (default 30) for all guests per hour |
 | `get_guest_job` | guest with token | `p_token` | The job (plus `quote_count`). Empty once the job is claimed |
 | `job_quotes` | job owner or guest with token | `p_job_id`, `p_token` | Quotes with `worker_name`, `amount_pkr`, `message`, `avg_rating`, `review_count`, `is_verified`, `years_experience`, cheapest first |
 | `list_open_jobs` | approved worker | `p_category`, `p_city`, `p_limit` | Open, unexpired jobs in the worker's categories, with full details, `quote_count` and the worker's own `my_quote_pkr` (the price they typed, not the customer price). No customer identity. Includes direct requests that expired and opened up |
@@ -172,6 +172,42 @@ const { job_id, guest_token } = data[0];          // guest_token is null when si
 await supabase.rpc('worker_quote_job', { p_job_id: job_id, p_amount_pkr: 1800 });
 await supabase.rpc('customer_accept_quote', { p_quote_id: quoteId });
 ```
+
+### Service listings without a price (signed-in unless noted; behind flag `listing_quote_requests_enabled`)
+A listing carries no price. A customer asks the listing's Ustad for a quote; the Ustad's quote is the only price. `worker_service_listings.price_pkr` is now nullable and the app never writes or shows it. Listing photos (up to 4) live in the **public** `listing-media` bucket.
+
+| Function | Who | Input | Result |
+|----------|-----|-------|--------|
+| `create_listing_request` | signed-in customer | `p_listing_id`, `p_title`, `p_description`, `p_location_text`, `p_preferred_time` | Job id. Creates a direct request (see Direct requests) to the listing's Ustad, with the listing's category and `jobs.listing_id` set. Needs both `listing_quote_requests_enabled` and `direct_requests_enabled`. Same checks as `create_direct_request` (not your own listing, approved Ustad, daily limit) |
+| `add_listing_media` | listing owner | `p_listing_id`, `p_path`, `p_bytes` | Media id, after the photo was uploaded to `{worker_id}/{listing_id}/` in `listing-media`. Max 4 photos, 3 MB each |
+| `remove_listing_media` | listing owner or admin | `p_media_id` | The file path, so the app can delete the stored object |
+| `list_listing_media` (anon + signed-in) | anyone | `p_listing_ids` | Photos of active listings; an owner also gets the photos of their draft listings |
+
+The Ustad sees a listing request in the Inbox like any direct request, and opens it with the same screen as the job board (`get_board_job`) to see the customer's photos, video and voice note and send a quote.
+
+### Help me write (AI) and English/Urdu posts (signed-in or guest; behind flag `ai_help_enabled`)
+Posts and listings keep the author's original text and an English and an Urdu version, which the author approves in the app. The AI runs in the Edge Function `ai-draft`; the app never holds an AI key.
+
+**Edge Function `ai-draft`** (`supabase/functions/ai-draft`; secrets `GROQ_API_KEY`, `GROQ_MODEL`, optional `GROQ_REASONING_EFFORT`). `POST` JSON, answered with HTTP 200 and `{ ok: true, action, data }` or `{ ok: false, error }`. Errors: `disabled`, `limit` (daily allowance used), `contact` (a phone number or link in the input), `blocked` (the answer had a number, link or price, so it was refused), `ai_failed`, `bad_request`. Call it with the anon key (guest) or a signed-in token; send a stable `x-device-id` header so a guest's allowance follows the device.
+
+| `action` | Input | `data` |
+|----------|-------|--------|
+| `questions` | `kind` (`job` or `listing`), `lang` (`en`/`ur`), `text`, `categories` (jobs), `answers` | `{ questions: [{ id, text, options[2-4] }] }`, at most 3, never about money |
+| `draft` | the same, with the answers | `{ draft }`: job `{ source, category, title{en,ur}, description{en,ur} }`; listing `{ source, headline{en,ur}, about{en,ur} }` |
+| `translate` | `kind`, `from`, `fields` (`title`, `description`, `headline`, `about`) | `{ fields, to }`: the same fields in the other language |
+
+Every call: the flag must be on; one unit is taken from the day's allowance (`ai_daily_limit_user`, default 5; `ai_daily_limit_guest`, default 2) and given back if the call fails or the answer is refused. Input and output are both checked for phone numbers, links and money. Only counts are logged.
+
+| Function / table | Who | Notes |
+|------------------|-----|-------|
+| `post_job` | customer or guest | Now also takes `p_title_i18n` and `p_description_i18n` (jsonb, optional): `{"source":"en","en":"...","ur":"...","ai":true}`. Both versions are checked for phone numbers and links |
+| `worker_service_listings.headline_i18n`, `detail_i18n` | owner (insert/update) | Same shape. A trigger applies the same text rules to the listing text, areas and translations |
+| `jobs.title_i18n`, `description_i18n` | via `post_job` | Read the other language of jobs you may see with `job_translations` |
+| `job_translations` | signed-in | `p_job_ids` -> `job_id`, `title_i18n`, `description_i18n` for jobs the caller may view (owner, assigned Ustad, admin, or a matching approved Ustad) |
+| `ai_consume`, `ai_refund`, `ai_log_call` | service role only | Used by the Edge Function: take or return a unit of the daily allowance, log a call (kind, action, ok, tokens, time; never the text) |
+| `admin_ai_usage` | admin | `p_days` -> per day: `calls`, `failed`, `tokens_in`, `tokens_out`, `people` |
+
+`_contains_contact` (used everywhere) now also catches phone numbers written in Urdu and Arabic-Indic digits. `profiles.preferred_language` (`en` or `ur`, set at registration and in Account) picks the language a reader sees.
 
 ### Inbox (signed-in)
 The Inbox tab lists everything from all three flows in one place, for customers and workers, with Pending / Active / Done filters. It reads tables the caller can already see, plus one function:
@@ -244,6 +280,7 @@ Exact parameters for these are in `supabase/migrations/`; search for `create or 
 | `admin_list_worker_approvals` | `p_status` text (`pending`/`approved`/`rejected`, or null for all) | Rows: `user_id, display_name, phone, city, cnic_number, categories, years_experience, rate_pkr, rate_unit, working_hours, bio, photo_url, cnic_front_url, cnic_back_url, approval_status, rejection_reason, created_at` |
 | `admin_set_worker_approval` | `p_user_id` uuid, `p_status` (`approved`/`rejected`/`pending`), `p_reason` text optional | void. Error `invalid status` for other values. The reason is kept only when rejected. |
 | `admin_confirm_payment` | `p_payment_id` uuid, `p_worker_confirmed` boolean | Updated `payment_ledger` row |
+| `admin_ai_usage` | `p_days` int (default 14) | Per day: `calls, failed, tokens_in, tokens_out, people` (Help me write calls; counts only) |
 | `admin_commission_summary` | none | One row: `total_earnings, total_commission, total_paid_to_workers, total_jobs_paid` (paid payments only) |
 | `admin_worker_commission_breakdown` | `p_limit` int (default 20, max 100) | `worker_id, display_name, city, total_jobs, total_commission, net_paid` |
 | `admin_reports_summary` | `p_days` int (default 30) | `total_earnings, prev_total_earnings, new_customers, prev_new_customers, avg_commission_pct, active_workers` |
@@ -261,7 +298,7 @@ await supabase.rpc('admin_set_worker_approval', { p_user_id: id, p_status: 'reje
 ```
 
 ## Main tables (via PostgREST)
-`profiles`, `worker_profiles`, `worker_service_listings`, `service_templates`, `listing_applications`, `jobs`, `quotes`, `messages`, `reviews`, `payment_ledger`, `job_contacts`, `admin_job_events`, `notifications`, `device_tokens`, `quote_events`, `quote_pricing`, `job_thread_messages`, `worker_commission_ledger`, `commission_events`, `app_setting_audit`, `job_realtime_states`, `job_completion_photos`, `job_quality_surveys`, `faqs`, `ocr_extractions`, `abuse_reports`, `cities`, `city_rollout_configs`, `city_service_availability`, `app_settings`, `app_events`. Access to each is decided by the RLS policies in the migrations.
+`profiles`, `worker_profiles`, `worker_service_listings`, `listing_media`, `ai_usage`, `ai_calls`, `service_templates`, `listing_applications` (no longer used by the app), `jobs`, `quotes`, `messages`, `reviews`, `payment_ledger`, `job_contacts`, `admin_job_events`, `notifications`, `device_tokens`, `quote_events`, `quote_pricing`, `job_thread_messages`, `worker_commission_ledger`, `commission_events`, `app_setting_audit`, `job_realtime_states`, `job_completion_photos`, `job_quality_surveys`, `faqs`, `ocr_extractions`, `abuse_reports`, `cities`, `city_rollout_configs`, `city_service_availability`, `app_settings`, `app_events`. Access to each is decided by the RLS policies in the migrations.
 
 ## Storage buckets
 | Bucket | Content | Access |
@@ -269,6 +306,7 @@ await supabase.rpc('admin_set_worker_approval', { p_user_id: id, p_status: 'reje
 | `worker-documents` | CNIC front/back | Private. Admin views them through a signed URL (5 min) |
 | `worker-photos` | Worker profile photos | See the migrations for the policy |
 | `quote-voice` | Voice notes on quotes and in the thread (private) | Upload into your own folder for a job you take part in; read only by the Ustad, the job's owner and admins |
+| `listing-media` | Photos of a service listing (public, like the listing) | Owner uploads into their own `{worker_id}/{listing_id}/` folder; anyone can read a file's public URL |
 | `job-media` | Photos on job posts (private) | Owner uploads into their own job folder; reads only through registered files for the owner, admins and matching workers |
 
 ## External services

@@ -27,6 +27,8 @@ import {
   type PriceType,
 } from '../../lib/quoteDetails';
 import { attachQuoteVoice, QUOTE_VOICE_SECONDS } from '../../lib/quoteVoice';
+import { LocalizedText } from '../../components/LocalizedText';
+import { loadJobTranslations, type JobTranslation } from '../../lib/jobTranslations';
 import { supabase } from '../../lib/supabase';
 import type { VoiceNote } from '../../lib/voiceNote';
 import type { RootStackParamList } from '../../navigation/types';
@@ -45,6 +47,7 @@ export default function BoardJobScreen() {
   const uid = session?.user.id ?? null;
 
   const [job, setJob] = useState<BoardJobDetail | null>(null);
+  const [translation, setTranslation] = useState<JobTranslation | null>(null);
   const [loaded, setLoaded] = useState(false);
   const [amount, setAmount] = useState('');
   const [message, setMessage] = useState('');
@@ -58,6 +61,7 @@ export default function BoardJobScreen() {
     const { data } = await supabase.rpc('get_board_job', { p_job_id: jobId });
     const row = ((Array.isArray(data) ? data[0] : data) ?? null) as BoardJobDetail | null;
     setJob(row);
+    if (row) setTranslation((await loadJobTranslations([row.id]))[row.id] ?? null);
     if (row?.my_quote_pkr != null) setAmount((a) => a || String(row.my_quote_pkr));
     setLoaded(true);
   }, [jobId]);
@@ -130,7 +134,7 @@ export default function BoardJobScreen() {
   return (
     <ScrollView contentContainerStyle={[styles.root, { paddingBottom: insets.bottom + spacing.xl }]} keyboardShouldPersistTaps="handled">
       <Card padding="lg">
-        <Text style={styles.title}>{job.title}</Text>
+        <LocalizedText original={job.title} i18n={translation?.title_i18n} style={styles.title} />
         <View style={styles.chips}>
           <Chip label={job.category} tone="neutral" icon="tag" />
           {job.city ? <Chip label={job.city} tone="neutral" icon="map" /> : null}
@@ -138,7 +142,7 @@ export default function BoardJobScreen() {
           {job.preferred_time ? <Chip label={job.preferred_time} tone="neutral" icon="calendar" /> : null}
           {left ? <Chip label={left} tone="neutral" icon="clock" /> : null}
         </View>
-        {job.description ? <Text style={styles.body}>{job.description}</Text> : null}
+        {job.description ? <LocalizedText original={job.description} i18n={translation?.description_i18n} style={styles.body} /> : null}
         {job.location_text ? <Text style={styles.meta}>{job.location_text}</Text> : null}
         <Banner id="board.privacy" tone="info" icon="lock" />
       </Card>

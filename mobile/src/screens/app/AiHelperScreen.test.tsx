@@ -1,0 +1,210 @@
+import React from 'react';
+import { fireEvent, render, waitFor } from '@testing-library/react-native';
+import { TextInput } from 'react-native';
+import { SafeAreaProvider } from 'react-native-safe-area-context';
+
+import AiHelperScreen from './AiHelperScreen';
+
+const mockNavigate = jest.fn();
+const mockGoBack = jest.fn();
+const mockAsk = jest.fn();
+const mockJobDraft = jest.fn();
+const mockListingDraft = jest.fn();
+const mockParams: { current: Record<string, unknown> } = {
+  current: { mode: 'job', categories: ['plumber', 'electrician'] },
+};
+
+jest.mock('../../context/AuthContext', () => ({ useAuth: () => ({ language: 'en' }) }));
+jest.mock('@react-navigation/native', () => ({
+  useNavigation: () => ({ navigate: mockNavigate, goBack: mockGoBack }),
+  useRoute: () => ({ params: mockParams.current }),
+}));
+jest.mock('../../lib/supabase', () => ({ supabase: {} }));
+jest.mock('../../lib/aiDraft', () => ({
+  ...jest.requireActual('../../lib/aiDraft'),
+  askQuestions: (...a: unknown[]) => mockAsk(...a),
+  makeJobDraft: (...a: unknown[]) => mockJobDraft(...a),
+  makeListingDraft: (...a: unknown[]) => mockListingDraft(...a),
+}));
+
+const wrap = () =>
+  render(
+    <SafeAreaProvider
+      initialMetrics={{ frame: { x: 0, y: 0, width: 320, height: 640 }, insets: { top: 0, left: 0, right: 0, bottom: 0 } }}
+    >
+      <AiHelperScreen />
+    </SafeAreaProvider>,
+  );
+
+const QUESTIONS = [
+  { id: 'q1', text: 'Where is the water coming from?', options: ['Tap spout', 'Pipe under sink', 'Both'] },
+  { id: 'q2', text: 'When should the Ustad come?', options: ['Today', 'Tomorrow evening'] },
+];
+
+const JOB_DRAFT = {
+  source: 'en',
+  category: 'plumber',
+  title: { en: 'Kitchen tap leaking', ur: 'کچن کے نل سے پانی ٹپک رہا ہے' },
+  description: { en: 'Water drips from the mixer.', ur: 'مکسر سے پانی ٹپکتا ہے۔' },
+};
+
+beforeEach(() => {
+  [mockNavigate, mockGoBack, mockAsk, mockJobDraft, mockListingDraft].forEach((m) => m.mockReset());
+  mockParams.current = { mode: 'job', categories: ['plumber', 'electrician'] };
+});
+
+const say = (u: ReturnType<typeof wrap>, text: string) => {
+  fireEvent.changeText(u.UNSAFE_getByType(TextInput), text);
+  fireEvent.press(u.getByLabelText('Send'));
+};
+
+describe('AiHelperScreen (job)', () => {
+  it('opens with a greeting in English and Urdu, and promises no price talk', () => {
+    const u = wrap();
+    expect(u.getByText('Tell me what needs fixing. You can type in English, Urdu or Roman Urdu.')).toBeTruthy();
+    expect(u.getByText('I never ask about or suggest a price.')).toBeTruthy();
+  });
+
+  it('will not send fewer than three characters', () => {
+    const u = wrap();
+    fireEvent.changeText(u.UNSAFE_getByType(TextInput), 'ab');
+    fireEvent.press(u.getByLabelText('Send'));
+    expect(mockAsk).not.toHaveBeenCalled();
+  });
+
+  it('keeps a phone number out: warns and stays on the typing step', () => {
+    const u = wrap();
+    say(u, 'Tap leaking, call 0300 1234567');
+    expect(u.getByText(/remove phone numbers and links/i)).toBeTruthy();
+    expect(mockAsk).not.toHaveBeenCalled();
+    expect(u.UNSAFE_getByType(TextInput)).toBeTruthy();
+  });
+
+  it('asks the questions, lets the person tap answers, and builds the draft from them', async () => {
+    mockAsk.mockResolvedValue({ ok: true, data: QUESTIONS });
+    mockJobDraft.mockResolvedValue({ ok: true, data: JOB_DRAFT });
+    const u = wrap();
+    say(u, 'Kitchen tap leaking');
+    expect(await u.findByText('Where is the water coming from?')).toBeTruthy();
+    expect(mockAsk).toHaveBeenCalledWith({ kind: 'job', lang: 'en', text: 'Kitchen tap leaking', categories: ['plumber', 'electrician'] });
+
+    fireEvent.press(u.getByText('Tap spout'));
+    fireEvent.press(u.getByText('Tomorrow evening'));
+    fireEvent.press(u.getByText('Create my draft'));
+
+    await waitFor(() => expect(mockJobDraft).toHaveBeenCalled());
+    expect(mockJobDraft).toHaveBeenCalledWith({
+      lang: 'en',
+      text: 'Kitchen tap leaking',
+      categories: ['plumber', 'electrician'],
+      answers: [
+        { question: 'Where is the water coming from?', answer: 'Tap spout' },
+        { question: 'When should the Ustad come?', answer: 'Tomorrow evening' },
+      ],
+    });
+    expect(await u.findByText('Your draft is ready. Check both languages on the next screen.')).toBeTruthy();
+    fireEvent.press(u.getByText('Review my draft'));
+    expect(mockNavigate).toHaveBeenCalledWith('PostJob', { draft: JOB_DRAFT });
+  });
+
+  it('lets a person change an answer by tapping it again', async () => {
+    mockAsk.mockResolvedValue({ ok: true, data: QUESTIONS });
+    mockJobDraft.mockResolvedValue({ ok: true, data: JOB_DRAFT });
+    const u = wrap();
+    say(u, 'Kitchen tap leaking');
+    await u.findByText('Tap spout');
+    fireEvent.press(u.getByText('Tap spout'));
+    fireEvent.press(u.getByText('Tap spout'));
+    fireEvent.press(u.getByText('Create my draft'));
+    await waitFor(() => expect(mockJobDraft).toHaveBeenCalled());
+    expect(mockJobDraft.mock.calls[0][0].answers).toEqual([]);
+  });
+
+  it('can skip the questions', async () => {
+    mockAsk.mockResolvedValue({ ok: true, data: QUESTIONS });
+    mockJobDraft.mockResolvedValue({ ok: true, data: JOB_DRAFT });
+    const u = wrap();
+    say(u, 'Kitchen tap leaking');
+    fireEvent.press(await u.findByText('Skip the questions'));
+    await waitFor(() => expect(mockJobDraft).toHaveBeenCalled());
+    expect(mockJobDraft.mock.calls[0][0].answers).toEqual([]);
+  });
+
+  it('goes straight to the draft when there is nothing more to ask', async () => {
+    mockAsk.mockResolvedValue({ ok: true, data: [] });
+    mockJobDraft.mockResolvedValue({ ok: true, data: JOB_DRAFT });
+    const u = wrap();
+    say(u, 'Kitchen tap leaking, the mixer drips all day');
+    await waitFor(() => expect(mockJobDraft).toHaveBeenCalled());
+    expect(await u.findByText('Review my draft')).toBeTruthy();
+  });
+
+  it('explains when the daily AI help is used up and offers to write it myself', async () => {
+    mockAsk.mockResolvedValue({ ok: false, error: 'limit' });
+    const u = wrap();
+    say(u, 'Kitchen tap leaking');
+    expect(await u.findByText(/used all of your AI help/)).toBeTruthy();
+    expect(u.queryByText('Continue')).toBeNull();
+    fireEvent.press(u.getByText('Write it myself'));
+    expect(mockGoBack).toHaveBeenCalled();
+  });
+
+  it('lets a person try again after a failure and uses the same text', async () => {
+    mockAsk.mockResolvedValueOnce({ ok: false, error: 'ai_failed' }).mockResolvedValueOnce({ ok: true, data: QUESTIONS });
+    const u = wrap();
+    say(u, 'Kitchen tap leaking');
+    expect(await u.findByText(/Something went wrong/)).toBeTruthy();
+    fireEvent.press(u.getByText('Continue'));
+    expect(await u.findByText('Where is the water coming from?')).toBeTruthy();
+    expect(mockAsk).toHaveBeenLastCalledWith(expect.objectContaining({ text: 'Kitchen tap leaking' }));
+  });
+
+  it('retries only the draft when the draft failed', async () => {
+    mockAsk.mockResolvedValue({ ok: true, data: QUESTIONS });
+    mockJobDraft.mockResolvedValueOnce({ ok: false, error: 'blocked' }).mockResolvedValueOnce({ ok: true, data: JOB_DRAFT });
+    const u = wrap();
+    say(u, 'Kitchen tap leaking');
+    fireEvent.press(await u.findByText('Tap spout'));
+    fireEvent.press(u.getByText('Create my draft'));
+    expect(await u.findByText(/could not prepare a safe draft/)).toBeTruthy();
+    fireEvent.press(u.getByText('Continue'));
+    expect(await u.findByText('Review my draft')).toBeTruthy();
+    expect(mockAsk).toHaveBeenCalledTimes(1);
+    expect(mockJobDraft.mock.calls[1][0].answers).toEqual([{ question: 'Where is the water coming from?', answer: 'Tap spout' }]);
+  });
+});
+
+describe('AiHelperScreen (listing)', () => {
+  beforeEach(() => {
+    mockParams.current = { mode: 'listing', serviceTitle: 'Leak inspection & minor fix' };
+  });
+
+  it('starts from the service and sends the draft back to the listing wizard', async () => {
+    const draft = {
+      source: 'en',
+      headline: { en: 'Leak and tap repair', ur: 'نل اور لیکیج کی مرمت' },
+      about: { en: 'I fix mixers and pipes.', ur: 'میں مکسر اور پائپ ٹھیک کرتا ہوں۔' },
+    };
+    mockAsk.mockResolvedValue({ ok: true, data: [{ id: 'q1', text: 'How long have you done this work?', options: ['1–3 years', '5–10 years'] }] });
+    mockListingDraft.mockResolvedValue({ ok: true, data: draft });
+    const u = wrap();
+    expect(u.getByText('Tell me about your work, or tap Continue and I will ask you.')).toBeTruthy();
+    fireEvent.press(u.getByLabelText('Continue'));
+    expect(await u.findByText('How long have you done this work?')).toBeTruthy();
+    expect(mockAsk).toHaveBeenCalledWith(expect.objectContaining({ kind: 'listing', text: 'Service: Leak inspection & minor fix' }));
+    fireEvent.press(u.getByText('5–10 years'));
+    fireEvent.press(u.getByText('Create my draft'));
+    await waitFor(() => expect(mockListingDraft).toHaveBeenCalled());
+    fireEvent.press(await u.findByText('Review my draft'));
+    expect(mockNavigate).toHaveBeenCalledWith('ListingWizard', { draft });
+  });
+
+  it('adds what the Ustad typed to the service', async () => {
+    mockAsk.mockResolvedValue({ ok: true, data: [] });
+    mockListingDraft.mockResolvedValue({ ok: false, error: 'ai_failed' });
+    const u = wrap();
+    say(u, 'I have eight years of experience');
+    await waitFor(() => expect(mockAsk).toHaveBeenCalled());
+    expect(mockAsk.mock.calls[0][0].text).toBe('Service: Leak inspection & minor fix. I have eight years of experience');
+  });
+});

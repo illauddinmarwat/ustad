@@ -26,6 +26,7 @@ import { supabase } from '../../lib/supabase';
 import type { RootStackParamList } from '../../navigation/types';
 import { colors, radius, spacing } from '../../theme/tokens';
 import { typography } from '../../theme/typography';
+import { LanguageSetting } from '../../components/LanguageSetting';
 
 type Msg = { kind: 'id'; id: StringId } | { kind: 'text'; text: string } | null;
 
@@ -204,6 +205,8 @@ export default function AccountScreen() {
           </View>
         </Card>
       )}
+
+      <LanguageSetting />
 
       {role === 'worker' && session?.user.id ? <CommissionCard /> : null}
 

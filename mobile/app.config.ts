@@ -50,16 +50,8 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
     supabaseAnonKey: process.env.EXPO_PUBLIC_SUPABASE_ANON_KEY ?? '',
     /** mirrors EXPO_PUBLIC_USE_FIXTURES for bare workflow */
     useFixtures: process.env.EXPO_PUBLIC_USE_FIXTURES ?? '',
-    /**
-     * Phase 3 OCR scaffold — values are read from .env at build time and
-     * surfaced via Constants.expoConfig.extra. Risky behavior remains gated
-     * by `phase3_ocr_enabled` in app_settings; missing keys cause a graceful
-     * manual fallback rather than a hard error.
-     */
-    googleVisionApiKey: process.env.GOOGLE_VISION_API_KEY ?? '',
-    groqApiKey: process.env.GROQ_API_KEY ?? '',
-    groqVisionModel: process.env.GROQ_VISION_MODEL ?? '',
-    visionProvider: process.env.VISION_PROVIDER ?? '',
+    // No AI or vision keys here: everything in `extra` is compiled into the app and readable by anyone.
+    // AI calls go through a Supabase Edge Function that holds the keys (docs/wizard-ai-plan.md, Phase 0).
     eas: {
       projectId: '0c7d0b0a-fa5b-4d3a-aa10-038b2fbf6ce1',
     },

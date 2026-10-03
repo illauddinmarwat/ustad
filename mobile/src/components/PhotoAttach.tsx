@@ -17,10 +17,12 @@ type Props = {
   onChange: (uris: string[]) => void;
   /** Extra slots already used (photos already on the job), so the total stays within the cap. */
   alreadyAttached?: number;
+  /** Leave out the line about quoting a job (used where the photos are not for a job). */
+  hideHint?: boolean;
 };
 
 /** Pick up to four photos (camera or gallery) and show removable thumbnails. */
-export function PhotoAttach({ uris, onChange, alreadyAttached = 0 }: Props) {
+export function PhotoAttach({ uris, onChange, alreadyAttached = 0, hideHint }: Props) {
   const { t } = useT();
   const [sheet, setSheet] = useState(false);
   const [denied, setDenied] = useState(false);
@@ -64,7 +66,7 @@ export function PhotoAttach({ uris, onChange, alreadyAttached = 0 }: Props) {
           </Pressable>
         ) : null}
       </View>
-      <BiText id="media.photoHint" variant="caption" tone="muted" />
+      {hideHint ? null : <BiText id="media.photoHint" variant="caption" tone="muted" />}
       {denied ? <Banner id="image.permissionDenied" tone="warning" /> : null}
       <ImageSourceSheet visible={sheet} onPick={onPickSource} onClose={() => setSheet(false)} />
     </View>

@@ -1,5 +1,5 @@
 import React from 'react';
-import { render } from '@testing-library/react-native';
+import { fireEvent, render } from '@testing-library/react-native';
 
 import { RequestRow, type RequestJob } from './RequestRow';
 
@@ -40,5 +40,19 @@ describe('RequestRow with the quote commission markup', () => {
     );
     expect(getByText('Rs 230')).toBeTruthy();
     expect(queryByText(/fee|commission/i)).toBeNull();
+  });
+});
+
+describe('RequestRow details for the Ustad', () => {
+  it('lets the Ustad open the request to see the photos, video and voice note', () => {
+    const onView = jest.fn();
+    const { getByText } = render(<RequestRow {...props} quoteMarkup onView={onView} />);
+    fireEvent.press(getByText('View photos and details'));
+    expect(onView).toHaveBeenCalledTimes(1);
+  });
+
+  it('does not show that button to the customer', () => {
+    const { queryByText } = render(<RequestRow {...props} mode="customer" />);
+    expect(queryByText('View photos and details')).toBeNull();
   });
 });

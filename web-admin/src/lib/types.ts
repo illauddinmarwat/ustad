@@ -137,6 +137,15 @@ export type PostedJobRow = {
   customer_name: string | null;
 };
 
+export type AiUsageRow = {
+  day: string;
+  calls: number;
+  failed: number;
+  tokens_in: number;
+  tokens_out: number;
+  people: number;
+};
+
 export type FunnelRow = {
   flow: 'service' | 'direct' | 'posted';
   created: number;

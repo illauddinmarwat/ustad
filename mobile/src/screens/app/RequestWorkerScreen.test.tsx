@@ -14,10 +14,34 @@ const mockAuth: { current: { session: { user: { id: string } } | null } } = {
 
 jest.mock('../../context/AuthContext', () => ({ useAuth: () => mockAuth.current }));
 
+const mockParams: { current: Record<string, unknown> } = {
+  current: { workerId: 'worker-1', workerName: 'Usman', category: 'plumber' },
+};
+const mockListingFlag = { current: true };
+const mockMediaFlag = { current: false };
+const mockUploadPhotos = jest.fn();
+
 jest.mock('@react-navigation/native', () => ({
   useNavigation: () => ({ navigate: mockNavigate }),
-  useRoute: () => ({ params: { workerId: 'worker-1', workerName: 'Usman', category: 'plumber' } }),
+  useRoute: () => ({ params: mockParams.current }),
 }));
+jest.mock('../../lib/listings', () => ({
+  ...jest.requireActual('../../lib/listings'),
+  fetchListingRequestsEnabled: () => Promise.resolve(mockListingFlag.current),
+}));
+jest.mock('../../lib/jobMedia', () => ({
+  ...jest.requireActual('../../lib/jobMedia'),
+  fetchJobMediaEnabled: () => Promise.resolve(mockMediaFlag.current),
+  uploadJobPhotos: (...a: unknown[]) => mockUploadPhotos(...a),
+}));
+jest.mock('../../components/PhotoAttach', () => {
+  const { Text } = require('react-native');
+  return {
+    PhotoAttach: ({ onChange }: { onChange: (u: string[]) => void }) => (
+      <Text onPress={() => onChange(['file://a.jpg'])}>Add test photo</Text>
+    ),
+  };
+});
 
 jest.mock('../../lib/analytics', () => ({ trackEvent: jest.fn() }));
 
@@ -47,6 +71,10 @@ beforeEach(() => {
   mockRpc.mockReset();
   mockFlags.enabled = true;
   mockFlags.quoteMarkup = false;
+  mockParams.current = { workerId: 'worker-1', workerName: 'Usman', category: 'plumber' };
+  mockListingFlag.current = true;
+  mockMediaFlag.current = false;
+  mockUploadPhotos.mockReset();
   mockAuth.current = { session: { user: { id: 'cust-1' } } };
 });
 
@@ -116,5 +144,72 @@ describe('RequestWorkerScreen', () => {
     fireEvent.press(getByText('Send request'));
     await waitFor(() => expect(mockNavigate).toHaveBeenCalledWith('Auth'));
     expect(mockRpc).not.toHaveBeenCalled();
+  });
+});
+
+describe('RequestWorkerScreen from a listing', () => {
+  beforeEach(() => {
+    mockParams.current = { workerId: 'worker-1', workerName: 'Usman', category: 'plumber', listingId: 'listing-1' };
+  });
+
+  const fill = (u: ReturnType<typeof wrap>) => {
+    const { TextInput } = require('react-native');
+    const inputs = u.UNSAFE_getAllByType(TextInput);
+    fireEvent.changeText(inputs[0], 'Fix tap');
+    fireEvent.changeText(inputs[1], 'Kitchen tap is leaking badly');
+    return inputs;
+  };
+
+  it('says it is a request for a quote and has no budget field', async () => {
+    const u = wrap();
+    expect(await u.findByText('Request a quote')).toBeTruthy();
+    expect(u.queryByText(/budget/i)).toBeNull();
+  });
+
+  it('asks for the quote through the listing and never sends a budget', async () => {
+    mockRpc.mockResolvedValue({ data: 'job-9', error: null });
+    const u = wrap();
+    fill(u);
+    fireEvent.press(u.getByText('Send request'));
+    await waitFor(() => expect(mockRpc).toHaveBeenCalled());
+    expect(mockRpc).toHaveBeenCalledWith('create_listing_request', {
+      p_listing_id: 'listing-1',
+      p_title: 'Fix tap',
+      p_description: 'Kitchen tap is leaking badly',
+      p_location_text: null,
+      p_preferred_time: null,
+    });
+    expect(mockRpc).not.toHaveBeenCalledWith('create_direct_request', expect.anything());
+    await waitFor(() => expect(mockNavigate).toHaveBeenCalledWith('Tabs', { screen: 'Applications' }));
+  });
+
+  it('is blocked while quote requests from listings are off', async () => {
+    mockListingFlag.current = false;
+    const u = wrap();
+    expect(await u.findByText(/not available/i)).toBeTruthy();
+    fill(u);
+    fireEvent.press(u.getByText('Send request'));
+    expect(mockRpc).not.toHaveBeenCalled();
+  });
+
+  it('attaches the photos to the new request when media is on', async () => {
+    mockMediaFlag.current = true;
+    mockRpc.mockResolvedValue({ data: 'job-9', error: null });
+    mockUploadPhotos.mockResolvedValue({ failed: 0 });
+    const u = wrap();
+    fireEvent.press(await u.findByText('Add test photo'));
+    fill(u);
+    fireEvent.press(u.getByText('Send request'));
+    await waitFor(() => expect(mockUploadPhotos).toHaveBeenCalledWith('cust-1', 'job-9', ['file://a.jpg']));
+    await waitFor(() => expect(mockNavigate).toHaveBeenCalledWith('Tabs', { screen: 'Applications' }));
+  });
+
+  it('shows the server error and does not leave the screen', async () => {
+    mockRpc.mockResolvedValue({ data: null, error: { message: 'daily request limit reached' } });
+    const u = wrap();
+    fill(u);
+    fireEvent.press(u.getByText('Send request'));
+    expect(await u.findByText('daily request limit reached')).toBeTruthy();
+    expect(mockNavigate).not.toHaveBeenCalled();
   });
 });

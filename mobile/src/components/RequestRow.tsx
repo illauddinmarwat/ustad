@@ -106,6 +106,7 @@ export function RequestRow({
               iconLeft="dollar-sign"
             />
             <QuotePricePreview amount={amount} />
+            <Button labelId="requests.viewDetails" onPress={onView} variant="secondary" iconLeft="image" size="sm" hideUrdu />
             <View style={styles.buttonRow}>
               <Button
                 labelId="requests.sendQuote"

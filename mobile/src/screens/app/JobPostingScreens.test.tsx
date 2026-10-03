@@ -14,7 +14,7 @@ const mockFrom = jest.fn();
 const mockAddGuestJob = jest.fn();
 const mockRemoveGuestJob = jest.fn();
 const mockParams: { current: Record<string, unknown> } = { current: {} };
-const mockAuth: { current: { session: { user: { id: string } } | null; role: string | null } } = {
+const mockAuth: { current: { session: { user: { id: string } } | null; role: string | null; language?: string } } = {
   current: { session: null, role: null },
 };
 
@@ -89,34 +89,71 @@ beforeEach(() => {
   audio.__state.calls.length = 0;
 });
 
-const fillPost = (utils: ReturnType<typeof wrap>, description = 'The kitchen tap is leaking badly') => {
+const goToDetails = async (utils: ReturnType<typeof wrap>) => {
+  fireEvent.press(await utils.findByText('Plumber'));
+  fireEvent.press(utils.getByText('Next'));
+  await utils.findByText('Job title');
+};
+
+const fillDetails = (utils: ReturnType<typeof wrap>, description = 'The kitchen tap is leaking badly') => {
   const inputs = utils.UNSAFE_getAllByType(TextInput);
   fireEvent.changeText(inputs[0], 'Fix kitchen tap');
   fireEvent.changeText(inputs[1], description);
-  fireEvent.press(utils.getByText('Plumber'));
+};
+
+/** Walk the wizard to the review step with a valid post. */
+const goToReview = async (utils: ReturnType<typeof wrap>, description?: string) => {
+  await goToDetails(utils);
+  fillDetails(utils, description);
+  fireEvent.press(utils.getByText('Next'));
+  await utils.findByText('Post job');
 };
 
 describe('PostJobScreen', () => {
-  it('validates before calling the server', async () => {
+  it('starts on step 1 and asks for a category before moving on', async () => {
     const u = wrap(<PostJobScreen />);
-    fireEvent.press(await u.findByText('Post job'));
+    expect(await u.findByText('Step 1 of 3')).toBeTruthy();
+    fireEvent.press(u.getByText('Next'));
     expect(await u.findByText('Choose a category.')).toBeTruthy();
+    expect(u.queryByText('Job title')).toBeNull();
     expect(mockRpc).not.toHaveBeenCalled();
+  });
+
+  it('asks for a title and description on step 2', async () => {
+    const u = wrap(<PostJobScreen />);
+    await goToDetails(u);
+    expect(u.getByText('Step 2 of 3')).toBeTruthy();
+    fireEvent.press(u.getByText('Next'));
+    expect(await u.findByText(/Describe the job/)).toBeTruthy();
+    expect(u.queryByText('Post job')).toBeNull();
   });
 
   it('blocks phone numbers in the description', async () => {
     const u = wrap(<PostJobScreen />);
-    fillPost(u, 'Tap is leaking, call 0300 1234567');
-    fireEvent.press(await u.findByText('Post job'));
+    await goToDetails(u);
+    fillDetails(u, 'Tap is leaking, call 0300 1234567');
+    fireEvent.press(u.getByText('Next'));
     expect((await u.findAllByText(/Do not include phone numbers or links/)).length).toBeGreaterThan(0);
+    expect(u.queryByText('Post job')).toBeNull();
+    expect(mockRpc).not.toHaveBeenCalled();
+  });
+
+  it('shows the whole post on the review step and can go back to edit it', async () => {
+    const u = wrap(<PostJobScreen />);
+    await goToReview(u);
+    expect(u.getByText('Step 3 of 3')).toBeTruthy();
+    expect(u.getByText('Fix kitchen tap')).toBeTruthy();
+    expect(u.getByText('The kitchen tap is leaking badly')).toBeTruthy();
+    fireEvent.press(u.getByText('Back'));
+    expect(await u.findByText('Job title')).toBeTruthy();
     expect(mockRpc).not.toHaveBeenCalled();
   });
 
   it('posts as a guest, remembers the token on the device, and opens the job', async () => {
     mockRpc.mockResolvedValue({ data: [{ job_id: 'j1', guest_token: 'tok-1' }], error: null });
     const u = wrap(<PostJobScreen />);
-    fillPost(u);
-    fireEvent.press(await u.findByText('Post job'));
+    await goToReview(u);
+    fireEvent.press(u.getByText('Post job'));
     await waitFor(() =>
       expect(mockRpc).toHaveBeenCalledWith(
         'post_job',
@@ -133,8 +170,8 @@ describe('PostJobScreen', () => {
     mockAuth.current = { session: { user: { id: 'c1' } }, role: 'customer' };
     mockRpc.mockResolvedValue({ data: [{ job_id: 'j2', guest_token: null }], error: null });
     const u = wrap(<PostJobScreen />);
-    fillPost(u);
-    fireEvent.press(await u.findByText('Post job'));
+    await goToReview(u);
+    fireEvent.press(u.getByText('Post job'));
     await waitFor(() => expect(mockReplace).toHaveBeenCalledWith('PostedJob', { jobId: 'j2', mediaFailed: false }));
     expect(mockAddGuestJob).not.toHaveBeenCalled();
   });
@@ -161,7 +198,7 @@ describe('PostJobScreen', () => {
   it('hides the photo picker while the media flag is off', async () => {
     mockAuth.current = { session: { user: { id: 'c1' } }, role: 'customer' };
     const u = wrap(<PostJobScreen />);
-    await u.findByText('Post job');
+    await u.findByText('Show the problem');
     expect(u.queryByText('Add photo')).toBeNull();
     expect(u.queryByText('Record voice note')).toBeNull();
   });
@@ -169,8 +206,8 @@ describe('PostJobScreen', () => {
   it('shows the server error', async () => {
     mockRpc.mockResolvedValue({ data: null, error: { message: 'daily job limit reached' } });
     const u = wrap(<PostJobScreen />);
-    fillPost(u);
-    fireEvent.press(await u.findByText('Post job'));
+    await goToReview(u);
+    fireEvent.press(u.getByText('Post job'));
     expect(await u.findByText('daily job limit reached')).toBeTruthy();
     expect(mockReplace).not.toHaveBeenCalled();
   });
@@ -226,6 +263,15 @@ describe('PostedJobScreen', () => {
     fireEvent.press(u.getByText('Accept quote'));
     await waitFor(() => expect(mockNavigate).toHaveBeenCalledWith('Auth'));
     expect(mockRpc).not.toHaveBeenCalledWith('customer_accept_quote', expect.anything());
+  });
+
+  it('lets a guest go back to the home page after posting', async () => {
+    mockParams.current = { jobId: 'j1', token: 'tok-1' };
+    rpcFor();
+    const u = wrap(<PostedJobScreen />);
+    await u.findByText('Usman');
+    fireEvent.press(u.getByText('Back to home'));
+    expect(mockNavigate).toHaveBeenCalledWith('Tabs', { screen: 'Dashboard' });
   });
 
   it('attaches the guest job to the account once signed in, then loads it by id', async () => {
@@ -317,6 +363,31 @@ describe('BoardJobScreen', () => {
   beforeEach(() => {
     mockAuth.current = { session: { user: { id: 'w1' } }, role: 'worker' };
     mockParams.current = { jobId: 'j9' };
+  });
+
+  it('shows the post in the reader language and can show the original', async () => {
+    mockAuth.current = { session: { user: { id: 'w1' } }, role: 'worker', language: 'ur' };
+    mockRpc.mockImplementation((name: string) =>
+      name === 'get_board_job'
+        ? Promise.resolve({ data: [boardJob] })
+        : name === 'job_translations'
+          ? Promise.resolve({
+              data: [
+                {
+                  job_id: 'j9',
+                  title_i18n: { source: 'en', en: 'Wire two rooms', ur: 'دو کمروں کی وائرنگ', ai: true },
+                  description_i18n: { source: 'en', en: 'New wiring for two bedrooms', ur: 'دو بیڈ رومز کی نئی وائرنگ', ai: true },
+                },
+              ],
+              error: null,
+            })
+          : Promise.resolve({ data: [], error: null }),
+    );
+    const u = wrap(<BoardJobScreen />);
+    expect(await u.findByText('دو کمروں کی وائرنگ')).toBeTruthy();
+    expect(u.getByText('دو بیڈ رومز کی نئی وائرنگ')).toBeTruthy();
+    fireEvent.press(u.getAllByText('Show original')[0]);
+    expect(await u.findByText('Wire two rooms')).toBeTruthy();
   });
 
   it('asks for a start date and sends the price type when quote details are on', async () => {

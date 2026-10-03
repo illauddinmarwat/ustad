@@ -7,7 +7,12 @@ import ServicesScreen from './ServicesScreen';
 const mockNavigate = jest.fn();
 
 const mockAuth: {
-  current: { role: 'customer' | 'worker' | null; session: { user: { id: string; email?: string } } | null };
+  current: {
+    role: 'customer' | 'worker' | null;
+    session: { user: { id: string; email?: string } } | null;
+    workerApprovalStatus?: 'approved' | 'pending' | null;
+    language?: 'en' | 'ur';
+  };
 } = {
   current: { role: null, session: null },
 };
@@ -90,6 +95,17 @@ jest.mock('../../lib/supabase', () => {
   };
 });
 
+const mockAreas: { current: Record<string, string[]> } = { current: {} };
+const mockHeadlineI18n: { current: unknown } = { current: null };
+const mockPhotos: { current: Record<string, string[]> } = { current: {} };
+const mockMine: { current: Array<{ id: string; headline: string; status: string }> } = { current: [] };
+jest.mock('../../lib/listings', () => ({
+  loadMyListings: () => Promise.resolve(mockMine.current),
+  loadListingExtras: () =>
+    Promise.resolve(Object.fromEntries(Object.entries(mockAreas.current).map(([id, areas]) => [id, { areas, headlineI18n: mockHeadlineI18n.current, detailI18n: null }]))),
+  loadListingPhotos: () => Promise.resolve(mockPhotos.current),
+}));
+
 jest.mock('../../lib/featureFlags', () => ({
   fetchPhase3Flags: () => Promise.resolve({ rankingEnabled: false, ocrEnabled: false }),
 }));
@@ -143,6 +159,10 @@ beforeEach(() => {
   mockListingCalls.length = 0;
   mockTemplates.current = [{ id: 'template-1' }];
   mockAuth.current = { role: null, session: null };
+  mockAreas.current = {};
+  mockMine.current = [];
+  mockHeadlineI18n.current = null;
+  mockPhotos.current = {};
 });
 
 describe('ServicesScreen', () => {
@@ -150,6 +170,74 @@ describe('ServicesScreen', () => {
     const { findByText, queryByText } = wrap(<ServicesScreen />);
     expect(await findByText('AC service — DHA')).toBeTruthy();
     expect(queryByText('Guest mode')).toBeNull();
+  });
+
+  it('shows no price on a listing, only its areas', async () => {
+    mockAreas.current = { 'listing-1': ['Gulshan', 'DHA'] };
+    const { findByText, queryByText } = wrap(<ServicesScreen />);
+    await findByText('AC service — DHA');
+    expect(await findByText('Gulshan · DHA')).toBeTruthy();
+    expect(queryByText(/From Rs/)).toBeNull();
+    expect(queryByText(/3500/)).toBeNull();
+  });
+
+  it('shows the listing headline in the reader language on the card', async () => {
+    mockAuth.current = { role: 'customer', session: { user: { id: 'c1' } }, language: 'ur' };
+    mockAreas.current = { 'listing-1': [] };
+    mockHeadlineI18n.current = { source: 'en', en: 'AC service — DHA', ur: 'اے سی سروس — ڈی ایچ اے', ai: true };
+    const { findByText, queryByText } = wrap(<ServicesScreen />);
+    expect(await findByText('اے سی سروس — ڈی ایچ اے')).toBeTruthy();
+    expect(queryByText('Show original')).toBeNull();
+  });
+
+  it('shows the original headline to a reader of the same language', async () => {
+    mockAuth.current = { role: 'customer', session: { user: { id: 'c1' } }, language: 'en' };
+    mockAreas.current = { 'listing-1': [] };
+    mockHeadlineI18n.current = { source: 'en', en: 'AC service — DHA', ur: 'اے سی سروس — ڈی ایچ اے', ai: true };
+    const { findByText } = wrap(<ServicesScreen />);
+    expect(await findByText('AC service — DHA')).toBeTruthy();
+  });
+
+  it('lists an Ustad own services with their status and an Edit button', async () => {
+    mockAuth.current = { role: 'worker', session: { user: { id: 'worker-1' } }, workerApprovalStatus: 'approved' };
+    mockMine.current = [
+      { id: 'm1', headline: 'Leak and tap repair', status: 'active' },
+      { id: 'm2', headline: 'Geyser fitting', status: 'paused' },
+    ];
+    const { findByText, getAllByText } = wrap(<ServicesScreen />);
+    expect(await findByText('Leak and tap repair')).toBeTruthy();
+    expect(await findByText('Geyser fitting')).toBeTruthy();
+    expect(await findByText('Active')).toBeTruthy();
+    expect(await findByText('Paused')).toBeTruthy();
+    fireEvent.press(getAllByText('Edit')[1]);
+    expect(mockNavigate).toHaveBeenCalledWith('ListingWizard', { listingId: 'm2' });
+  });
+
+  it('shows no My services list to a customer', async () => {
+    mockAuth.current = { role: 'customer', session: { user: { id: 'c1' } } };
+    mockMine.current = [{ id: 'm1', headline: 'Leak and tap repair', status: 'active' }];
+    const { findByText, queryByText } = wrap(<ServicesScreen />);
+    await findByText('AC service — DHA');
+    expect(queryByText('My services')).toBeNull();
+  });
+
+  it('shows the first photo of a listing as its cover', async () => {
+    mockPhotos.current = { 'listing-1': ['https://x/cover.jpg'] };
+    const { findByText, UNSAFE_getAllByType } = wrap(<ServicesScreen />);
+    await findByText('AC service — DHA');
+    await waitFor(() => {
+      const images = UNSAFE_getAllByType(require('react-native').Image);
+      expect(images.some((i: { props: { source: { uri?: string } } }) => i.props.source?.uri === 'https://x/cover.jpg')).toBe(true);
+    });
+  });
+
+  it('lets an approved Ustad add a service through the wizard, with no price field', async () => {
+    mockAuth.current = { role: 'worker', session: { user: { id: 'worker-1' } }, workerApprovalStatus: 'approved' };
+    const { findByText, queryByText } = wrap(<ServicesScreen />);
+    await findByText('AC service — DHA');
+    expect(queryByText(/Price \(PKR\)/)).toBeNull();
+    fireEvent.press(await findByText('Add a service'));
+    expect(mockNavigate).toHaveBeenCalledWith('ListingWizard');
   });
 
   it('shows the inline sign-in hint at the bottom of the listings card for guests', async () => {

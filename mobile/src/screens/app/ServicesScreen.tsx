@@ -3,9 +3,10 @@ import type { CompositeNavigationProp } from '@react-navigation/native';
 import { useNavigation, useRoute, type RouteProp } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { useEffect, useMemo, useState } from 'react';
-import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { Image, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
+import { LocalizedText } from '../../components/LocalizedText';
 import { Avatar } from '../../components/ui/Avatar';
 import { Banner } from '../../components/ui/Banner';
 import { BiText } from '../../components/ui/BiText';
@@ -13,19 +14,18 @@ import { Button } from '../../components/ui/Button';
 import { Card } from '../../components/ui/Card';
 import { Chip } from '../../components/ui/Chip';
 import { Icon } from '../../components/ui/Icon';
-import { Input } from '../../components/ui/Input';
 import { ScreenHeader } from '../../components/ui/ScreenHeader';
 import { useAuth } from '../../context/AuthContext';
 import type { StringId } from '../../i18n/strings';
 import { useT } from '../../i18n/useT';
 import { trackEvent } from '../../lib/analytics';
-import { ensureAuthenticated, ensureRole } from '../../lib/authGuards';
 import { boostChipLabel } from '../../lib/boosts';
 import { trackCampaignTouch } from '../../lib/campaignAttribution';
 import { buildDiscoverySubtitle, resolveDiscoveryCityCode, shouldUseCityAwareDiscovery } from '../../lib/cityDiscovery';
 import { assignCohort, RANKING_EXPERIMENT } from '../../lib/experiments';
 import { templateCategoryFor } from '../../lib/categoryMap';
 import { fetchPhase3Flags } from '../../lib/featureFlags';
+import { loadListingExtras, loadListingPhotos, loadMyListings, type ListingExtras, type MyListing } from '../../lib/listings';
 import { fetchPhase4Flags } from '../../lib/phase4Flags';
 import { fetchPhase5Flags } from '../../lib/phase5Flags';
 import { applyRanking, type RankableListing, type ScoredListing } from '../../lib/ranking';
@@ -39,7 +39,7 @@ import { typography } from '../../theme/typography';
 type Listing = {
   id: string;
   headline: string;
-  price_pkr: number;
+  price_pkr?: number | null;
   status: string;
   worker_id: string;
   template_id: string;
@@ -64,8 +64,6 @@ type RankedListingRow = Listing & {
   city_filtered?: boolean | null;
 };
 
-type Template = { id: string; title: string; category: string };
-
 type ServicesNav = CompositeNavigationProp<
   BottomTabNavigationProp<TabParamList, 'Services'>,
   NativeStackNavigationProp<RootStackParamList>
@@ -81,10 +79,10 @@ export default function ServicesScreen() {
   const { role, session, workerApprovalStatus } = useAuth();
   const insets = useSafeAreaInsets();
   const [listings, setListings] = useState<Array<ScoredListing<Listing>>>([]);
-  const [templates, setTemplates] = useState<Template[]>([]);
+  const [photos, setPhotos] = useState<Record<string, string[]>>({});
+  const [extras, setExtras] = useState<Record<string, ListingExtras>>({});
+  const [mine, setMine] = useState<MyListing[]>([]);
   const [msg, setMsg] = useState<Msg | null>(null);
-  const [headline, setHeadline] = useState('');
-  const [price, setPrice] = useState('2500');
   const [rankingEnabled, setRankingEnabled] = useState(false);
   const [boostsEnabled, setBoostsEnabled] = useState(false);
   const [cityCode, setCityCode] = useState('karachi');
@@ -101,16 +99,6 @@ export default function ServicesScreen() {
 
   const setMsgId = (id: StringId) => setMsg({ kind: 'id', id });
   const setMsgText = (text: string) => setMsg({ kind: 'text', text });
-
-  const loadTemplates = async () => {
-    const { data, error } = await supabase
-      .from('service_templates')
-      .select('id,title,category')
-      .eq('active', true)
-      .limit(20);
-    if (error) throw new Error(error.message);
-    setTemplates((data ?? []) as Template[]);
-  };
 
   const loadFallback = async (): Promise<Array<RankableListing<Listing>>> => {
     let query = supabase.from('worker_service_listings').select('*').eq('status', 'active');
@@ -238,7 +226,6 @@ export default function ServicesScreen() {
   };
 
   const load = async () => {
-    await loadTemplates();
     const [phase3, phase4, phase5] = await Promise.all([
       fetchPhase3Flags(),
       fetchPhase4Flags(),
@@ -260,7 +247,14 @@ export default function ServicesScreen() {
           ? await loadRankedWithBoosts()
           : await loadRanked()
       : await loadFallback();
-    setListings(applyRanking(rows, phase3.rankingEnabled));
+    if (userId && role === 'worker') setMine(await loadMyListings(userId));
+    const ranked = applyRanking(rows, phase3.rankingEnabled);
+    setListings(ranked);
+    const ids = ranked.map((l) => l.id);
+    void Promise.all([loadListingPhotos(ids), loadListingExtras(ids)]).then(([p, x]) => {
+      setPhotos(p);
+      setExtras(x);
+    });
 
     if (phase5.cityCampaignsEnabled) {
       await trackCampaignTouch({
@@ -319,55 +313,6 @@ export default function ServicesScreen() {
     });
   }, [impressionPayload, listings, userId, rankingEnabled, boostsEnabled, cohort]);
 
-  const publishListing = async () => {
-    const uid = session?.user.id;
-    if (
-      !ensureAuthenticated({
-        userId: uid,
-        message: 'Sign in to publish a listing.',
-        setMessage: () => setMsgId('services.gate.publishSignIn'),
-        goToAuth: () => navigation.navigate('Auth'),
-      })
-    ) {
-      return;
-    }
-    if (
-      !ensureRole({
-        role,
-        requiredRole: 'worker',
-        roleMessage: 'Switch to worker role to publish services.',
-        setMessage: () => setMsgId('services.gate.publishRole'),
-      })
-    ) {
-      return;
-    }
-    if (workerApprovalStatus !== 'approved') {
-      setMsgId('services.approval.pendingBanner');
-      return;
-    }
-    if (!templates[0]) return;
-    const amount = Number(price || '0');
-    const { error } = await supabase.from('worker_service_listings').insert({
-      worker_id: uid!,
-      template_id: templates[0].id,
-      headline: headline.trim() || `${templates[0].title} by me`,
-      detail_text: 'Fast and reliable service',
-      price_pkr: amount,
-      status: 'active',
-    });
-    if (error) {
-      setMsgText(error.message);
-    } else {
-      setMsgId('services.publish.toast');
-      await trackEvent('listing_published', uid!, {
-        template_id: templates[0].id,
-        price_pkr: amount,
-      });
-      setHeadline('');
-      await load();
-    }
-  };
-
   const openListing = (listing: ScoredListing<Listing>, position: number) => {
     void trackEvent('ranking_clicked', userId, {
       listing_id: listing.id,
@@ -423,26 +368,38 @@ export default function ServicesScreen() {
               tone={workerApprovalStatus === 'rejected' ? 'danger' : 'warning'}
             />
           )}
-          <Input
-            labelId="services.publish.headline"
-            value={headline}
-            onChangeText={setHeadline}
-            iconLeft="edit-3"
-          />
-          <Input
-            labelId="services.publish.price"
-            value={price}
-            onChangeText={setPrice}
-            keyboardType="numeric"
-            iconLeft="dollar-sign"
-          />
+          <BiText id="listing.noPrice" variant="bodySm" tone="muted" style={styles.cardTitle} />
           <Button
-            labelId="services.publish.cta"
-            onPress={publishListing}
-            iconLeft="upload"
+            labelId="listing.addService"
+            onPress={() => navigation.navigate('ListingWizard')}
+            iconLeft="plus"
             fullWidth
             disabled={workerApprovalStatus !== 'approved'}
           />
+          {mine.length > 0 ? (
+            <View style={styles.mine}>
+              <BiText id="listing.myServices" variant="label" tone="body" />
+              {mine.map((m) => (
+                <View key={m.id} style={styles.mineRow}>
+                  <View style={styles.mineBody}>
+                    <Text style={styles.mineTitle} numberOfLines={2}>{m.headline}</Text>
+                    <Chip
+                      label={t(`listing.status.${m.status === 'active' || m.status === 'paused' ? m.status : 'draft'}` as StringId).en}
+                      tone={m.status === 'active' ? 'accent' : 'warning'}
+                    />
+                  </View>
+                  <Button
+                    labelId="listing.edit"
+                    onPress={() => navigation.navigate('ListingWizard', { listingId: m.id })}
+                    variant="secondary"
+                    iconLeft="edit-2"
+                    size="sm"
+                    hideUrdu
+                  />
+                </View>
+              ))}
+            </View>
+          ) : null}
         </Card>
       )}
 
@@ -474,10 +431,16 @@ export default function ServicesScreen() {
         ) : (
           listings.map((l, idx) => (
             <Pressable key={l.id} style={styles.listingItem} onPress={() => openListing(l, idx)}>
-              <Avatar name={l.headline} tone="primary" />
+              {photos[l.id]?.[0] ? (
+                <Image source={{ uri: photos[l.id][0] }} style={styles.cover} accessibilityIgnoresInvertColors />
+              ) : (
+                <Avatar name={l.headline} tone="primary" />
+              )}
               <View style={styles.listingBody}>
-                <Text style={styles.listingHeadline} numberOfLines={2}>{l.headline}</Text>
-                <Text style={styles.listingPrice}>From Rs {l.price_pkr}</Text>
+                <LocalizedText original={l.headline} i18n={extras[l.id]?.headlineI18n} style={styles.listingHeadline} numberOfLines={2} compact />
+                {extras[l.id]?.areas.length ? (
+                  <Text style={styles.listingAreas} numberOfLines={1}>{extras[l.id].areas.join(' · ')}</Text>
+                ) : null}
                 {l.explanations.length > 0 || boostChipLabel({ is_boosted: l.is_boosted, boost_weight: l.boost_weight }) ? (
                   <View style={styles.chipRow}>
                     {boostChipLabel({ is_boosted: l.is_boosted, boost_weight: l.boost_weight }) ? (
@@ -550,7 +513,12 @@ const styles = StyleSheet.create({
   },
   listingBody: { flex: 1, marginLeft: spacing.md, marginRight: spacing.sm },
   listingHeadline: { ...typography.subtitle, color: colors.textStrong },
-  listingPrice: { ...typography.bodySm, color: colors.textMuted, marginTop: 2 },
+  mine: { gap: spacing.sm, marginTop: spacing.md },
+  mineRow: { flexDirection: 'row', alignItems: 'center', gap: spacing.md, paddingVertical: spacing.xs },
+  mineBody: { flex: 1, gap: 4, alignItems: 'flex-start' },
+  mineTitle: { ...typography.subtitle, color: colors.textStrong },
+  listingAreas: { ...typography.bodySm, color: colors.textMuted, marginTop: 2 },
+  cover: { width: 64, height: 64, borderRadius: radius.md, backgroundColor: colors.border },
   chipRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 6, marginTop: 6 },
   chevron: { padding: 4 },
   guestHint: { marginTop: spacing.md, gap: spacing.sm },

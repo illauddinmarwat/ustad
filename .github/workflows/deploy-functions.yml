@@ -1,0 +1,51 @@
+name: Deploy Supabase functions
+
+# Deploys the Edge Function `ai-draft` and sets its secrets (Help me write).
+# GitHub secrets used: SUPABASE_ACCESS_TOKEN, GROQ_API_KEY, NEXT_PUBLIC_SUPABASE_URL (only to read the project reference).
+# Optional: a GitHub variable or secret named GROQ_MODEL; without one, openai/gpt-oss-120b is used.
+# Run it by hand (Actions, Deploy Supabase functions, Run workflow) to push a changed key or model.
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [ master ]
+    paths:
+      - 'supabase/functions/**'
+
+jobs:
+  deploy-functions:
+    runs-on: ubuntu-latest
+    env:
+      SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
+      SUPABASE_URL: ${{ secrets.NEXT_PUBLIC_SUPABASE_URL }}
+      GROQ_API_KEY: ${{ secrets.GROQ_API_KEY }}
+      GROQ_MODEL: ${{ vars.GROQ_MODEL || secrets.GROQ_MODEL || 'openai/gpt-oss-120b' }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: supabase/setup-cli@v1
+        with:
+          version: 2.98.2
+
+      # https://<ref>.supabase.co -> <ref>. The reference is not secret.
+      - name: Read the project reference
+        run: |
+          ref="$(printf '%s' "$SUPABASE_URL" | sed -E 's#^https?://([^./]+)\..*#\1#')"
+          if [ -z "$ref" ] || [ "$ref" = "$SUPABASE_URL" ]; then
+            echo "Could not read the project reference from NEXT_PUBLIC_SUPABASE_URL" >&2
+            exit 1
+          fi
+          echo "PROJECT_REF=$ref" >> "$GITHUB_ENV"
+
+      - name: Check the secrets are there
+        run: |
+          for v in SUPABASE_ACCESS_TOKEN GROQ_API_KEY; do
+            if [ -z "${!v}" ]; then echo "Missing GitHub secret $v" >&2; exit 1; fi
+          done
+
+      # Secrets live in Supabase, set here from GitHub so there is one place to change them.
+      - name: Set the function secrets
+        run: supabase secrets set GROQ_API_KEY="$GROQ_API_KEY" GROQ_MODEL="$GROQ_MODEL" --project-ref "$PROJECT_REF"
+
+      - name: Deploy ai-draft
+        run: supabase functions deploy ai-draft --project-ref "$PROJECT_REF"

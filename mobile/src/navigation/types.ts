@@ -20,12 +20,14 @@ export type RootStackParamList = {
   JobDetail: { jobId: string };
   JobTracking: { jobId: string };
   ListingDetail: { listingId: string };
+  ListingWizard: { draft?: import('../lib/aiDraft').ListingDraft; listingId?: string } | undefined;
   Notifications: undefined;
-  PostJob: undefined;
+  PostJob: { draft?: import('../lib/aiDraft').JobDraft } | undefined;
+  AiHelper: { mode: 'job' | 'listing'; serviceTitle?: string; categories?: string[] };
   PostedJob: { jobId?: string; token?: string; mediaFailed?: boolean };
   JobBoard: undefined;
   BoardJob: { jobId: string };
-  RequestWorker: { workerId: string; workerName?: string | null; category?: string | null };
+  RequestWorker: { workerId: string; workerName?: string | null; category?: string | null; listingId?: string };
   Faq: undefined;
   FaqChat: undefined;
   CommunityTips: undefined;

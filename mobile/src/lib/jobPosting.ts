@@ -27,12 +27,8 @@ export async function fetchJobPostingEnabled(): Promise<boolean> {
   }
 }
 
-/** Same rule as the server's `_contains_contact`: 7+ digits, or a link/handle. */
-export function looksLikeContact(text: string): boolean {
-  const digits = text.replace(/[\s().+-]/g, '');
-  if (/[0-9]{7,}/.test(digits)) return true;
-  return /(https?:\/\/|www\.|[a-z0-9._-]+@[a-z0-9-]+\.[a-z]{2,}|wa\.me|whats ?app)/i.test(text);
-}
+export { looksLikeContact } from './contactCheck';
+import { looksLikeContact } from './contactCheck';
 
 export type PostJobForm = {
   category: string;

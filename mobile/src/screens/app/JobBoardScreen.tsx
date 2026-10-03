@@ -13,6 +13,8 @@ import { Icon } from '../../components/ui/Icon';
 import { ScreenHeader } from '../../components/ui/ScreenHeader';
 import { useAuth } from '../../context/AuthContext';
 import { useT } from '../../i18n/useT';
+import { LocalizedText } from '../../components/LocalizedText';
+import { loadJobTranslations, type JobTranslation } from '../../lib/jobTranslations';
 import { describeMediaCounts, fetchJobMediaEnabled, loadMediaCounts, type JobMediaCounts } from '../../lib/jobMedia';
 import { expiresIn, fetchJobPostingEnabled, formatBudget } from '../../lib/jobPosting';
 import { useSkillCategories } from '../../lib/skillCategories';
@@ -49,6 +51,7 @@ export function JobBoardList() {
   const [category, setCategory] = useState<string | null>(null);
   const [jobs, setJobs] = useState<BoardJob[]>([]);
   const [counts, setCounts] = useState<Record<string, JobMediaCounts>>({});
+  const [translations, setTranslations] = useState<Record<string, JobTranslation>>({});
   const [loaded, setLoaded] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -67,6 +70,7 @@ export function JobBoardList() {
     else {
       const rows = (data ?? []) as BoardJob[];
       setJobs(rows);
+      setTranslations(await loadJobTranslations(rows.map((r) => r.id)));
       setCounts((await fetchJobMediaEnabled()) ? await loadMediaCounts(rows.map((r) => r.id)) : {});
     }
     setLoaded(true);
@@ -100,7 +104,7 @@ export function JobBoardList() {
         return (
           <Pressable key={j.id} onPress={() => navigation.navigate('BoardJob', { jobId: j.id })} accessibilityRole="button">
             <Card padding="lg">
-              <Text style={styles.title}>{j.title}</Text>
+              <LocalizedText original={j.title} i18n={translations[j.id]?.title_i18n} style={styles.title} compact />
               <View style={styles.chips}>
                 <Chip label={j.category} tone="neutral" icon="tag" />
                 {j.city ? <Chip label={j.city} tone="neutral" icon="map" /> : null}
@@ -111,9 +115,13 @@ export function JobBoardList() {
                 ) : null}
               </View>
               {j.description ? (
-                <Text style={styles.body} numberOfLines={3}>
-                  {j.description}
-                </Text>
+                <LocalizedText
+                  original={j.description}
+                  i18n={translations[j.id]?.description_i18n}
+                  style={styles.body}
+                  numberOfLines={3}
+                  compact
+                />
               ) : null}
               <View style={styles.foot}>
                 <Text style={styles.meta}>

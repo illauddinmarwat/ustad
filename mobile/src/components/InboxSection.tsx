@@ -220,7 +220,7 @@ export function InboxSection({ userId, role }: Props) {
           onDecline={() => run(() => supabase.rpc('worker_decline_direct_request', { p_job_id: j.id }), 'requests.done.declined')}
           onAcceptQuote={(quoteId) => run(() => supabase.rpc('customer_accept_quote', { p_quote_id: quoteId }), 'requests.done.accepted')}
           onCancel={() => run(() => supabase.rpc('customer_cancel_job', { job_id: j.id }), 'requests.done.cancelled')}
-          onView={() => navigation.navigate('PostedJob', { jobId: j.id })}
+          onView={() => navigation.navigate(role === 'worker' ? 'BoardJob' : 'PostedJob', { jobId: j.id })}
         />
       );
     }

@@ -1,8 +1,9 @@
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { useCallback, useEffect, useState } from 'react';
-import { Modal, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
+import { Image, Modal, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
+import { LocalizedText } from '../../components/LocalizedText';
 import { Avatar } from '../../components/ui/Avatar';
 import { Banner } from '../../components/ui/Banner';
 import { BiText } from '../../components/ui/BiText';
@@ -17,6 +18,9 @@ import type { StringId } from '../../i18n/strings';
 import { useT } from '../../i18n/useT';
 import { trackEvent } from '../../lib/analytics';
 import { ensureAuthenticated, ensureRole } from '../../lib/authGuards';
+import { skillForTemplateCategory } from '../../lib/categoryMap';
+import { fetchListingRequestsEnabled, loadListingExtras, loadListingPhotos } from '../../lib/listings';
+import type { I18n } from '../../lib/i18nText';
 import { fetchPhase4Flags } from '../../lib/phase4Flags';
 import { supabase } from '../../lib/supabase';
 import { buildCheckoutUrl } from '../../lib/webCheckout';
@@ -28,7 +32,7 @@ type ListingRow = {
   id: string;
   headline: string;
   detail_text: string | null;
-  price_pkr: number;
+  price_pkr?: number | null;
   worker_id: string;
   template_id: string;
   status: string;
@@ -58,6 +62,10 @@ export default function ListingDetailScreen({ route, navigation }: Props) {
   const [banner, setBanner] = useState<Msg>(null);
   const [phase4WebEnabled, setPhase4WebEnabled] = useState(false);
   const [webCheckoutLink, setWebCheckoutLink] = useState<string | null>(null);
+  const [requestsEnabled, setRequestsEnabled] = useState(false);
+  const [photoUrls, setPhotoUrls] = useState<string[]>([]);
+  const [areas, setAreas] = useState<string[]>([]);
+  const [i18n, setI18n] = useState<{ headline: I18n; detail: I18n }>({ headline: null, detail: null });
 
   const bannerId = (id: StringId, tone: 'info' | 'success' | 'warning' | 'danger' = 'info') =>
     setBanner({ kind: 'id', id, tone });
@@ -87,6 +95,11 @@ export default function ListingDetailScreen({ route, navigation }: Props) {
       .maybeSingle();
     setTpl(tplRow as TemplateRow | null);
 
+    const [photoMap, extraMap] = await Promise.all([loadListingPhotos([listingId]), loadListingExtras([listingId])]);
+    setPhotoUrls(photoMap[listingId] ?? []);
+    setAreas(extraMap[listingId]?.areas ?? []);
+    setI18n({ headline: extraMap[listingId]?.headlineI18n ?? null, detail: extraMap[listingId]?.detailI18n ?? null });
+
     const { data: p } = await supabase.from('profiles').select('display_name').eq('id', l.worker_id).maybeSingle();
     setWorkerName((p as ProfileRow | null)?.display_name ?? null);
   }, [listingId]);
@@ -99,6 +112,10 @@ export default function ListingDetailScreen({ route, navigation }: Props) {
     fetchPhase4Flags()
       .then((flags) => setPhase4WebEnabled(flags.webEnabled))
       .catch(() => setPhase4WebEnabled(false));
+  }, []);
+
+  useEffect(() => {
+    fetchListingRequestsEnabled().then(setRequestsEnabled);
   }, []);
 
   useEffect(() => {
@@ -143,6 +160,26 @@ export default function ListingDetailScreen({ route, navigation }: Props) {
       setApplyOpen(false);
       setNote('');
     }
+  };
+
+  const requestQuote = () => {
+    if (!listing) return;
+    if (
+      !ensureAuthenticated({
+        userId: session?.user.id,
+        message: 'Sign in to request a quote.',
+        setMessage: () => bannerId('listing.gate.applySignIn', 'warning'),
+        goToAuth: () => navigation.navigate('Auth'),
+      })
+    ) {
+      return;
+    }
+    navigation.navigate('RequestWorker', {
+      workerId: listing.worker_id,
+      workerName,
+      category: skillForTemplateCategory(tpl?.category),
+      listingId: listing.id,
+    });
   };
 
   const createWebCheckout = async () => {
@@ -203,11 +240,24 @@ export default function ListingDetailScreen({ route, navigation }: Props) {
 
   return (
     <ScrollView contentContainerStyle={[styles.root, { paddingTop: insets.top + spacing.md }]}>
+      {photoUrls.length > 0 ? (
+        <View style={styles.gallery}>
+          {photoUrls.map((uri, i) => (
+            <Image
+              key={uri}
+              source={{ uri }}
+              style={[styles.galleryImg, i === 0 && photoUrls.length > 1 && styles.galleryFirst]}
+              accessibilityIgnoresInvertColors
+            />
+          ))}
+        </View>
+      ) : null}
+
       <Card padding="lg">
         <View style={styles.headerRow}>
           <Avatar name={workerName ?? listing.headline} tone="primary" size={48} />
           <View style={styles.headerBody}>
-            <Text style={styles.title} numberOfLines={2}>{listing.headline}</Text>
+            <LocalizedText original={listing.headline} i18n={i18n.headline} style={styles.title} numberOfLines={2} />
             {tpl ? (
               <View style={styles.tagsRow}>
                 <Chip label={tpl.category} tone="primary" icon="tag" />
@@ -218,10 +268,6 @@ export default function ListingDetailScreen({ route, navigation }: Props) {
         </View>
 
         <View style={styles.priceRow}>
-          <View>
-            <BiText id="services.list.fromRs" hideUrdu variant="caption" tone="muted" />
-            <Text style={styles.price}>Rs {listing.price_pkr}</Text>
-          </View>
           <View style={styles.posted}>
             <BiText id="listing.postedBy" hideUrdu variant="caption" tone="muted" />
             <Text style={styles.postedName} numberOfLines={1}>
@@ -230,7 +276,15 @@ export default function ListingDetailScreen({ route, navigation }: Props) {
           </View>
         </View>
 
-        {listing.detail_text ? <Text style={styles.body}>{listing.detail_text}</Text> : null}
+        {areas.length > 0 ? (
+          <View style={styles.tagsRow}>
+            {areas.map((a) => (
+              <Chip key={a} label={a} icon="map-pin" />
+            ))}
+          </View>
+        ) : null}
+
+        {listing.detail_text ? <LocalizedText original={listing.detail_text} i18n={i18n.detail} style={styles.body} /> : null}
       </Card>
 
       {banner ? (
@@ -256,8 +310,8 @@ export default function ListingDetailScreen({ route, navigation }: Props) {
       {role === 'customer' && (
         <View style={styles.actionsCol}>
           <Button
-            labelId="listing.cta.apply"
-            onPress={() => setApplyOpen(true)}
+            labelId={requestsEnabled ? 'listing.cta.requestQuote' : 'listing.cta.apply'}
+            onPress={requestsEnabled ? requestQuote : () => setApplyOpen(true)}
             size="lg"
             iconRight="arrow-right"
             fullWidth
@@ -342,6 +396,9 @@ export default function ListingDetailScreen({ route, navigation }: Props) {
 }
 
 const styles = StyleSheet.create({
+  gallery: { flexDirection: 'row', flexWrap: 'wrap', gap: spacing.xs, borderRadius: radius.lg, overflow: 'hidden' },
+  galleryImg: { width: '49%', height: 110, backgroundColor: colors.border },
+  galleryFirst: { width: '100%', height: 190 },
   root: { padding: spacing.lg, backgroundColor: colors.bg, flexGrow: 1 },
   center: { flex: 1, justifyContent: 'center', padding: spacing.lg, backgroundColor: colors.bg },
   headerRow: { flexDirection: 'row', alignItems: 'flex-start', marginBottom: spacing.md },

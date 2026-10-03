@@ -14,6 +14,7 @@ const NAV = [
   { href: '/hisab', label: 'Hisab (dues)', icon: '📒' },
   { href: '/moderation', label: 'Posted jobs', icon: '🛡️' },
   { href: '/commissions', label: 'Commissions', icon: '📊' },
+  { href: '/ai-usage', label: 'AI Usage', icon: '✨' },
   { href: '/reports', label: 'Reports', icon: '📈' },
   { href: '/categories', label: 'Skill Categories', icon: '🛠️' },
   { href: '/cities', label: 'Cities & Areas', icon: '📍' },
