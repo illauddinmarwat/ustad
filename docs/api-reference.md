@@ -179,6 +179,7 @@ A listing carries no price. A customer asks the listing's Ustad for a quote; the
 | Function | Who | Input | Result |
 |----------|-----|-------|--------|
 | `create_listing_request` | signed-in customer | `p_listing_id`, `p_title`, `p_description`, `p_location_text`, `p_preferred_time` | Job id. Creates a direct request (see Direct requests) to the listing's Ustad, with the listing's category and `jobs.listing_id` set. Needs both `listing_quote_requests_enabled` and `direct_requests_enabled`. Same checks as `create_direct_request` (not your own listing, approved Ustad, daily limit) |
+| `worker_set_trades` | signed-in worker | `p_categories` (skill keys, 1 to 6, from the active skill categories) | The saved list, in the order given, without repeats. Sets `worker_profiles.categories`; jobs, requests, the job board and Nearby already match on that list, so a worker can be an electrician and a plumber |
 | `listing_card_info` (anon + signed-in) | anyone | `p_listing_ids` | Per active listing: `worker_name`, `rating`, `review_count`, `verified` (the Ustad is approved), `jobs_done` (finished jobs). For the Services cards; guests see it too |
 | `add_listing_media` | listing owner | `p_listing_id`, `p_path`, `p_bytes` | Media id, after the photo was uploaded to `{worker_id}/{listing_id}/` in `listing-media`. Max 4 photos, 3 MB each |
 | `remove_listing_media` | listing owner or admin | `p_media_id` | The file path, so the app can delete the stored object |

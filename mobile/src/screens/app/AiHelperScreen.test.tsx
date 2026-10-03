@@ -250,3 +250,67 @@ describe('AiHelperScreen (listing)', () => {
     expect(mockAsk.mock.calls[0][0].text).toBe('Service: Leak inspection & minor fix. I have eight years of experience');
   });
 });
+
+describe('AiHelperScreen (listing, choosing the service in the chat)', () => {
+  const services = [
+    { id: 't-leak', title: 'Leak inspection & minor fix' },
+    { id: 't-drain', title: 'Drain cleaning and blockage' },
+  ];
+  const draft = {
+    source: 'ur',
+    headline: { en: 'Plumber', ur: 'پلمبر' },
+    about: { en: 'I fix leaks.', ur: 'میں لیکیج ٹھیک کرتا ہوں۔' },
+  };
+
+  beforeEach(() => {
+    mockParams.current = { mode: 'listing', services };
+  });
+
+  it('first asks which kind of work the Ustad does, with the services to tap', () => {
+    const u = wrap();
+    expect(u.getByText('What kind of work do you do? Tap one.')).toBeTruthy();
+    expect(u.getByText('Leak inspection & minor fix')).toBeTruthy();
+    expect(u.getByText('Drain cleaning and blockage')).toBeTruthy();
+    expect(u.queryByText('Tell me about your work, or tap Continue and I will ask you.')).toBeNull();
+  });
+
+  it('goes on to ask about the work once a service is tapped, and sends the draft back with that service', async () => {
+    mockAsk.mockResolvedValue({ ok: true, data: [] });
+    mockListingDraft.mockResolvedValue({ ok: true, data: draft });
+    const u = wrap();
+    fireEvent.press(u.getByText('Drain cleaning and blockage'));
+    expect(await u.findByText('Tell me about your work, or tap Continue and I will ask you.')).toBeTruthy();
+    fireEvent.press(u.getByLabelText('Continue'));
+    await waitFor(() => expect(mockAsk).toHaveBeenCalled());
+    expect(mockAsk.mock.calls[0][0].text).toBe('Service: Drain cleaning and blockage');
+    fireEvent.press(await u.findByText('Review my draft'));
+    expect(mockNavigate).toHaveBeenCalledWith('ListingWizard', { draft, templateId: 't-drain' });
+  });
+
+  it('keeps the chosen service when the helper cannot write a draft and the Ustad finishes by hand', async () => {
+    mockAsk.mockResolvedValue({ ok: true, data: [] });
+    mockListingDraft.mockResolvedValue({ ok: false, error: 'blocked' });
+    const u = wrap();
+    fireEvent.press(u.getByText('Leak inspection & minor fix'));
+    await u.findByText('Tell me about your work, or tap Continue and I will ask you.');
+    say(u, 'main plumber hun');
+    expect(await u.findByText(/Your words are saved/)).toBeTruthy();
+    fireEvent.press(u.getByText('Write it myself'));
+    expect(mockNavigate).toHaveBeenCalledWith('ListingWizard', { prefill: { about: 'main plumber hun' }, templateId: 't-leak' });
+  });
+
+  it('does not ask again when the service was already chosen in the wizard', () => {
+    mockParams.current = { mode: 'listing', services, serviceTitle: 'Leak inspection & minor fix', serviceId: 't-leak' };
+    const u = wrap();
+    expect(u.queryByText('What kind of work do you do? Tap one.')).toBeNull();
+    expect(u.getByText('Tell me about your work, or tap Continue and I will ask you.')).toBeTruthy();
+  });
+
+  it('goes straight to the intro when there are no services to choose from', () => {
+    mockParams.current = { mode: 'listing', services: [] };
+    const u = wrap();
+    expect(u.queryByText('What kind of work do you do? Tap one.')).toBeNull();
+    expect(u.getByText('Tell me about your work, or tap Continue and I will ask you.')).toBeTruthy();
+  });
+});
+

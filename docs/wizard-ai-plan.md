@@ -200,3 +200,11 @@ The hosted project is not touched. A local Supabase stack runs from a scratch fo
 - **Areas in the listing wizard** are picked, not typed: city list and area chips from the admin-managed lists (`cities`, `city_areas`), several cities allowed, an "other area" box, selected areas as removable chips (up to 10). **Use my location** reads the device position and ticks the matching area; with no device location (a PC) it opens a map to pin instead. The Ustad's own city is pre-selected.
 - **Nearby on a PC**: when the device location is not available there is now a city list and **Pick on the map** instead of a dead end, plus a note on switching location on in Windows. A chosen city is turned into coordinates with OpenStreetMap (no key) and the usual nearby search runs around it; "Showing Ustads near ..." with Change goes back to device location.
 - **Hourly rate removed from Nearby cards**, as decided earlier.
+
+## Several trades per Ustad, services chosen inside Help me write (2026-10-03)
+
+- **Where the service choices come from:** the `service_templates` table (title, trade, hint), filtered to the Ustad's trades. They are added by migration, not from the admin panel. About 23 more were added (for example drain cleaning, wiring, AC repair, doors and windows, wood polish, window grills) and every trade has an "Other ... work" choice.
+- **Several trades:** `worker_set_trades` saves the list (pgTAP `phase27`, 19 assertions). The app has a **My trades** card in Account (Ustads) and an **Add another trade** link on step 1 of Add a service; after saving, that trade's services appear. Registration still asks for one trade; the rest are added afterwards.
+- **Help me write picks the service itself:** if no service is chosen yet, the chat starts by asking "What kind of work do you do?" with the services to tap. The chosen service goes back to the wizard with the draft, so nothing is asked twice.
+- **Not done:** more than one trade at registration; an admin page to add or edit service types.
+- **Worth fixing:** `worker_profiles` has a policy that lets a worker update their own row, with no column limits, so a worker could in principle change their own `approval_status`. Not changed here.

@@ -5,6 +5,7 @@ import { Image, Pressable, StyleSheet, Switch, Text, View } from 'react-native';
 
 import { AiHelpButton } from '../../components/ai/AiHelpButton';
 import { AreaPicker } from '../../components/AreaPicker';
+import { TradesSetting } from '../../components/TradesSetting';
 import { BilingualReview, type ReviewField } from '../../components/ai/BilingualReview';
 import { PhotoAttach } from '../../components/PhotoAttach';
 import { Banner } from '../../components/ui/Banner';
@@ -92,6 +93,8 @@ export default function ListingWizardScreen() {
   const [busy, setBusy] = useState(false);
   const [loaded, setLoaded] = useState(false);
   const [profileCity, setProfileCity] = useState<string | null>(null);
+  const [showTrades, setShowTrades] = useState(false);
+  const [reload, setReload] = useState(0);
   const [aiEnabled, setAiEnabled] = useState(false);
   const bi = useBilingual('listing', LISTING_FIELDS);
   const draft = route.params?.draft;
@@ -115,6 +118,7 @@ export default function ListingWizardScreen() {
     );
     setHeadline(draft.headline[draft.source]);
     setAbout(draft.about[draft.source]);
+    if (route.params?.templateId) setTemplateId(route.params.templateId);
     setStep(2);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [draft]);
@@ -123,6 +127,7 @@ export default function ListingWizardScreen() {
   useEffect(() => {
     if (!prefill?.about) return;
     setAbout((cur) => cur || prefill.about);
+    if (route.params?.templateId) setTemplateId(route.params.templateId);
     setStep(2);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [prefill]);
@@ -204,7 +209,7 @@ export default function ListingWizardScreen() {
     return () => {
       cancelled = true;
     };
-  }, [uid]);
+  }, [uid, reload]);
 
   const isApprovedWorker = !!uid && role === 'worker' && workerApprovalStatus === 'approved';
   const template = templates.find((x) => x.id === templateId);
@@ -348,13 +353,14 @@ export default function ListingWizardScreen() {
           {aiEnabled && isApprovedWorker && !isEdit ? (
             <AiHelpButton
               subId="ai.helpMe.listing"
-              onPress={() => {
-                if (!template) {
-                  setErrors({ templateId: 'Choose the service you offer.' });
-                  return;
-                }
-                navigation.navigate('AiHelper', { mode: 'listing', serviceTitle: template.title });
-              }}
+              onPress={() =>
+                navigation.navigate('AiHelper', {
+                  mode: 'listing',
+                  serviceTitle: template?.title,
+                  serviceId: template?.id,
+                  services: templates.map((x) => ({ id: x.id, title: x.title })),
+                })
+              }
             />
           ) : null}
           <Card padding="lg">
@@ -385,6 +391,19 @@ export default function ListingWizardScreen() {
               </>
             )}
             {errors.templateId ? <Text style={styles.err}>{errors.templateId}</Text> : null}
+            {!isEdit ? (
+              <>
+                <Pressable onPress={() => setShowTrades((v) => !v)} accessibilityRole="button" style={styles.tradesLink} hitSlop={8}>
+                  <Icon name={showTrades ? 'chevron-up' : 'plus-circle'} size={16} color={colors.primary} />
+                  <BiText id="trades.addAnother" hideUrdu variant="label" tone="body" enStyle={styles.tradesLinkText} />
+                </Pressable>
+                {showTrades ? (
+                  <View style={styles.tradesBox}>
+                    <TradesSetting bare onSaved={() => setReload((n) => n + 1)} />
+                  </View>
+                ) : null}
+              </>
+            ) : null}
           </Card>
           <Card padding="lg">
             <BiText id="listing.photos.hint" variant="bodySm" tone="muted" style={styles.label} />
@@ -522,6 +541,9 @@ export default function ListingWizardScreen() {
 const styles = StyleSheet.create({
   label: { marginBottom: spacing.sm },
   lockedHint: { marginTop: spacing.sm },
+  tradesLink: { flexDirection: 'row', alignItems: 'center', gap: spacing.xs, marginTop: spacing.md },
+  tradesLinkText: { color: colors.primary },
+  tradesBox: { marginTop: spacing.md, paddingTop: spacing.md, borderTopWidth: 1, borderTopColor: colors.divider },
   pills: { flexDirection: 'row', flexWrap: 'wrap', gap: spacing.sm },
   pill: {
     paddingHorizontal: spacing.md,

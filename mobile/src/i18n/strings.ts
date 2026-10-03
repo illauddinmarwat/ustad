@@ -808,6 +808,16 @@ export const strings = {
     en: 'Answer a few questions. We write your listing in English and Urdu.',
     ur: 'چند سوالوں کے جواب دیں۔ ہم آپ کی فہرست انگریزی اور اردو میں لکھ دیں گے۔',
   },
+  'ai.pickService': { en: 'What kind of work do you do? Tap one.', ur: 'آپ کس قسم کا کام کرتے ہیں؟ ایک دبائیں۔' },
+  'trades.title': { en: 'My trades', ur: 'میرے ہنر' },
+  'trades.hint': {
+    en: 'Pick every kind of work you do, for example electrician and plumber. Customers can find you and send requests for all of them.',
+    ur: 'وہ تمام کام چنیں جو آپ کرتے ہیں، مثلاً الیکٹریشن اور پلمبر۔ گاہک آپ کو ان سب کے لیے تلاش کر سکتے ہیں اور درخواست بھیج سکتے ہیں۔',
+  },
+  'trades.save': { en: 'Save my trades', ur: 'میرے ہنر محفوظ کریں' },
+  'trades.saved': { en: 'Trades saved. You can now add services for each.', ur: 'ہنر محفوظ ہو گئے۔ اب ہر ایک کے لیے سروس شامل کر سکتے ہیں۔' },
+  'trades.atLeastOne': { en: 'Keep at least one trade.', ur: 'کم از کم ایک ہنر رکھیں۔' },
+  'trades.addAnother': { en: 'Do other work too? Add another trade', ur: 'کوئی اور کام بھی کرتے ہیں؟ ایک اور ہنر شامل کریں' },
   'ai.badge': { en: 'AI draft', ur: 'اے آئی ڈرافٹ' },
   'ai.intro.job': {
     en: 'Tell me what needs fixing. You can type in English, Urdu or Roman Urdu.',

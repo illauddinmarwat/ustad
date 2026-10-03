@@ -28,7 +28,7 @@ import { typography, urduTypography } from '../../theme/typography';
 
 type Nav = NativeStackNavigationProp<RootStackParamList, 'AiHelper'>;
 
-type Phase = 'intro' | 'thinking' | 'questions' | 'drafting' | 'ready' | 'error';
+type Phase = 'pick' | 'intro' | 'thinking' | 'questions' | 'drafting' | 'ready' | 'error';
 
 /**
  * Help me write: a full-screen chat that asks up to three tap-to-answer questions and then prepares a draft in
@@ -38,13 +38,15 @@ type Phase = 'intro' | 'thinking' | 'questions' | 'drafting' | 'ready' | 'error'
 export default function AiHelperScreen() {
   const navigation = useNavigation<Nav>();
   const route = useRoute<RouteProp<RootStackParamList, 'AiHelper'>>();
-  const { mode, serviceTitle, categories } = route.params;
+  const { mode, serviceTitle, serviceId, services, categories } = route.params;
   const { language } = useAuth();
   const { t } = useT();
   const insets = useSafeAreaInsets();
   const lang = language ?? 'en';
 
-  const [phase, setPhase] = useState<Phase>('intro');
+  const [service, setService] = useState<{ id?: string; title: string } | null>(serviceTitle ? { id: serviceId, title: serviceTitle } : null);
+  const needsService = mode === 'listing' && !serviceTitle && (services?.length ?? 0) > 0;
+  const [phase, setPhase] = useState<Phase>(needsService ? 'pick' : 'intro');
   const [input, setInput] = useState('');
   const [said, setSaid] = useState('');
   const [questions, setQuestions] = useState<AiQuestion[]>([]);
@@ -54,7 +56,7 @@ export default function AiHelperScreen() {
   const [stage, setStage] = useState<'questions' | 'draft'>('questions');
   const scroller = useRef<ScrollView>(null);
 
-  const baseText = (extra: string) => [mode === 'listing' && serviceTitle ? `Service: ${serviceTitle}` : '', extra].filter(Boolean).join('. ');
+  const baseText = (extra: string) => [mode === 'listing' && service ? `Service: ${service.title}` : '', extra].filter(Boolean).join('. ');
 
   const fail = (code: AiErrorCode) => {
     setError(code);
@@ -104,7 +106,7 @@ export default function AiHelperScreen() {
 
   const useDraft = () => {
     if (mode === 'job') navigation.navigate('PostJob', { draft: draft as never });
-    else navigation.navigate('ListingWizard', { draft: draft as never });
+    else navigation.navigate('ListingWizard', { draft: draft as never, templateId: service?.id });
   };
 
   // Nothing they typed is lost: when the helper cannot help, their own words go into the form.
@@ -115,7 +117,7 @@ export default function AiHelperScreen() {
       return;
     }
     if (mode === 'job') navigation.navigate('PostJob', { prefill: { description: mine } });
-    else navigation.navigate('ListingWizard', { prefill: { about: mine } });
+    else navigation.navigate('ListingWizard', { prefill: { about: mine }, templateId: service?.id });
   };
 
   const bot = (text: string, key: string, ur?: string) => (
@@ -146,7 +148,37 @@ export default function AiHelperScreen() {
           <Text style={styles.note}>{t('ai.noPriceNote').en}</Text>
         </View>
 
-        {bot(t(introId).en, 'intro', t(introId).ur)}
+        {phase === 'pick' ? (
+          <>
+            {bot(t('ai.pickService').en, 'pick', t('ai.pickService').ur)}
+            <View style={styles.chips}>
+              {(services ?? []).map((s) => (
+                <Pressable
+                  key={s.id}
+                  onPress={() => {
+                    setService(s);
+                    setPhase('intro');
+                  }}
+                  accessibilityRole="button"
+                  style={styles.pill}
+                >
+                  <Text style={[typography.label, styles.pillText]}>{s.title}</Text>
+                </Pressable>
+              ))}
+            </View>
+          </>
+        ) : (
+          <>
+            {service && needsService ? (
+              <View style={styles.meRow}>
+                <View style={styles.meBubble}>
+                  <Text style={styles.meText}>{service.title}</Text>
+                </View>
+              </View>
+            ) : null}
+            {bot(t(introId).en, 'intro', t(introId).ur)}
+          </>
+        )}
         {phase === 'intro' ? (
           <View style={styles.tipRow}>
             <Icon name="mic" size={14} color={colors.primary} />

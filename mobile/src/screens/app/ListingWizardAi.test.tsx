@@ -109,14 +109,53 @@ const reviewWithTranslation = async (u: ReturnType<typeof wrap>) => {
 };
 
 describe('ListingWizardScreen: Help me write', () => {
-  it('asks for a service before opening the helper, then opens it for that service', async () => {
+  it('opens the helper without choosing a service first, handing it the services to choose from', async () => {
     const u = wrap();
     fireEvent.press(await u.findByText('Help me write'));
-    expect(await u.findByText('Choose the service you offer.')).toBeTruthy();
-    expect(mockNavigate).not.toHaveBeenCalled();
-    fireEvent.press(u.getByText('Leak inspection & minor fix'));
+    expect(mockNavigate).toHaveBeenCalledWith('AiHelper', {
+      mode: 'listing',
+      serviceTitle: undefined,
+      serviceId: undefined,
+      services: [{ id: 't1', title: 'Leak inspection & minor fix' }],
+    });
+  });
+
+  it('hands the helper the service that was already chosen', async () => {
+    const u = wrap();
+    fireEvent.press(await u.findByText('Leak inspection & minor fix'));
     fireEvent.press(u.getByText('Help me write'));
-    expect(mockNavigate).toHaveBeenCalledWith('AiHelper', { mode: 'listing', serviceTitle: 'Leak inspection & minor fix' });
+    expect(mockNavigate).toHaveBeenCalledWith('AiHelper', {
+      mode: 'listing',
+      serviceTitle: 'Leak inspection & minor fix',
+      serviceId: 't1',
+      services: [{ id: 't1', title: 'Leak inspection & minor fix' }],
+    });
+  });
+
+  it('selects the service the helper chose when it hands the draft back', async () => {
+    mockParams.current = {
+      templateId: 't1',
+      draft: {
+        source: 'en',
+        headline: { en: 'Leak and tap repair', ur: UR_HEAD },
+        about: { en: 'Mixers, pipes and flush tanks.', ur: UR_ABOUT },
+      },
+    };
+    const u = wrap();
+    await u.findByText('Step 2 of 3');
+    fireEvent.press(u.getByText('Back'));
+    await u.findByText('Which service do you offer?');
+    // The service is already selected, so Next works without choosing again.
+    fireEvent.press(u.getByText('Next'));
+    expect(await u.findByText('Headline')).toBeTruthy();
+  });
+
+  it('can add another trade from the first step, and then shows that trade services', async () => {
+    const u = wrap();
+    await u.findByText('Leak inspection & minor fix');
+    expect(u.queryByText('My trades')).toBeNull();
+    fireEvent.press(u.getByText('Do other work too? Add another trade'));
+    expect(await u.findByText('My trades')).toBeTruthy();
   });
 
   it('is not offered while AI help is off', async () => {

@@ -27,6 +27,7 @@ import type { RootStackParamList } from '../../navigation/types';
 import { colors, radius, spacing } from '../../theme/tokens';
 import { typography } from '../../theme/typography';
 import { LanguageSetting } from '../../components/LanguageSetting';
+import { TradesSetting } from '../../components/TradesSetting';
 
 type Msg = { kind: 'id'; id: StringId } | { kind: 'text'; text: string } | null;
 
@@ -205,6 +206,8 @@ export default function AccountScreen() {
           </View>
         </Card>
       )}
+
+      {role === 'worker' ? <TradesSetting /> : null}
 
       <LanguageSetting />
 
