@@ -26,3 +26,6 @@ supabase/.temp/
 **/build/
 **/dist/
 
+
+# Local seed account lists (credentials), never commit
+docs/seed-data/phase1-seed-accounts.txt
