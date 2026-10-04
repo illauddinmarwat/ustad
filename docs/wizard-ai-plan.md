@@ -243,3 +243,7 @@ Finishing a job is now two steps. The Ustad taps **Work is done** (`worker_mark_
 ## Guest nudge (2026-10-04)
 
 A guest has no account, so nothing can tell them a quote arrived. Now the post screen and the "Jobs you posted" card explain this and offer **Create a free account**, the card shows "N quotes waiting" per job (read with the guest token, up to 5 jobs, refreshed every minute and when the app opens), and the Requests tab badge counts those quotes for guests. A signed-in customer sees none of it.
+
+## Status timeline (2026-10-04)
+
+Every job screen now starts with **Where this job is**: posted (or request sent) → Ustad sent a price → price accepted → Ustad on the way (only while live tracking is on) → Ustad says work is done → customer confirmed → customer paid → payment confirmed, job closed. Done steps are green, the current step is outlined, a cancelled job shows only "posted" and "cancelled", and a payment problem is flagged. Under it, **What happens next** tells the person looking what to do (the customer and the Ustad get different lines). English and Urdu. `lib/jobTimeline.ts` is the pure logic, `components/JobStatusTimeline.tsx` the card. The old four-step list in the on-the-way card is gone.

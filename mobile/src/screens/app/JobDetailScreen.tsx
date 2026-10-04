@@ -19,6 +19,7 @@ import { useT } from '../../i18n/useT';
 import { trackEvent } from '../../lib/analytics';
 import { FinalPriceSection } from '../../components/FinalPriceSection';
 import { JobContactSection } from '../../components/JobContactSection';
+import { JobStatusTimeline } from '../../components/JobStatusTimeline';
 import { JobPaymentSection } from '../../components/JobPaymentSection';
 import { ensureAuthenticated } from '../../lib/authGuards';
 import { fetchPhase4Flags } from '../../lib/phase4Flags';
@@ -436,12 +437,6 @@ export default function JobDetailScreen({ route, navigation }: Props) {
   const realtimeVisible = phase4RealtimeEnabled && (isCustomer || isWorker) && !!job.worker_id;
   const timerSeconds = computeTimerSeconds(realtimeState, nowTs);
   const timerText = formatDuration(timerSeconds);
-  const timeline = [
-    { labelId: 'jobDetail.timeline.assigned' as StringId, done: ['assigned', 'completed', 'payment_pending', 'disputed', 'closed'].includes(job.status) },
-    { labelId: 'jobDetail.timeline.enRoute' as StringId, done: !!realtimeState?.is_en_route || !!realtimeState?.started_work_at || afterWork },
-    { labelId: 'jobDetail.timeline.inProgress' as StringId, done: !!realtimeState?.started_work_at || afterWork },
-    { labelId: 'jobDetail.timeline.complete' as StringId, done: afterWork },
-  ];
 
   return (
     <ScrollView contentContainerStyle={[styles.root, { paddingTop: insets.top + spacing.md }]} keyboardShouldPersistTaps="handled">
@@ -460,6 +455,18 @@ export default function JobDetailScreen({ route, navigation }: Props) {
         ) : null}
         {job.description ? <Text style={styles.body}>{job.description}</Text> : null}
       </Card>
+
+      {isCustomer || isWorker ? (
+        <JobStatusTimeline
+          viewer={isCustomer ? 'customer' : 'worker'}
+          status={job.status}
+          origin={job.origin}
+          workerDone={workerSaidDone}
+          hasQuote={acceptedAmount != null}
+          enRoute={!!realtimeState?.is_en_route || !!realtimeState?.started_work_at}
+          showEnRoute={phase4RealtimeEnabled}
+        />
+      ) : null}
 
       {banner ? (
         banner.kind === 'id' ? (
@@ -526,25 +533,8 @@ export default function JobDetailScreen({ route, navigation }: Props) {
 
       {realtimeVisible && (
         <Card padding="lg">
-          <BiText id="jobDetail.timeline.title" variant="title" tone="strong" style={styles.cardTitle} />
+          <BiText id="jobDetail.live.title" variant="title" tone="strong" style={styles.cardTitle} />
           <BiText id="jobDetail.timeline.subtitle" variant="bodySm" tone="muted" style={styles.cardSubtitle} />
-          <View style={styles.timeline}>
-            {timeline.map((step) => (
-              <View key={step.labelId} style={styles.timelineItem}>
-                <Icon
-                  name={step.done ? 'check-circle' : 'circle'}
-                  size={18}
-                  color={step.done ? colors.accent : colors.textMuted}
-                />
-                <BiText
-                  id={step.labelId}
-                  variant="label"
-                  tone={step.done ? 'strong' : 'muted'}
-                  style={styles.timelineLabel}
-                />
-              </View>
-            ))}
-          </View>
           <View style={styles.statusRow}>
             <Icon name="navigation" size={14} color={colors.primary} />
             <BiText id="jobDetail.timeline.workerStatus" hideUrdu variant="caption" tone="muted" style={styles.statusLabel} />
