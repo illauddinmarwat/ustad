@@ -4,7 +4,7 @@ begin;
 
 create extension if not exists pgtap with schema extensions;
 
-select plan(6);
+select plan(7);
 
 create function public._t_id (n text) returns uuid language sql immutable as $$
   select (case n
@@ -43,6 +43,10 @@ select lives_ok ($$update public.profiles set active_view = 'customer' where id 
 select throws_ok ($$update public.profiles set active_view = 'admin' where id = public._t_id ('w2')$$, '23514', null, 'only customer or worker are valid views');
 reset role;
 select is ((select role from public.profiles where id = public._t_id ('w2')), 'worker', 'the role is still worker');
+select public._t_as ('w2');
+
+select lives_ok ($$select role, active_view, preferred_language from public.profiles where id = public._t_id ('w2')$$, 'the app can read the view along with the role');
+reset role;
 
 -- In the customer view they can post a job and ask another Ustad for a quote.
 select public._t_as ('w2');
