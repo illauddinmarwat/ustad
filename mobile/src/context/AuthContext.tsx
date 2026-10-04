@@ -29,6 +29,8 @@ type AuthCtx = {
   loading: boolean;
   role: 'customer' | 'worker' | 'admin' | null;
   workerApprovalStatus: WorkerApprovalStatus | null;
+  /** The person is an Ustad (whatever screen they are looking at); only they can switch to the Ustad view. */
+  isWorkerAccount: boolean;
   /** The language the person reads posts in (`profiles.preferred_language`). */
   language: AppLanguage;
   setLanguage: (l: AppLanguage) => Promise<void>;
@@ -72,14 +74,18 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [previewRole, setPreviewRole] = useState<'customer' | 'worker'>('customer');
   const [role, setRoleState] = useState<'customer' | 'worker' | 'admin' | null>(null);
   const [workerApprovalStatus, setWorkerApprovalStatus] = useState<WorkerApprovalStatus | null>(null);
+  const [isWorkerAccount, setIsWorkerAccount] = useState(false);
   const [registering, setRegistering] = useState(false);
   const [rejectionReason, setRejectionReason] = useState<string | null>(null);
   const [language, setLanguageState] = useState<AppLanguage>(deviceLanguage);
 
   const applyRoleForUser = async (userId: string, email?: string): Promise<WorkerApprovalStatus | null> => {
-    const { data } = await supabase.from('profiles').select('role,preferred_language').eq('id', userId).maybeSingle();
+    const { data } = await supabase.from('profiles').select('role,active_view,preferred_language').eq('id', userId).maybeSingle();
     if (data?.preferred_language === 'ur' || data?.preferred_language === 'en') setLanguageState(data.preferred_language);
-    const resolvedRole = (data?.role as 'customer' | 'worker' | 'admin') ?? 'customer';
+    // `role` is who the person is and never changes with the screen; `active_view` is the screen an Ustad chose.
+    const accountRole = (data?.role as 'customer' | 'worker' | 'admin') ?? 'customer';
+    const resolvedRole = accountRole === 'worker' && data?.active_view === 'customer' ? 'customer' : accountRole;
+    setIsWorkerAccount(accountRole === 'worker');
     let approval: WorkerApprovalStatus | null = null;
     let reason: string | null = null;
     if (resolvedRole === 'worker') {
@@ -207,7 +213,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       return;
     }
     if (!session?.user?.id) return;
-    const { error } = await supabase.from('profiles').update({ role: r }).eq('id', session.user.id);
+    // Only an Ustad can look at the app as an Ustad; a customer who asks is ignored.
+    if (r === 'worker' && !isWorkerAccount) return;
+    const { error } = await supabase.from('profiles').update({ active_view: r }).eq('id', session.user.id);
     if (error) throw error;
     setRoleState(r);
     if (r === 'worker') await applyRoleForUser(session.user.id);
@@ -227,6 +235,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       loading,
       role,
       workerApprovalStatus,
+      isWorkerAccount,
       language,
       setLanguage,
       rejectionReason,
@@ -238,7 +247,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       setRegistering,
       setRole,
     }),
-    [session, loading, role, workerApprovalStatus, rejectionReason, registering, language]
+    [session, loading, role, workerApprovalStatus, isWorkerAccount, rejectionReason, registering, language]
   );
 
   return <Ctx.Provider value={value}>{children}</Ctx.Provider>;

@@ -172,7 +172,8 @@ export default function JobDetailScreen({ route, navigation }: Props) {
     return () => clearInterval(id);
   }, [phase4RealtimeEnabled, realtimeState?.timer_started_at]);
 
-  const isWorkerOwner = role === 'worker' && job?.worker_id === uid;
+  // Being the job's Ustad does not depend on which screen they are looking at.
+  const isWorkerOwner = !!uid && job?.worker_id === uid;
   const watchSubRef = useRef<Location.LocationSubscription | null>(null);
 
   useEffect(() => {
@@ -424,8 +425,8 @@ export default function JobDetailScreen({ route, navigation }: Props) {
     );
   }
 
-  const isCustomer = role === 'customer' && job.customer_id === uid;
-  const isWorker = role === 'worker' && job.worker_id === uid;
+  const isCustomer = job.customer_id === uid;
+  const isWorker = job.worker_id === uid;
   const showConfirm = isCustomer && job.status === 'pending_customer_confirm' && job.origin === 'service_listing';
   const showComplete = (isCustomer || isWorker) && job.status === 'assigned';
   const workerSaidDone = !!job.worker_done_at;

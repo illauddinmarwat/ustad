@@ -32,7 +32,7 @@ import { TradesSetting } from '../../components/TradesSetting';
 type Msg = { kind: 'id'; id: StringId } | { kind: 'text'; text: string } | null;
 
 export default function AccountScreen() {
-  const { session, role, setRole, signOut } = useAuth();
+  const { session, role, setRole, signOut, isWorkerAccount } = useAuth();
   const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
   const insets = useSafeAreaInsets();
   const { t } = useT();
@@ -196,13 +196,15 @@ export default function AccountScreen() {
               iconLeft="user"
               style={styles.flex1}
             />
-            <Button
-              labelId="role.worker"
-              onPress={() => setRole('worker')}
-              variant={role === 'worker' ? 'primary' : 'secondary'}
-              iconLeft="briefcase"
-              style={styles.flex1}
-            />
+            {isWorkerAccount ? (
+              <Button
+                labelId="role.worker"
+                onPress={() => setRole('worker')}
+                variant={role === 'worker' ? 'primary' : 'secondary'}
+                iconLeft="briefcase"
+                style={styles.flex1}
+              />
+            ) : null}
           </View>
         </Card>
       )}
