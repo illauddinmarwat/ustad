@@ -7,6 +7,7 @@ const mockNavigate = jest.fn();
 const mockRpc = jest.fn();
 const mockData: { current: Record<string, unknown[]> } = { current: {} };
 
+jest.mock('../context/AuthContext', () => ({ useAuth: () => ({ language: 'en' }) }));
 jest.mock('@react-navigation/native', () => ({ useNavigation: () => ({ navigate: mockNavigate }) }));
 jest.mock('../lib/directRequests', () => ({
   ...jest.requireActual('../lib/directRequests'),
@@ -91,6 +92,12 @@ describe('InboxSection (worker)', () => {
     const { findByText } = render(<InboxSection userId="w1" role="worker" />);
     fireEvent.press(await findByText('Wire kitchen'));
     expect(mockNavigate).toHaveBeenCalledWith('JobDetail', { jobId: 'ja' });
+  });
+
+  it('tells the Ustad what to do next on a running job', async () => {
+    mockData.current = { jobs: [job({ id: 'jr', title: 'Fix sink', status: 'assigned', worker_id: 'w1' })] };
+    const { findByText } = render(<InboxSection userId="w1" role="worker" />);
+    expect(await findByText('Do the work, then tap Work is done.')).toBeTruthy();
   });
 });
 

@@ -6,6 +6,8 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { useCityAreaFields } from '../../components/CityAreaFields';
 import { PhotoAttach } from '../../components/PhotoAttach';
+import { PlaceSection } from '../../components/PlaceSection';
+import { TimeChips } from '../../components/TimeChips';
 import { VideoRecorder } from '../../components/VideoRecorder';
 import { VoiceRecorder } from '../../components/VoiceRecorder';
 import { Banner } from '../../components/ui/Banner';
@@ -166,13 +168,8 @@ export default function RequestWorkerScreen() {
             error={errors.budget}
           />
         )}
-        <Input
-          labelId="request.field.time"
-          value={preferredTime}
-          onChangeText={setPreferredTime}
-          iconLeft="calendar"
-        />
-        {place.fields}
+        <TimeChips value={preferredTime} onChange={setPreferredTime} />
+        <PlaceSection summary={[place.areaName, place.cityName].filter(Boolean).join(', ')}>{place.fields}</PlaceSection>
 
         {mediaEnabled && session?.user.id ? (
           <>

@@ -21,7 +21,7 @@ export function ScreenHeader({ titleId, subtitleId, right, inverse, style }: Scr
     <View style={[styles.wrap, style]}>
       <View style={styles.left}>
         <BiText id={titleId} variant="displayMd" tone={tone} />
-        {subtitleId ? <BiText id={subtitleId} variant="body" tone={subTone} style={styles.subtitle} /> : null}
+        {subtitleId ? <BiText id={subtitleId} variant="bodySm" tone={subTone} style={styles.subtitle} /> : null}
       </View>
       {right ? <View style={styles.right}>{right}</View> : null}
     </View>
@@ -29,7 +29,7 @@ export function ScreenHeader({ titleId, subtitleId, right, inverse, style }: Scr
 }
 
 const styles = StyleSheet.create({
-  wrap: { flexDirection: 'row', alignItems: 'flex-start', marginBottom: spacing.lg },
+  wrap: { flexDirection: 'row', alignItems: 'flex-start', marginBottom: spacing.md },
   left: { flex: 1 },
   right: { marginLeft: spacing.md },
   subtitle: { marginTop: 4 },

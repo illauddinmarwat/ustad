@@ -22,6 +22,8 @@ export type InboxItem = {
   status: string;
   bucket: InboxBucket;
   createdAt: string;
+  /** The Ustad has said the work is done (jobs only). */
+  workerDone?: boolean;
 };
 
 // ─── Raw rows, as returned by the queries ───────────────────────────────
@@ -45,6 +47,7 @@ export type JobRaw = {
   worker_id: string | null;
   target_worker_id: string | null;
   created_at: string;
+  worker_done_at?: string | null;
 };
 
 export type MyQuoteRaw = {
@@ -134,6 +137,7 @@ export function jobItem(j: JobRaw, asKind: 'request' | 'job'): InboxItem {
     status: j.status,
     bucket: bucketFor(asKind, j.status),
     createdAt: j.created_at,
+    workerDone: !!j.worker_done_at,
   };
 }
 

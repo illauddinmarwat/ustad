@@ -329,6 +329,7 @@ export default function ListingWizardScreen() {
       total={3}
       stepNameId={step === 1 ? 'listing.step.work' : step === 2 ? 'post.step.details' : 'post.step.review'}
       onBack={step > 1 && !published ? () => setStep(step - 1) : undefined}
+      onStepPress={published ? undefined : setStep}
       onNext={step === 3 ? publish : next}
       nextLabelId={step === 3 ? (published ? 'common.done' : isEdit ? 'listing.saveChanges' : 'services.publish.cta') : 'wizard.next'}
       nextIcon={step === 3 ? 'check' : 'arrow-right'}

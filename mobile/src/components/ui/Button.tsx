@@ -38,19 +38,19 @@ const sizeStyles = {
   sm: {
     container: { minHeight: 36, paddingHorizontal: spacing.md, paddingVertical: spacing.xs },
     label: { ...typography.button, fontSize: 13 },
-    urdu: { ...urduTypography.button, fontSize: 11, marginTop: 1 },
+    urdu: { ...urduTypography.button, fontSize: 12, lineHeight: 18, marginTop: 0 },
     icon: 16,
   },
   md: {
     container: { minHeight: 48, paddingHorizontal: spacing.lg, paddingVertical: spacing.sm },
     label: typography.button,
-    urdu: { ...urduTypography.button, marginTop: 2 },
+    urdu: { ...urduTypography.button, marginTop: 0 },
     icon: 18,
   },
   lg: {
     container: { minHeight: 56, paddingHorizontal: spacing.xl, paddingVertical: spacing.md },
     label: { ...typography.button, fontSize: 16 },
-    urdu: { ...urduTypography.button, fontSize: 13, marginTop: 2 },
+    urdu: { ...urduTypography.button, fontSize: 17, lineHeight: 24, marginTop: 0 },
     icon: 20,
   },
 } as const;

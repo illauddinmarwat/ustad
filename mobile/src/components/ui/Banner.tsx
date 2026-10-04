@@ -1,4 +1,5 @@
-import { StyleSheet, Text, View } from 'react-native';
+import { useEffect, useRef } from 'react';
+import { Animated, StyleSheet, Text, View } from 'react-native';
 
 import type { StringId } from '../../i18n/strings';
 import { useT } from '../../i18n/useT';
@@ -6,6 +7,7 @@ import { colors, radius, spacing } from '../../theme/tokens';
 import { typography, urduTypography } from '../../theme/typography';
 
 import { Icon, type IconProps } from './Icon';
+import { motionEnabled } from './motion';
 
 type Tone = 'info' | 'success' | 'warning' | 'danger';
 
@@ -31,10 +33,21 @@ export function Banner({ id, text, tone = 'info', icon }: BannerProps) {
   const palette = TONE[tone];
   const resolvedIcon = icon ?? palette.icon;
 
+  const appear = useRef(new Animated.Value(motionEnabled ? 0 : 1)).current;
+  useEffect(() => {
+    if (!motionEnabled) return;
+    Animated.timing(appear, { toValue: 1, duration: 220, useNativeDriver: true }).start();
+  }, [appear]);
+
   if (!entry && !text) return null;
 
   return (
-    <View style={[styles.wrap, { backgroundColor: palette.bg, borderColor: palette.border }]}>
+    <Animated.View
+      style={[
+        styles.wrap,
+        { backgroundColor: palette.bg, borderColor: palette.border, opacity: appear, transform: [{ translateY: appear.interpolate({ inputRange: [0, 1], outputRange: [6, 0] }) }] },
+      ]}
+    >
       <Icon name={resolvedIcon} size={16} color={palette.ink} />
       <View style={styles.body}>
         {entry ? (
@@ -48,7 +61,7 @@ export function Banner({ id, text, tone = 'info', icon }: BannerProps) {
           <Text style={[typography.bodySm, { color: palette.ink }]}>{text}</Text>
         )}
       </View>
-    </View>
+    </Animated.View>
   );
 }
 

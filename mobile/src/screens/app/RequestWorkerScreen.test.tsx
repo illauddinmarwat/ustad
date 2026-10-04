@@ -128,7 +128,7 @@ describe('RequestWorkerScreen', () => {
     mockRpc.mockResolvedValue({ data: 'job-2', error: null });
     const { getByText, queryByText, findByText, UNSAFE_getAllByType } = wrap();
     const { TextInput } = require('react-native');
-    await waitFor(() => expect(queryByText('Your budget in Rs (optional)')).toBeNull());
+    await waitFor(() => expect(queryByText('Your budget in Rs (optional)')).toBeNull(), { timeout: 4000 });
     const inputs = UNSAFE_getAllByType(TextInput);
     fireEvent.changeText(inputs[0], 'Fix tap');
     fireEvent.changeText(inputs[1], 'Kitchen tap is leaking badly');

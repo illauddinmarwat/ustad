@@ -1,4 +1,5 @@
-import { StyleSheet, View } from 'react-native';
+import { useEffect, useRef } from 'react';
+import { Animated, StyleSheet, View } from 'react-native';
 
 import { buildTimeline, type TimelineInput, type Viewer } from '../lib/jobTimeline';
 import { colors, radius, spacing } from '../theme/tokens';
@@ -6,8 +7,26 @@ import { colors, radius, spacing } from '../theme/tokens';
 import { BiText } from './ui/BiText';
 import { Card } from './ui/Card';
 import { Icon } from './ui/Icon';
+import { motionEnabled } from './ui/motion';
 
 type Props = TimelineInput & { viewer: Viewer };
+
+/** The dot of the current step: a soft ring that grows and fades, so the eye finds where the job is. */
+function Pulse() {
+  const v = useRef(new Animated.Value(0)).current;
+  useEffect(() => {
+    if (!motionEnabled) return;
+    const loop = Animated.loop(Animated.timing(v, { toValue: 1, duration: 1400, useNativeDriver: true }));
+    loop.start();
+    return () => loop.stop();
+  }, [v]);
+  return (
+    <Animated.View
+      pointerEvents="none"
+      style={[styles.pulse, { opacity: v.interpolate({ inputRange: [0, 1], outputRange: [0.5, 0] }), transform: [{ scale: v.interpolate({ inputRange: [0, 1], outputRange: [1, 1.9] }) }] }]}
+    />
+  );
+}
 
 /** Where a job is, step by step, and what happens next for the person looking. English and Urdu. */
 export function JobStatusTimeline({ viewer, ...input }: Props) {
@@ -21,6 +40,7 @@ export function JobStatusTimeline({ viewer, ...input }: Props) {
           <View key={step.id} style={styles.row}>
             <View style={styles.rail}>
               <View style={[styles.dot, step.done && styles.dotDone, step.current && styles.dotCurrent]}>
+                {step.current ? <Pulse /> : null}
                 {step.done ? <Icon name="check" size={12} color="#fff" /> : null}
               </View>
               {i < timeline.steps.length - 1 || timeline.terminal ? (
@@ -78,6 +98,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
+  pulse: { position: 'absolute', width: DOT, height: DOT, borderRadius: DOT / 2, backgroundColor: colors.primary },
   dotDone: { backgroundColor: colors.accent, borderColor: colors.accent },
   dotCurrent: { borderColor: colors.primary, backgroundColor: colors.primarySoft },
   dotBad: { backgroundColor: colors.danger, borderColor: colors.danger },

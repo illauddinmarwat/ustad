@@ -52,4 +52,16 @@ describe('WizardShell', () => {
     expect(onNext).not.toHaveBeenCalled();
     expect(onBack).not.toHaveBeenCalled();
   });
+
+  it('lets a person tap a step they already passed to go back to it, but not a later one', () => {
+    const onStepPress = jest.fn();
+    const u = wrap(
+      <WizardShell step={3} total={3} stepNameId="post.step.review" onNext={jest.fn()} onStepPress={onStepPress}>
+        <Text>x</Text>
+      </WizardShell>,
+    );
+    fireEvent.press(u.getByLabelText('Go back to this step 1'));
+    expect(onStepPress).toHaveBeenCalledWith(1);
+    expect(u.queryByLabelText('Go back to this step 3')).toBeNull();
+  });
 });

@@ -120,10 +120,10 @@ exports[`DashboardScreen matches snapshot 1`] = `
                     {
                       "fontFamily": "NotoNaskhArabic_700Bold",
                       "fontSize": 28,
-                      "lineHeight": 44,
+                      "lineHeight": 42,
                     },
                     {
-                      "marginTop": 2,
+                      "marginTop": 0,
                       "writingDirection": "rtl",
                     },
                     {
@@ -170,10 +170,10 @@ exports[`DashboardScreen matches snapshot 1`] = `
                     {
                       "fontFamily": "NotoNaskhArabic_400Regular",
                       "fontSize": 13,
-                      "lineHeight": 22,
+                      "lineHeight": 21,
                     },
                     {
-                      "marginTop": 2,
+                      "marginTop": 0,
                       "writingDirection": "rtl",
                     },
                     {
@@ -317,9 +317,9 @@ exports[`DashboardScreen matches snapshot 1`] = `
                   [
                     {
                       "fontFamily": "NotoNaskhArabic_400Regular",
-                      "fontSize": 13,
-                      "lineHeight": 26,
-                      "marginTop": 2,
+                      "fontSize": 17,
+                      "lineHeight": 24,
+                      "marginTop": 0,
                     },
                     {
                       "color": "#FFFFFF",
@@ -446,9 +446,9 @@ exports[`DashboardScreen matches snapshot 1`] = `
                   [
                     {
                       "fontFamily": "NotoNaskhArabic_400Regular",
-                      "fontSize": 13,
-                      "lineHeight": 26,
-                      "marginTop": 2,
+                      "fontSize": 17,
+                      "lineHeight": 24,
+                      "marginTop": 0,
                     },
                     {
                       "color": "#0B0F19",
@@ -525,10 +525,10 @@ exports[`DashboardScreen matches snapshot 1`] = `
                   {
                     "fontFamily": "NotoNaskhArabic_700Bold",
                     "fontSize": 17,
-                    "lineHeight": 28,
+                    "lineHeight": 26,
                   },
                   {
-                    "marginTop": 2,
+                    "marginTop": 0,
                     "writingDirection": "rtl",
                   },
                   {
@@ -703,7 +703,7 @@ exports[`DashboardScreen matches snapshot 1`] = `
                   {
                     "fontFamily": "NotoNaskhArabic_400Regular",
                     "fontSize": 12,
-                    "lineHeight": 20,
+                    "lineHeight": 19,
                   },
                   {
                     "color": "#6B7280",
@@ -809,7 +809,7 @@ exports[`DashboardScreen matches snapshot 1`] = `
                   {
                     "fontFamily": "NotoNaskhArabic_400Regular",
                     "fontSize": 12,
-                    "lineHeight": 20,
+                    "lineHeight": 19,
                   },
                   {
                     "color": "#6B7280",
@@ -915,7 +915,7 @@ exports[`DashboardScreen matches snapshot 1`] = `
                   {
                     "fontFamily": "NotoNaskhArabic_400Regular",
                     "fontSize": 12,
-                    "lineHeight": 20,
+                    "lineHeight": 19,
                   },
                   {
                     "color": "#6B7280",
@@ -1021,7 +1021,7 @@ exports[`DashboardScreen matches snapshot 1`] = `
                   {
                     "fontFamily": "NotoNaskhArabic_400Regular",
                     "fontSize": 12,
-                    "lineHeight": 20,
+                    "lineHeight": 19,
                   },
                   {
                     "color": "#6B7280",
@@ -1127,7 +1127,7 @@ exports[`DashboardScreen matches snapshot 1`] = `
                   {
                     "fontFamily": "NotoNaskhArabic_400Regular",
                     "fontSize": 12,
-                    "lineHeight": 20,
+                    "lineHeight": 19,
                   },
                   {
                     "color": "#6B7280",
@@ -1233,7 +1233,7 @@ exports[`DashboardScreen matches snapshot 1`] = `
                   {
                     "fontFamily": "NotoNaskhArabic_400Regular",
                     "fontSize": 12,
-                    "lineHeight": 20,
+                    "lineHeight": 19,
                   },
                   {
                     "color": "#6B7280",
@@ -1282,10 +1282,10 @@ exports[`DashboardScreen matches snapshot 1`] = `
               {
                 "fontFamily": "NotoNaskhArabic_400Regular",
                 "fontSize": 12,
-                "lineHeight": 20,
+                "lineHeight": 19,
               },
               {
-                "marginTop": 2,
+                "marginTop": 0,
                 "writingDirection": "rtl",
               },
               {

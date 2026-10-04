@@ -415,8 +415,19 @@ export default function ServicesScreen() {
         </ScrollView>
       ) : null}
 
+      {showMine && mine.length > 0 && workerApprovalStatus === 'approved' ? (
+        <Button
+          labelId="listing.addService"
+          onPress={() => navigation.navigate('ListingWizard')}
+          iconLeft="plus"
+          variant="secondary"
+          fullWidth
+        />
+      ) : null}
+
       {showMine && (
         <>
+          {mine.length > 0 && workerApprovalStatus === 'approved' ? null : (
           <Card padding="lg">
             <BiText id="services.publish.title" variant="title" tone="strong" style={styles.cardTitle} />
             {workerApprovalStatus !== 'approved' && (
@@ -435,6 +446,7 @@ export default function ServicesScreen() {
               disabled={workerApprovalStatus !== 'approved'}
             />
           </Card>
+          )}
 
           {mine.length === 0 ? (
             <Card padding="lg">

@@ -95,6 +95,6 @@ export function BiText({
 const styles = StyleSheet.create({
   urdu: {
     writingDirection: 'rtl',
-    marginTop: 2,
+    marginTop: 0,
   },
 });

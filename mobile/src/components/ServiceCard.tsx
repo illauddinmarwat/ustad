@@ -67,12 +67,19 @@ export function ServiceCard({
       accessibilityLabel={headline}
       style={({ pressed }) => [styles.card, pressed && styles.pressed]}
     >
-      <View style={styles.cover}>
+      <View style={[styles.cover, !cover && styles.coverShort]}>
         {cover ? (
           <Image source={{ uri: cover }} style={styles.coverImg} accessibilityIgnoresInvertColors />
         ) : (
           <View style={styles.coverFallback}>
-            <Text style={styles.coverInitials}>{initials(name || headline)}</Text>
+            {onEdit ? (
+              <>
+                <Icon name="image" size={26} color={colors.primary} />
+                <Text style={styles.addPhoto}>{t('listing.addPhoto').en}</Text>
+              </>
+            ) : (
+              <Text style={styles.coverInitials}>{initials(name || headline)}</Text>
+            )}
           </View>
         )}
         <View style={styles.badges}>
@@ -175,9 +182,11 @@ const styles = StyleSheet.create({
   },
   pressed: { opacity: 0.92 },
   cover: { height: 150, backgroundColor: colors.primarySoft },
+  coverShort: { height: 96 },
+  addPhoto: { ...typography.caption, color: colors.primary, fontWeight: '700', marginTop: 4 },
   coverImg: { width: '100%', height: '100%' },
   coverFallback: { flex: 1, alignItems: 'center', justifyContent: 'center', backgroundColor: colors.primarySoft },
-  coverInitials: { fontSize: 44, fontWeight: '800', color: colors.primary, opacity: 0.55 },
+  coverInitials: { fontSize: 36, fontWeight: '800', color: colors.primary, opacity: 0.55 },
   badges: {
     position: 'absolute',
     top: spacing.sm,

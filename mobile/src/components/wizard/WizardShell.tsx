@@ -1,7 +1,8 @@
-import { ScrollView, StyleSheet, Text, View } from 'react-native';
+import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import type { StringId } from '../../i18n/strings';
+import { useT } from '../../i18n/useT';
 import { colors, radius, spacing } from '../../theme/tokens';
 import { typography, urduTypography } from '../../theme/typography';
 import { BiText } from '../ui/BiText';
@@ -18,6 +19,8 @@ export type WizardShellProps = {
   nextIcon?: 'send' | 'arrow-right' | 'check';
   onNext: () => void;
   onBack?: () => void;
+  /** Tapping a step you already passed goes back to it. */
+  onStepPress?: (step: number) => void;
   /** Disables Next (for example while posting). */
   busy?: boolean;
   nextDisabled?: boolean;
@@ -39,12 +42,14 @@ export function WizardShell({
   nextIcon = 'arrow-right',
   onNext,
   onBack,
+  onStepPress,
   busy,
   nextDisabled,
   top,
   children,
 }: WizardShellProps) {
   const insets = useSafeAreaInsets();
+  const { t } = useT();
   return (
     <View style={styles.root}>
       <View style={styles.head}>
@@ -53,9 +58,20 @@ export function WizardShell({
           <Text style={styles.stepUr}>{`مرحلہ ${step} از ${total}`}</Text>
         </View>
         <View style={styles.bars} accessibilityRole="progressbar" accessibilityValue={{ min: 1, max: total, now: step }}>
-          {Array.from({ length: total }, (_, i) => (
-            <View key={i} style={[styles.bar, i < step && styles.barOn]} />
-          ))}
+          {Array.from({ length: total }, (_, i) =>
+            onStepPress && i + 1 < step && !busy ? (
+              <Pressable
+                key={i}
+                onPress={() => onStepPress(i + 1)}
+                accessibilityRole="button"
+                accessibilityLabel={`${t('wizard.goToStep').en} ${i + 1}`}
+                hitSlop={{ top: 12, bottom: 12 }}
+                style={[styles.bar, styles.barOn]}
+              />
+            ) : (
+              <View key={i} style={[styles.bar, i < step && styles.barOn]} />
+            ),
+          )}
         </View>
         <BiText id={stepNameId} variant="title" tone="strong" style={styles.name} />
       </View>

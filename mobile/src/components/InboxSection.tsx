@@ -4,7 +4,10 @@ import { useCallback, useEffect, useMemo, useState } from 'react';
 import { Pressable, StyleSheet, Switch, Text, View } from 'react-native';
 
 import type { StringId } from '../i18n/strings';
+import { useAuth } from '../context/AuthContext';
+import { useT } from '../i18n/useT';
 import { fetchDirectRequestFlags } from '../lib/directRequests';
+import { nextHintFor } from '../lib/jobTimeline';
 import {
   buildInbox,
   countByBucket,
@@ -30,6 +33,7 @@ import { Button } from './ui/Button';
 import { Card } from './ui/Card';
 import { Chip } from './ui/Chip';
 import { Icon } from './ui/Icon';
+import { SkeletonList } from './ui/Skeleton';
 
 type Props = { userId: string; role: 'worker' | 'customer' };
 type RpcResult = PromiseLike<{ error: { message: string } | null }>;
@@ -65,6 +69,8 @@ const TONE: Record<string, 'primary' | 'accent' | 'warning' | 'danger' | 'info' 
  */
 export function InboxSection({ userId, role }: Props) {
   const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
+  const { language } = useAuth();
+  const { t } = useT();
   const [items, setItems] = useState<InboxItem[]>([]);
   const [jobs, setJobs] = useState<Record<string, RequestJob>>({});
   const [quotes, setQuotes] = useState<RequestQuote[]>([]);
@@ -225,6 +231,7 @@ export function InboxSection({ userId, role }: Props) {
       );
     }
 
+    const nextHintId = (it: InboxItem) => nextHintFor(it.status, !!it.workerDone, role);
     const open = () => {
       if (item.kind === 'job' && item.jobId) navigation.navigate('JobDetail', { jobId: item.jobId });
       else if (item.kind === 'quote' && item.jobId && item.bucket === 'pending') navigation.navigate('BoardJob', { jobId: item.jobId });
@@ -248,6 +255,14 @@ export function InboxSection({ userId, role }: Props) {
             <Chip label={FLOW_LABEL[item.flow]} tone="neutral" />
             <Chip label={statusLabel(item.status)} tone={TONE[item.status] ?? 'neutral'} />
           </View>
+          {item.kind === 'job' && nextHintId(item) ? (
+            <View style={styles.hint}>
+              <Icon name="arrow-right" size={12} color={colors.primary} />
+              <Text style={styles.hintText} numberOfLines={2}>
+                {t(nextHintId(item)!)[language === 'ur' ? 'ur' : 'en']}
+              </Text>
+            </View>
+          ) : null}
           {role === 'worker' && applicationId && item.status === 'pending' ? (
             <View style={styles.buttonRow}>
               <Button
@@ -300,6 +315,8 @@ export function InboxSection({ userId, role }: Props) {
 
       {msg ? msg.id ? <Banner id={msg.id} tone="info" /> : <Banner text={msg.text} tone="warning" /> : null}
 
+      {!loaded ? <SkeletonList count={3} /> : null}
+
       {loaded && visible.length === 0 ? (
         <BiText id="inbox.empty" variant="body" tone="muted" align="center" style={styles.empty} />
       ) : (
@@ -339,5 +356,7 @@ const styles = StyleSheet.create({
   title: { ...typography.subtitle, color: colors.textStrong },
   meta: { ...typography.bodySm, color: colors.textMuted, marginTop: 2 },
   chips: { flexDirection: 'row', flexWrap: 'wrap', gap: 6, marginTop: spacing.sm },
+  hint: { flexDirection: 'row', alignItems: 'center', gap: 6, marginTop: spacing.sm },
+  hintText: { ...typography.caption, color: colors.primaryDeep, flex: 1 },
   buttonRow: { flexDirection: 'row', gap: spacing.sm, marginTop: spacing.md },
 });

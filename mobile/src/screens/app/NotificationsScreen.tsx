@@ -12,7 +12,8 @@ import { EmptyState } from '../../components/ui/EmptyState';
 import { Icon } from '../../components/ui/Icon';
 import { ScreenHeader } from '../../components/ui/ScreenHeader';
 import { useAuth } from '../../context/AuthContext';
-import { notificationTarget, type NotificationRow } from '../../lib/notificationHelpers';
+import { groupNotifications, notificationTarget, timeAgo, type NotificationRow } from '../../lib/notificationHelpers';
+import { useT } from '../../i18n/useT';
 import { fetchNotifications, markNotificationsRead } from '../../lib/notifications';
 import type { RootStackParamList } from '../../navigation/types';
 import { colors, spacing } from '../../theme/tokens';
@@ -22,7 +23,9 @@ type Nav = NativeStackNavigationProp<RootStackParamList, 'Notifications'>;
 
 export default function NotificationsScreen() {
   const navigation = useNavigation<Nav>();
-  const { session } = useAuth();
+  const { session, language } = useAuth();
+  const { t } = useT();
+  const [expanded, setExpanded] = useState<Record<string, boolean>>({});
   const insets = useSafeAreaInsets();
   const [rows, setRows] = useState<NotificationRow[]>([]);
   const [loaded, setLoaded] = useState(false);
@@ -83,17 +86,33 @@ export default function NotificationsScreen() {
         <Button labelId="notifications.markAll" onPress={markAll} variant="secondary" iconLeft="check" size="sm" hideUrdu />
       ) : null}
 
-      {rows.map((n) => (
-        <Pressable key={n.id} onPress={() => open(n)} accessibilityRole="button" style={styles.row}>
-          <View style={[styles.dot, n.read_at ? styles.dotRead : styles.dotUnread]} />
-          <View style={styles.body}>
-            <Text style={[styles.title, !n.read_at && styles.titleUnread]}>{n.title}</Text>
-            <Text style={styles.text}>{n.body}</Text>
-            <Text style={styles.time}>{new Date(n.created_at).toLocaleString()}</Text>
+      {groupNotifications(rows).map((g) => {
+        const shown = expanded[g.key] ? [g.latest, ...g.earlier] : [g.latest];
+        return (
+          <View key={g.key} style={styles.group}>
+            {shown.map((n) => (
+              <Pressable key={n.id} onPress={() => open(n)} accessibilityRole="button" style={styles.row}>
+                <View style={[styles.dot, n.read_at ? styles.dotRead : styles.dotUnread]} />
+                <View style={styles.body}>
+                  <Text style={[styles.title, !n.read_at && styles.titleUnread]}>{n.title}</Text>
+                  <Text style={styles.text}>{n.body}</Text>
+                  <Text style={styles.time}>{timeAgo(n.created_at, language === 'ur' ? 'ur' : 'en')}</Text>
+                </View>
+                <Icon name="chevron-right" size={18} color={colors.textMuted} />
+              </Pressable>
+            ))}
+            {g.earlier.length > 0 ? (
+              <Pressable onPress={() => setExpanded((e) => ({ ...e, [g.key]: !e[g.key] }))} accessibilityRole="button" style={styles.more}>
+                <Text style={styles.moreText}>
+                  {expanded[g.key]
+                    ? t('notifications.showLess')[language === 'ur' ? 'ur' : 'en']
+                    : `+${g.earlier.length} ${t('notifications.earlier')[language === 'ur' ? 'ur' : 'en']}`}
+                </Text>
+              </Pressable>
+            ) : null}
           </View>
-          <Icon name="chevron-right" size={18} color={colors.textMuted} />
-        </Pressable>
-      ))}
+        );
+      })}
 
       {rows.length > 0 ? <BiText id="notifications.footer" variant="caption" tone="muted" align="center" /> : null}
     </ScrollView>
@@ -112,6 +131,9 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: colors.border,
   },
+  group: { gap: 4 },
+  more: { alignSelf: 'flex-start', paddingVertical: 4, paddingHorizontal: spacing.md },
+  moreText: { ...typography.caption, color: colors.primary, fontWeight: '700' },
   dot: { width: 10, height: 10, borderRadius: 5 },
   dotUnread: { backgroundColor: colors.primary },
   dotRead: { backgroundColor: 'transparent' },

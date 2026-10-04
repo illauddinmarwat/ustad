@@ -7,6 +7,8 @@ import { AiHelpButton } from '../../components/ai/AiHelpButton';
 import { BilingualReview, type ReviewField } from '../../components/ai/BilingualReview';
 import { useCityAreaFields } from '../../components/CityAreaFields';
 import { PhotoAttach } from '../../components/PhotoAttach';
+import { PlaceSection } from '../../components/PlaceSection';
+import { TimeChips } from '../../components/TimeChips';
 import { VideoRecorder } from '../../components/VideoRecorder';
 import { VoiceRecorder } from '../../components/VoiceRecorder';
 import { Banner } from '../../components/ui/Banner';
@@ -201,6 +203,7 @@ export default function PostJobScreen() {
       total={3}
       stepNameId={step === 1 ? 'post.step.media' : step === 2 ? 'post.step.details' : 'post.step.review'}
       onBack={step > 1 ? () => setStep(step - 1) : undefined}
+      onStepPress={setStep}
       onNext={step === 3 ? submit : next}
       nextLabelId={step === 3 ? 'post.submit' : 'wizard.next'}
       nextIcon={step === 3 ? 'send' : 'arrow-right'}
@@ -244,8 +247,9 @@ export default function PostJobScreen() {
               <BiText id="post.media.hint" variant="bodySm" tone="muted" style={styles.label} />
               {session && !isWorker ? (
                 <>
-                  <PhotoAttach uris={photos} onChange={setPhotos} />
+                  <BiText id="media.describeByVoice" variant="caption" tone="muted" style={styles.label} />
                   <VoiceRecorder value={voice} onChange={setVoice} />
+                  <PhotoAttach uris={photos} onChange={setPhotos} />
                   <VideoRecorder value={video} onChange={setVideo} />
                 </>
               ) : !session ? (
@@ -282,8 +286,8 @@ export default function PostJobScreen() {
             style={styles.multiline}
             error={errors.description}
           />
-          {place.fields}
-          <Input labelId="post.field.time" value={preferredTime} onChangeText={setPreferredTime} iconLeft="calendar" />
+          <PlaceSection summary={[place.areaName, place.cityName].filter(Boolean).join(', ')}>{place.fields}</PlaceSection>
+          <TimeChips value={preferredTime} onChange={setPreferredTime} />
         </Card>
         </>
       )}
@@ -332,10 +336,24 @@ export default function PostJobScreen() {
           )}
           <Card padding="lg">
             <View style={styles.chips}>
-              <Chip label={categoryLabel} tone="primary" icon="tag" />
-              {city.trim() ? <Chip label={city.trim()} icon="map" /> : null}
-              {area.trim() ? <Chip label={area.trim()} icon="map-pin" /> : null}
-              {preferredTime.trim() ? <Chip label={preferredTime.trim()} icon="calendar" /> : null}
+              <Pressable onPress={() => setStep(1)} accessibilityRole="button" accessibilityLabel={`${t('review.change').en}: ${categoryLabel}`}>
+                <Chip label={categoryLabel} tone="primary" icon="tag" />
+              </Pressable>
+              {city.trim() ? (
+                <Pressable onPress={() => setStep(2)} accessibilityRole="button" accessibilityLabel={`${t('review.change').en}: ${city.trim()}`}>
+                  <Chip label={city.trim()} icon="map" />
+                </Pressable>
+              ) : null}
+              {area.trim() ? (
+                <Pressable onPress={() => setStep(2)} accessibilityRole="button" accessibilityLabel={`${t('review.change').en}: ${area.trim()}`}>
+                  <Chip label={area.trim()} icon="map-pin" />
+                </Pressable>
+              ) : null}
+              {preferredTime.trim() ? (
+                <Pressable onPress={() => setStep(2)} accessibilityRole="button" accessibilityLabel={`${t('review.change').en}: ${preferredTime.trim()}`}>
+                  <Chip label={preferredTime.trim()} icon="calendar" />
+                </Pressable>
+              ) : null}
               {mediaCount > 0 ? (
                 <Chip
                   label={[

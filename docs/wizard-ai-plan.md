@@ -247,3 +247,17 @@ A guest has no account, so nothing can tell them a quote arrived. Now the post s
 ## Status timeline (2026-10-04)
 
 Every job screen now starts with **Where this job is**: posted (or request sent) → Ustad sent a price → price accepted → Ustad on the way (only while live tracking is on) → Ustad says work is done → customer confirmed → customer paid → payment confirmed, job closed. Done steps are green, the current step is outlined, a cancelled job shows only "posted" and "cancelled", and a payment problem is flagged. Under it, **What happens next** tells the person looking what to do (the customer and the Ustad get different lines). English and Urdu. `lib/jobTimeline.ts` is the pure logic, `components/JobStatusTimeline.tsx` the card. The old four-step list in the on-the-way card is gone.
+
+## Ten UI improvements (2026-10-04)
+
+1. **Short step 2:** one "Where is the work?" row that opens city, area, my-location and map only when tapped (`PlaceSection`), and quick time chips (Today, Tomorrow, This week, Any time; `TimeChips`). Also on Request a quote.
+2. **Starter examples** in Help me write: one tap sends "Tap is leaking", "I bring my own tools" and so on, in the chosen speaking language.
+3. **Tighter Urdu:** line heights re-tuned for Naskh, button Urdu a size up, no extra gap under the English line.
+4. **Compact screen header:** the subtitle is smaller and the gap under the header is shorter.
+5. **Smarter empty states:** the "Publish your service" card collapses to one button once the Ustad has services; a service without a photo is a shorter card with "Add a photo" for its owner.
+6. **Wizard steps:** the finished bars are tappable to go back; the review chips (trade, city, area, time) take you to the right step.
+7. **Requests list:** every job row says what happens next, in the person's own language.
+8. **Notifications:** one row per job with "+N earlier updates", and "5 min ago" times.
+9. **Voice first:** the job's first step leads with "say it in your own words" and the voice note, and the recorder shows live bars.
+10. **Motion and loading:** pulsing skeleton cards while jobs load, banners that fade in, and a pulsing ring on the timeline's current step. Animations are off under tests.
+Also: the job status chip is now localized.

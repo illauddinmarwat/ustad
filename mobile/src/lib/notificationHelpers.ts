@@ -23,6 +23,38 @@ export function notificationTarget(kind: string, jobId: string | null | undefine
   return { screen: 'Applications' };
 }
 
+export type NotificationGroup = { key: string; latest: NotificationRow; earlier: NotificationRow[] };
+
+/** One group per job (newest first), so a busy job is one row with its earlier updates behind a tap. */
+export function groupNotifications(rows: NotificationRow[]): NotificationGroup[] {
+  const sorted = [...rows].sort((a, b) => b.created_at.localeCompare(a.created_at));
+  const groups: NotificationGroup[] = [];
+  const byJob = new Map<string, NotificationGroup>();
+  for (const r of sorted) {
+    const existing = r.job_id ? byJob.get(r.job_id) : undefined;
+    if (existing) {
+      existing.earlier.push(r);
+      continue;
+    }
+    const g: NotificationGroup = { key: r.job_id ?? r.id, latest: r, earlier: [] };
+    if (r.job_id) byJob.set(r.job_id, g);
+    groups.push(g);
+  }
+  return groups;
+}
+
+/** "just now", "5 min ago", "2 h ago", "3 days ago"; in Urdu when asked. */
+export function timeAgo(iso: string, lang: 'en' | 'ur', now: number = Date.now()): string {
+  const mins = Math.max(0, Math.floor((now - new Date(iso).getTime()) / 60000));
+  const ur = lang === 'ur';
+  if (mins < 1) return ur ? 'ابھی' : 'just now';
+  if (mins < 60) return ur ? `${mins} منٹ پہلے` : `${mins} min ago`;
+  const hours = Math.floor(mins / 60);
+  if (hours < 24) return ur ? `${hours} گھنٹے پہلے` : `${hours} h ago`;
+  const days = Math.floor(hours / 24);
+  return ur ? `${days} دن پہلے` : `${days} day${days === 1 ? '' : 's'} ago`;
+}
+
 /** Badge text: nothing for 0, "9+" style cap for large counts. */
 export function badgeValue(count: number): number | undefined {
   return count > 0 ? Math.min(count, 99) : undefined;

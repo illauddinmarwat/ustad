@@ -67,6 +67,12 @@ function nextFor(i: TimelineInput, viewer: Viewer, rank: number): StringId | nul
   return viewer === 'customer' ? 'timeline.next.customer.rate' : 'timeline.next.worker.finished';
 }
 
+/** The "what happens next" line for a job row, from just its status. */
+export function nextHintFor(status: string, workerDone: boolean, viewer: Viewer): StringId | null {
+  const rank = RANK[status] ?? 0;
+  return nextFor({ status, origin: 'customer_job', workerDone, hasQuote: false, enRoute: false, showEnRoute: false }, viewer, rank);
+}
+
 export function buildTimeline(i: TimelineInput, viewer: Viewer): Timeline {
   const cancelled = i.status === 'cancelled';
   const rank = RANK[i.status] ?? 0;

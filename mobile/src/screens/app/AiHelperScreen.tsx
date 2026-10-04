@@ -149,6 +149,16 @@ export default function AiHelperScreen() {
 
   const introId: StringId = mode === 'job' ? 'ai.intro.job' : 'ai.intro.listing';
   const canType = phase === 'intro';
+  const starters: StringId[] =
+    mode === 'job'
+      ? ['ai.starter.job.1', 'ai.starter.job.2', 'ai.starter.job.3', 'ai.starter.job.4', 'ai.starter.job.5']
+      : ['ai.starter.listing.1', 'ai.starter.listing.2', 'ai.starter.listing.3', 'ai.starter.listing.4'];
+  // One tap on an example sends it, so a person who writes very little can still get a draft.
+  const useStarter = async (text: string) => {
+    setSaid(text);
+    setInput('');
+    await ask(text);
+  };
   // With the in-app microphone the tip is about it; otherwise the phone keyboard microphone (not on the web).
   const tipId: StringId | null = speech.available ? 'ai.tip.mic' : Platform.OS === 'web' ? null : 'ai.tip.speak';
 
@@ -202,6 +212,24 @@ export default function AiHelperScreen() {
             <View style={styles.tipText}>
               <Text style={styles.tip}>{t(tipId).en}</Text>
               <Text style={styles.tipUr}>{t(tipId).ur}</Text>
+            </View>
+          </View>
+        ) : null}
+
+        {phase === 'intro' && !said && !input ? (
+          <View style={styles.starters}>
+            <Text style={styles.startersTitle}>{t('ai.starter.title').en}</Text>
+            <View style={styles.startersRow}>
+              {starters.map((id) => (
+                <Pressable
+                  key={id}
+                  onPress={() => void useStarter(t(id)[speakLang])}
+                  accessibilityRole="button"
+                  style={styles.pill}
+                >
+                  <Text style={[typography.label, styles.pillText]}>{t(id)[speakLang]}</Text>
+                </Pressable>
+              ))}
             </View>
           </View>
         ) : null}
@@ -363,6 +391,9 @@ const styles = StyleSheet.create({
     padding: spacing.md,
     gap: spacing.xs,
   },
+  starters: { gap: spacing.sm, marginLeft: 34 },
+  startersTitle: { ...typography.caption, color: colors.textMuted },
+  startersRow: { flexDirection: 'row', flexWrap: 'wrap', gap: spacing.sm },
   tipRow: { flexDirection: 'row', gap: spacing.sm, alignItems: 'flex-start', marginLeft: 34 },
   tipText: { flex: 1, gap: 2 },
   tip: { ...typography.caption, color: colors.textMuted },

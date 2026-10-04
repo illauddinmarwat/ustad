@@ -218,6 +218,24 @@ describe('AiHelperScreen (job)', () => {
   });
 });
 
+describe('AiHelperScreen: starter examples', () => {
+  it('sends an example with one tap, in the speaking language, and hides them once typing starts', async () => {
+    mockAsk.mockResolvedValue({ ok: true, data: [] });
+    mockJobDraft.mockResolvedValue({ ok: true, data: JOB_DRAFT });
+    const u = wrap();
+    expect(u.getByText('Or tap one to start')).toBeTruthy();
+    fireEvent.press(u.getByText('Tap is leaking'));
+    await waitFor(() => expect(mockAsk).toHaveBeenCalledWith(expect.objectContaining({ text: 'Tap is leaking', lang: 'en' })));
+    expect(u.queryByText('Or tap one to start')).toBeNull();
+  });
+
+  it('keeps the examples out of the way once the person has typed something', () => {
+    const u = wrap();
+    fireEvent.changeText(u.UNSAFE_getByType(TextInput), 'tap');
+    expect(u.queryByText('Or tap one to start')).toBeNull();
+  });
+});
+
 describe('AiHelperScreen: what the wizard already has', () => {
   it('starts with the text already typed, and tells the AI how much was attached', async () => {
     mockParams.current = { mode: 'job', categories: ['plumber'], startText: 'tap leaking', attached: { photos: 2, voice: false, video: true } };

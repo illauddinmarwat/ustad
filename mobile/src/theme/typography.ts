@@ -90,14 +90,14 @@ export const typography: Record<TypeVariant, TextStyle> = {
 
 /** Urdu variant sizing: about the English size, with a line height that leaves room for the marks above and below. */
 export const urduTypography: Record<TypeVariant, TextStyle> = {
-  displayLg: { fontFamily: fontFamilies.urduBold, fontSize: 28, lineHeight: 44 },
-  displayMd: { fontFamily: fontFamilies.urduBold, fontSize: 22, lineHeight: 36 },
-  title: { fontFamily: fontFamilies.urduBold, fontSize: 17, lineHeight: 28 },
-  subtitle: { fontFamily: fontFamilies.urdu, fontSize: 15, lineHeight: 26 },
-  body: { fontFamily: fontFamilies.urdu, fontSize: 15, lineHeight: 26 },
-  bodySm: { fontFamily: fontFamilies.urdu, fontSize: 13, lineHeight: 22 },
-  label: { fontFamily: fontFamilies.urdu, fontSize: 13, lineHeight: 22 },
-  button: { fontFamily: fontFamilies.urdu, fontSize: 15, lineHeight: 26 },
-  caption: { fontFamily: fontFamilies.urdu, fontSize: 12, lineHeight: 20 },
+  displayLg: { fontFamily: fontFamilies.urduBold, fontSize: 28, lineHeight: 42 },
+  displayMd: { fontFamily: fontFamilies.urduBold, fontSize: 22, lineHeight: 34 },
+  title: { fontFamily: fontFamilies.urduBold, fontSize: 17, lineHeight: 26 },
+  subtitle: { fontFamily: fontFamilies.urdu, fontSize: 15, lineHeight: 24 },
+  body: { fontFamily: fontFamilies.urdu, fontSize: 15, lineHeight: 24 },
+  bodySm: { fontFamily: fontFamilies.urdu, fontSize: 13, lineHeight: 21 },
+  label: { fontFamily: fontFamilies.urdu, fontSize: 13, lineHeight: 20 },
+  button: { fontFamily: fontFamilies.urdu, fontSize: 16, lineHeight: 22 },
+  caption: { fontFamily: fontFamilies.urdu, fontSize: 12, lineHeight: 19 },
   overline: { fontFamily: fontFamilies.urdu, fontSize: 11, lineHeight: 18 },
 };

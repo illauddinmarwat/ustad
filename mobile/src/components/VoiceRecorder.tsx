@@ -6,6 +6,7 @@ import {
   useAudioRecorder,
   useAudioRecorderState,
 } from 'expo-audio';
+import { LiveBars } from './ui/LiveBars';
 import { useEffect, useRef, useState } from 'react';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 
@@ -184,6 +185,7 @@ export function VoiceRecorder({ value, onChange, maxSeconds = MAX_AUDIO_SECONDS,
       {phase === 'recording' || phase === 'paused' ? (
         <View style={styles.playerRow}>
           <View style={[styles.dot, phase === 'recording' && styles.dotLive]} />
+          {phase === 'recording' ? <LiveBars /> : null}
           <Text style={[typography.body, styles.clock]}>
             {formatClock(seconds)} / {formatClock(maxSeconds)}
           </Text>

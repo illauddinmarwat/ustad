@@ -11,6 +11,7 @@ import { Button } from '../../components/ui/Button';
 import { Card } from '../../components/ui/Card';
 import { Chip } from '../../components/ui/Chip';
 import { EmptyState } from '../../components/ui/EmptyState';
+import { SkeletonList } from '../../components/ui/Skeleton';
 import { Icon } from '../../components/ui/Icon';
 import { useLiveDatabase } from '../../config/env';
 import { useAuth } from '../../context/AuthContext';
@@ -53,6 +54,18 @@ type Props = NativeStackScreenProps<RootStackParamList, 'JobDetail'>;
 type BannerTone = 'info' | 'success' | 'warning' | 'danger';
 type BannerState = { kind: 'id'; id: StringId; tone: BannerTone } | { kind: 'text'; text: string; tone: BannerTone } | null;
 
+const STATUS_STRINGS: Record<string, true> = {
+  'job.status.open': true,
+  'job.status.quoted': true,
+  'job.status.pending_customer_confirm': true,
+  'job.status.assigned': true,
+  'job.status.completed': true,
+  'job.status.payment_pending': true,
+  'job.status.disputed': true,
+  'job.status.closed': true,
+  'job.status.cancelled': true,
+};
+
 const STATUS_TONE: Record<string, 'primary' | 'accent' | 'warning' | 'danger' | 'info' | 'neutral'> = {
   open: 'info',
   assigned: 'primary',
@@ -67,7 +80,7 @@ const STATUS_TONE: Record<string, 'primary' | 'accent' | 'warning' | 'danger' | 
 
 export default function JobDetailScreen({ route, navigation }: Props) {
   const { jobId } = route.params;
-  const { role, session } = useAuth();
+  const { role, session, language } = useAuth();
   const { t } = useT();
   const insets = useSafeAreaInsets();
   const [job, setJob] = useState<Job | null>(null);
@@ -421,7 +434,7 @@ export default function JobDetailScreen({ route, navigation }: Props) {
   if (!job) {
     return (
       <View style={styles.offline}>
-        <BiText id="common.loading" variant="body" tone="muted" align="center" />
+        <SkeletonList count={3} />
       </View>
     );
   }
@@ -444,7 +457,14 @@ export default function JobDetailScreen({ route, navigation }: Props) {
         <Text style={styles.title}>{job.title}</Text>
         <View style={styles.tagsRow}>
           <Chip label={job.category} tone="neutral" icon="tag" />
-          <Chip label={job.status.replace('_', ' ')} tone={STATUS_TONE[job.status] ?? 'neutral'} />
+          <Chip
+            label={
+              `job.status.${job.status}` in STATUS_STRINGS
+                ? t(`job.status.${job.status}` as StringId)[language === 'ur' ? 'ur' : 'en']
+                : job.status.replace('_', ' ')
+            }
+            tone={STATUS_TONE[job.status] ?? 'neutral'}
+          />
         </View>
         {job.location_text ? (
           <View style={styles.metaRow}>
