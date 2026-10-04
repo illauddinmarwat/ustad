@@ -27,6 +27,10 @@ export type RootStackParamList = {
   PostJob: { draft?: import('../lib/aiDraft').JobDraft; prefill?: { description: string } } | undefined;
   AiHelper: {
     mode: 'job' | 'listing';
+    /** Text already typed in the wizard's Describe step, so the helper can start from it. */
+    startText?: string;
+    /** What was attached in step 1 (the helper cannot see it, only count it). */
+    attached?: import('../lib/aiDraft').Attached;
     serviceTitle?: string;
     serviceId?: string;
     /** The services to choose from, when none is chosen yet (listing). */

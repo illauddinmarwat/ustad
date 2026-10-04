@@ -7,6 +7,17 @@ jest.mock('@react-native-async-storage/async-storage', () =>
   require('@react-native-async-storage/async-storage/jest/async-storage-mock'),
 );
 
+// On-device speech recognition is native; by default it is "not available", a test that needs it overrides this.
+jest.mock('expo-speech-recognition', () => ({
+  ExpoSpeechRecognitionModule: {
+    isRecognitionAvailable: () => false,
+    requestPermissionsAsync: () => Promise.resolve({ granted: true }),
+    start: jest.fn(),
+    stop: jest.fn(),
+  },
+  useSpeechRecognitionEvent: () => undefined,
+}));
+
 // The native WebView (used by the map picker) is plain ESM that jest cannot load; a blank stand-in is enough.
 jest.mock('react-native-webview', () => ({ WebView: () => null }));
 

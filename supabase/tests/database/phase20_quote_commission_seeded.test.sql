@@ -101,8 +101,9 @@ create function public._t_finish (p_job uuid, p_cust text, p_worker text, p_amt 
 declare r text;
 begin
   perform public._t_as (p_worker);
-  perform public.mark_job_completed (p_job);
+  perform public.worker_mark_work_done (p_job);
   perform public._t_as (p_cust);
+  perform public.mark_job_completed (p_job);
   perform public.mark_job_paid (p_job, p_amt, 'cash');
   perform public._t_as (p_worker);
   r := public.worker_confirm_payment_received (p_job, p_got);

@@ -117,9 +117,9 @@ exports[`AuthScreen matches snapshot 1`] = `
               style={
                 {
                   "color": "rgba(255,255,255,0.85)",
-                  "fontFamily": "NotoNastaliqUrdu_400Regular",
-                  "fontSize": 10,
-                  "lineHeight": 14,
+                  "fontFamily": "NotoNaskhArabic_400Regular",
+                  "fontSize": 13,
+                  "lineHeight": 22,
                   "marginLeft": 8,
                 }
               }
@@ -159,9 +159,9 @@ exports[`AuthScreen matches snapshot 1`] = `
               style={
                 [
                   {
-                    "fontFamily": "NotoNastaliqUrdu_600SemiBold",
-                    "fontSize": 18,
-                    "lineHeight": 26,
+                    "fontFamily": "NotoNaskhArabic_700Bold",
+                    "fontSize": 28,
+                    "lineHeight": 44,
                   },
                   {
                     "marginTop": 2,
@@ -205,9 +205,9 @@ exports[`AuthScreen matches snapshot 1`] = `
               style={
                 [
                   {
-                    "fontFamily": "NotoNastaliqUrdu_400Regular",
-                    "fontSize": 12,
-                    "lineHeight": 18,
+                    "fontFamily": "NotoNaskhArabic_400Regular",
+                    "fontSize": 15,
+                    "lineHeight": 26,
                   },
                   {
                     "marginTop": 2,
@@ -275,9 +275,9 @@ exports[`AuthScreen matches snapshot 1`] = `
               style={
                 [
                   {
-                    "fontFamily": "NotoNastaliqUrdu_400Regular",
-                    "fontSize": 13,
-                    "lineHeight": 20,
+                    "fontFamily": "NotoNaskhArabic_700Bold",
+                    "fontSize": 17,
+                    "lineHeight": 28,
                   },
                   {
                     "marginTop": 2,
@@ -331,9 +331,9 @@ exports[`AuthScreen matches snapshot 1`] = `
                 style={
                   [
                     {
-                      "fontFamily": "NotoNastaliqUrdu_400Regular",
-                      "fontSize": 10,
-                      "lineHeight": 14,
+                      "fontFamily": "NotoNaskhArabic_400Regular",
+                      "fontSize": 13,
+                      "lineHeight": 22,
                     },
                     {
                       "color": "#6B7280",
@@ -445,9 +445,9 @@ exports[`AuthScreen matches snapshot 1`] = `
                 style={
                   [
                     {
-                      "fontFamily": "NotoNastaliqUrdu_400Regular",
-                      "fontSize": 10,
-                      "lineHeight": 14,
+                      "fontFamily": "NotoNaskhArabic_400Regular",
+                      "fontSize": 13,
+                      "lineHeight": 22,
                     },
                     {
                       "color": "#6B7280",
@@ -668,9 +668,9 @@ exports[`AuthScreen matches snapshot 1`] = `
                   style={
                     [
                       {
-                        "fontFamily": "NotoNastaliqUrdu_400Regular",
+                        "fontFamily": "NotoNaskhArabic_400Regular",
                         "fontSize": 13,
-                        "lineHeight": 16,
+                        "lineHeight": 26,
                         "marginTop": 2,
                       },
                       {
@@ -799,9 +799,9 @@ exports[`AuthScreen matches snapshot 1`] = `
                   style={
                     [
                       {
-                        "fontFamily": "NotoNastaliqUrdu_400Regular",
+                        "fontFamily": "NotoNaskhArabic_400Regular",
                         "fontSize": 13,
-                        "lineHeight": 16,
+                        "lineHeight": 26,
                         "marginTop": 2,
                       },
                       {

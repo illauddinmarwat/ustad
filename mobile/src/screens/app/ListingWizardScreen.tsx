@@ -108,16 +108,12 @@ export default function ListingWizardScreen() {
     if (isEdit) navigation.setOptions?.({ title: t('nav.listingEdit').en });
   }, [isEdit, navigation, t]);
 
-  // A draft from "Help me write": fill the text, keep both languages, and land on Details for the areas.
+  // A draft from "Help me write": one text in the author's language, to read and edit here; the other language is made on the review step.
   useEffect(() => {
     if (!draft) return;
-    bi.applyDraft(
-      draft.source,
-      { headline: draft.headline.en, about: draft.about.en },
-      { headline: draft.headline.ur, about: draft.about.ur },
-    );
-    setHeadline(draft.headline[draft.source]);
-    setAbout(draft.about[draft.source]);
+    bi.reset();
+    setHeadline(draft.headline);
+    setAbout(draft.about);
     if (route.params?.templateId) setTemplateId(route.params.templateId);
     setStep(2);
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -350,19 +346,6 @@ export default function ListingWizardScreen() {
     >
       {step === 1 && (
         <>
-          {aiEnabled && isApprovedWorker && !isEdit ? (
-            <AiHelpButton
-              subId="ai.helpMe.listing"
-              onPress={() =>
-                navigation.navigate('AiHelper', {
-                  mode: 'listing',
-                  serviceTitle: template?.title,
-                  serviceId: template?.id,
-                  services: templates.map((x) => ({ id: x.id, title: x.title })),
-                })
-              }
-            />
-          ) : null}
           <Card padding="lg">
             <BiText id="listing.field.service" variant="label" tone="body" style={styles.label} />
             {isEdit ? (
@@ -436,6 +419,21 @@ export default function ListingWizardScreen() {
 
       {step === 2 && (
         <>
+          {aiEnabled && isApprovedWorker && !isEdit ? (
+            <AiHelpButton
+              subId="ai.helpMe.listing"
+              onPress={() =>
+                navigation.navigate('AiHelper', {
+                  mode: 'listing',
+                  serviceTitle: template?.title,
+                  serviceId: template?.id,
+                  services: templates.map((x) => ({ id: x.id, title: x.title })),
+                  startText: about.trim() || undefined,
+                  attached: { photos: photos.length, voice: false, video: false },
+                })
+              }
+            />
+          ) : null}
           <Card padding="lg">
             <Input
               labelId="listing.field.headline"

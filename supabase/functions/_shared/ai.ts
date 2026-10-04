@@ -25,6 +25,8 @@ export type AiRequest = {
   /** translate: the fields to translate, keyed by name (title, description, headline, about). */
   fields: Record<string, string>;
   from: Lang;
+  /** draft: what the person attached in the earlier step. The AI cannot see it; it may only know it exists. */
+  attached: { photos: number; voice: boolean; video: boolean };
 };
 
 export type ErrorCode = 'bad_request' | 'contact' | 'disabled' | 'limit' | 'ai_failed' | 'blocked';
@@ -121,6 +123,13 @@ export function parseRequest(body: unknown): { ok: true; req: AiRequest } | { ok
     }
   }
 
+  const a = (b.attached ?? {}) as Record<string, unknown>;
+  const attached = {
+    photos: typeof a.photos === 'number' ? Math.max(0, Math.min(10, Math.trunc(a.photos))) : 0,
+    voice: a.voice === true,
+    video: a.video === true,
+  };
+
   const fields: Record<string, string> = {};
   if (action === 'translate') {
     if (!b.fields || typeof b.fields !== 'object') return { ok: false, error: 'bad_request' };
@@ -137,7 +146,7 @@ export function parseRequest(body: unknown): { ok: true; req: AiRequest } | { ok
   const everything = [text, ...answers.flatMap((a) => [a.question, a.answer]), ...Object.values(fields)];
   if (everything.some(containsContact)) return { ok: false, error: 'contact' };
 
-  return { ok: true, req: { action, kind, lang, text, categories, answers, fields, from } };
+  return { ok: true, req: { action, kind, lang, text, categories, answers, fields, from, attached } };
 }
 
 // ─── Prompts ───
@@ -150,6 +159,14 @@ Rules:
 - Do not invent facts the person did not give you.
 - Use very short, simple, everyday words that a person with little schooling understands. No fancy or business words.
 - Write English in plain English. Write Urdu in Urdu script (never Roman Urdu), in simple everyday words.`;
+
+/** The AI cannot see photos, voice or video. It may be told they exist, so the text does not repeat what they show. */
+function attachedNote(req: AiRequest): string {
+  const { photos, voice, video } = req.attached;
+  const parts = [photos > 0 ? `${photos} photo${photos > 1 ? 's' : ''}` : '', voice ? 'a voice note' : '', video ? 'a video' : ''].filter(Boolean);
+  if (parts.length === 0) return '';
+  return ` The person has also attached ${parts.join(', ')}. You cannot see them. Do not describe or guess what they show; the text only needs to say what the words say.`;
+}
 
 const langName = (l: Lang) => (l === 'ur' ? 'Urdu (Urdu script)' : 'English');
 
@@ -177,14 +194,14 @@ export function buildMessages(req: AiRequest): Message[] {
   if (req.action === 'draft') {
     const shape =
       req.kind === 'job'
-        ? `{"source":"en|ur","category":"<one of the allowed categories, or null>","title":{"en":"","ur":""},"description":{"en":"","ur":""}}`
-        : `{"source":"en|ur","headline":{"en":"","ur":""},"about":{"en":"","ur":""}}`;
+        ? `{"category":"<one of the allowed categories, or null>","title":"","description":""}`
+        : `{"headline":"","about":""}`;
     const limits =
       req.kind === 'job'
         ? 'The title is at most 80 characters. The description is 1 to 3 short sentences, at most 400 characters, and says what is wrong, where it is in the home and anything the worker should know.'
         : 'The headline is at most 80 characters: the trade and the main work, for example "Painter for homes and shops". "about" is 2 to 4 short sentences, at most 500 characters, in the first person as the worker ("I paint..."). Say what jobs the worker does (list them from their own words), their experience if they said it, and whether they bring materials or tools if they said it. Use only the facts given. If very little is given, write one short honest sentence about the trade. No advertising words.';
     return [
-      { role: 'system', content: `${RULES}\nTask: write the ${subject} in both English and Urdu from the person's text and answers. "source" is the language the person wrote in ("ur" for Urdu or Roman Urdu). ${limits}\nJSON: ${shape}` },
+      { role: 'system', content: `${RULES}\nTask: write the ${subject} from the person's text and answers, in ${langName(req.lang)} only. One version, no translation. ${limits}${attachedNote(req)}\nJSON: ${shape}` },
       { role: 'user', content: data },
     ];
   }
@@ -204,9 +221,9 @@ export function parseModelJson(raw: string): unknown {
 }
 
 export type Question = { id: string; text: string; options: string[] };
-export type Bilingual = { en: string; ur: string };
-export type JobDraft = { source: Lang; category: string | null; title: Bilingual; description: Bilingual };
-export type ListingDraft = { source: Lang; headline: Bilingual; about: Bilingual };
+/** One draft, in the language the author wrote in. The other language is made later, on the review step. */
+export type JobDraft = { source: Lang; category: string | null; title: string; description: string };
+export type ListingDraft = { source: Lang; headline: string; about: string };
 
 const HAS_URDU = /[؀-ۿ]/;
 const HAS_LATIN = /[A-Za-z]/;
@@ -223,13 +240,10 @@ const clean = (v: unknown, max: number, given: Set<string>): string => {
   return s;
 };
 
-function bilingual(v: unknown, max: number, given: Set<string>): Bilingual {
-  const o = (v ?? {}) as Record<string, unknown>;
-  const en = clean(o.en, max, given);
-  const ur = clean(o.ur, max, given);
-  if (!HAS_LATIN.test(en)) throw new Blocked('english missing');
-  if (!HAS_URDU.test(ur)) throw new Blocked('urdu missing');
-  return { en, ur };
+function inLang(v: unknown, max: number, given: Set<string>, lang: Lang): string {
+  const text = clean(v, max, given);
+  if (lang === 'ur' ? !HAS_URDU.test(text) : !HAS_LATIN.test(text)) throw new Blocked('wrong language');
+  return text;
 }
 
 export function parseQuestions(obj: unknown): Question[] {
@@ -257,12 +271,12 @@ export function parseQuestions(obj: unknown): Question[] {
 export function parseDraft(obj: unknown, req: AiRequest): JobDraft | ListingDraft {
   const o = (obj ?? {}) as Record<string, unknown>;
   const given = givenNumbers(req);
-  const source: Lang = o.source === 'ur' ? 'ur' : 'en';
+  const source: Lang = req.lang;
   if (req.kind === 'job') {
     const category = typeof o.category === 'string' && req.categories.includes(o.category) ? o.category : null;
-    return { source, category, title: bilingual(o.title, 80, given), description: bilingual(o.description, 400, given) };
+    return { source, category, title: inLang(o.title, 80, given, source), description: inLang(o.description, 400, given, source) };
   }
-  return { source, headline: bilingual(o.headline, 80, given), about: bilingual(o.about, 500, given) };
+  return { source, headline: inLang(o.headline, 80, given, source), about: inLang(o.about, 500, given, source) };
 }
 
 export function parseTranslation(obj: unknown, req: AiRequest): Record<string, string> {

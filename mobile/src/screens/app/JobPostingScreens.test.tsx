@@ -7,6 +7,18 @@ import BoardJobScreen from './BoardJobScreen';
 import PostedJobScreen from './PostedJobScreen';
 import PostJobScreen from './PostJobScreen';
 
+jest.mock('../../lib/useProfileCity', () => ({ useProfileCity: () => null }));
+jest.mock('../../lib/myLocation', () => ({ getMyLocation: jest.fn(() => Promise.resolve(null)) }));
+jest.mock('../../lib/locations', () => ({
+  useCities: () => ({ items: [{ id: 'c1', name: 'Karachi' }], loading: false, failed: false, reload: jest.fn() }),
+  useAreas: (cityId: string | null) => ({
+    items: cityId ? [{ id: 'a1', name: 'Gulshan' }] : [],
+    loading: false,
+    failed: false,
+    reload: jest.fn(),
+  }),
+}));
+
 const mockNavigate = jest.fn();
 const mockReplace = jest.fn();
 const mockRpc = jest.fn();

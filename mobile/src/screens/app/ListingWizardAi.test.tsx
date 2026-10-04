@@ -109,37 +109,27 @@ const reviewWithTranslation = async (u: ReturnType<typeof wrap>) => {
 };
 
 describe('ListingWizardScreen: Help me write', () => {
-  it('opens the helper without choosing a service first, handing it the services to choose from', async () => {
+  it('is on the Describe step, not the first, and hands the helper the chosen service, the typed text and the photo count', async () => {
     const u = wrap();
-    fireEvent.press(await u.findByText('Help me write'));
-    expect(mockNavigate).toHaveBeenCalledWith('AiHelper', {
-      mode: 'listing',
-      serviceTitle: undefined,
-      serviceId: undefined,
-      services: [{ id: 't1', title: 'Leak inspection & minor fix' }],
-    });
-  });
-
-  it('hands the helper the service that was already chosen', async () => {
-    const u = wrap();
-    fireEvent.press(await u.findByText('Leak inspection & minor fix'));
+    await u.findByText('Leak inspection & minor fix');
+    expect(u.queryByText('Help me write')).toBeNull();
+    await toDetails(u);
+    fireEvent.changeText(u.UNSAFE_getAllByType(TextInput)[1], 'I fix taps');
     fireEvent.press(u.getByText('Help me write'));
     expect(mockNavigate).toHaveBeenCalledWith('AiHelper', {
       mode: 'listing',
       serviceTitle: 'Leak inspection & minor fix',
       serviceId: 't1',
       services: [{ id: 't1', title: 'Leak inspection & minor fix' }],
+      startText: 'I fix taps',
+      attached: { photos: 0, voice: false, video: false },
     });
   });
 
   it('selects the service the helper chose when it hands the draft back', async () => {
     mockParams.current = {
       templateId: 't1',
-      draft: {
-        source: 'en',
-        headline: { en: 'Leak and tap repair', ur: UR_HEAD },
-        about: { en: 'Mixers, pipes and flush tanks.', ur: UR_ABOUT },
-      },
+      draft: { source: 'en', headline: 'Leak and tap repair', about: 'Mixers, pipes and flush tanks.' },
     };
     const u = wrap();
     await u.findByText('Step 2 of 3');
@@ -161,17 +151,14 @@ describe('ListingWizardScreen: Help me write', () => {
   it('is not offered while AI help is off', async () => {
     mockAi.enabled = false;
     const u = wrap();
-    await u.findByText('Leak inspection & minor fix');
+    await toDetails(u);
     expect(u.queryByText('Help me write')).toBeNull();
   });
 
-  it('takes the draft from the helper and lands on Details with the text filled', async () => {
+  it('takes the draft from the helper, in one language, and translates nothing until the review', async () => {
+    mockTranslate.mockResolvedValue({ ok: true, data: { headline: UR_HEAD, about: UR_ABOUT } });
     mockParams.current = {
-      draft: {
-        source: 'en',
-        headline: { en: 'Leak and tap repair', ur: UR_HEAD },
-        about: { en: 'Mixers, pipes and flush tanks.', ur: UR_ABOUT },
-      },
+      draft: { source: 'en', headline: 'Leak and tap repair', about: 'Mixers, pipes and flush tanks.' },
     };
     const u = wrap();
     expect(await u.findByText('Step 2 of 3')).toBeTruthy();
@@ -179,6 +166,13 @@ describe('ListingWizardScreen: Help me write', () => {
     expect(inputs[0].props.value).toBe('Leak and tap repair');
     expect(inputs[1].props.value).toBe('Mixers, pipes and flush tanks.');
     expect(mockTranslate).not.toHaveBeenCalled();
+    fireEvent.press(u.getByText('Next'));
+    await u.findByText('I checked both versions');
+    expect(mockTranslate).toHaveBeenCalledTimes(1);
+    expect(mockTranslate).toHaveBeenCalledWith('listing', 'en', {
+      headline: 'Leak and tap repair',
+      about: 'Mixers, pipes and flush tanks.',
+    });
   });
 });
 

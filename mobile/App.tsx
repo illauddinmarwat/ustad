@@ -5,9 +5,9 @@ import {
   Manrope_700Bold,
 } from '@expo-google-fonts/manrope';
 import {
-  NotoNastaliqUrdu_400Regular,
-  NotoNastaliqUrdu_600SemiBold,
-} from '@expo-google-fonts/noto-nastaliq-urdu';
+  NotoNaskhArabic_400Regular,
+  NotoNaskhArabic_700Bold,
+} from '@expo-google-fonts/noto-naskh-arabic';
 import {
   SpaceGrotesk_600SemiBold,
   SpaceGrotesk_700Bold,
@@ -334,8 +334,8 @@ export default function App() {
     Manrope_700Bold,
     SpaceGrotesk_600SemiBold,
     SpaceGrotesk_700Bold,
-    NotoNastaliqUrdu_400Regular,
-    NotoNastaliqUrdu_600SemiBold,
+    NotoNaskhArabic_400Regular,
+    NotoNaskhArabic_700Bold,
   });
 
   if (!fontsLoaded) {

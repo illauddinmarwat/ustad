@@ -39,6 +39,8 @@ type Job = {
   worker_id: string | null;
   category: string;
   location_text: string | null;
+  worker_done_at?: string | null;
+  completion_note?: string | null;
 };
 
 type MessageRow = { id: string; body: string; sender_id: string; created_at: string };
@@ -238,6 +240,31 @@ export default function JobDetailScreen({ route, navigation }: Props) {
     }
   };
 
+  const [rejecting, setRejecting] = useState(false);
+  const [rejectNote, setRejectNote] = useState('');
+
+  // The Ustad says the work is done; the customer then confirms (or says it is not finished).
+  const workDone = async () => {
+    const { error } = await supabase.rpc('worker_mark_work_done', { p_job_id: jobId });
+    if (error) bannerText(error.message, 'danger');
+    else {
+      bannerId('jobDetail.workDone.toast', 'success');
+      await trackEvent('work_marked_done', uid ?? null, { job_id: jobId });
+      await load();
+    }
+  };
+
+  const notFinished = async () => {
+    const { error } = await supabase.rpc('customer_reject_completion', { p_job_id: jobId, p_note: rejectNote.trim() || null });
+    if (error) bannerText(error.message, 'danger');
+    else {
+      bannerId('jobDetail.confirmDone.sent', 'info');
+      setRejecting(false);
+      setRejectNote('');
+      await load();
+    }
+  };
+
   const markComplete = async () => {
     const { error } = await supabase.rpc('mark_job_completed', { job_id: jobId });
     if (error) bannerText(error.message, 'danger');
@@ -401,6 +428,7 @@ export default function JobDetailScreen({ route, navigation }: Props) {
   const isWorker = role === 'worker' && job.worker_id === uid;
   const showConfirm = isCustomer && job.status === 'pending_customer_confirm' && job.origin === 'service_listing';
   const showComplete = (isCustomer || isWorker) && job.status === 'assigned';
+  const workerSaidDone = !!job.worker_done_at;
   const afterWork = ['completed', 'payment_pending', 'disputed', 'closed'].includes(job.status);
   const showReview = isCustomer && afterWork && job.worker_id && !existingReview;
   const showQuality = phase4QualityEnabled && afterWork && (isCustomer || isWorker);
@@ -448,9 +476,50 @@ export default function JobDetailScreen({ route, navigation }: Props) {
         </Card>
       )}
 
-      {showComplete && (
+      {showComplete && isCustomer && workerSaidDone && (
         <Card padding="lg">
+          <BiText id="jobDetail.confirmDone.title" variant="title" tone="strong" style={styles.cardTitle} />
+          <BiText id="jobDetail.confirmDone.subtitle" variant="body" tone="muted" style={styles.cardSubtitle} />
+          <Button labelId="jobDetail.confirmDone.yes" onPress={markComplete} variant="success" iconLeft="check-circle" fullWidth size="lg" />
+          {rejecting ? (
+            <View style={styles.rejectBox}>
+              <TextInput
+                value={rejectNote}
+                onChangeText={setRejectNote}
+                placeholder={t('jobDetail.confirmDone.notePh').en}
+                placeholderTextColor={colors.textMuted}
+                style={styles.input}
+                multiline
+                maxLength={300}
+                accessibilityLabel={t('jobDetail.confirmDone.notePh').en}
+              />
+              <Button labelId="jobDetail.confirmDone.send" onPress={notFinished} variant="secondary" fullWidth />
+            </View>
+          ) : (
+            <Button labelId="jobDetail.confirmDone.no" onPress={() => setRejecting(true)} variant="ghost" fullWidth />
+          )}
+        </Card>
+      )}
+
+      {showComplete && isCustomer && !workerSaidDone && (
+        <Card padding="lg">
+          <BiText id="jobDetail.complete.hint" variant="bodySm" tone="muted" style={styles.cardSubtitle} />
           <Button labelId="jobDetail.complete.cta" onPress={markComplete} variant="success" iconLeft="check-circle" fullWidth size="lg" />
+        </Card>
+      )}
+
+      {showComplete && isWorker && (
+        <Card padding="lg">
+          {workerSaidDone ? (
+            <Banner id="jobDetail.workDone.waiting" tone="info" icon="clock" />
+          ) : (
+            <>
+              {job.completion_note ? (
+                <Banner text={`${t('jobDetail.workDone.rejected').en} ${job.completion_note}`} tone="warning" />
+              ) : null}
+              <Button labelId="jobDetail.workDone.cta" onPress={workDone} variant="success" iconLeft="check-circle" fullWidth size="lg" />
+            </>
+          )}
         </Card>
       )}
 
@@ -706,6 +775,7 @@ export default function JobDetailScreen({ route, navigation }: Props) {
 }
 
 const styles = StyleSheet.create({
+  rejectBox: { gap: spacing.sm, marginTop: spacing.sm },
   root: { padding: spacing.lg, backgroundColor: colors.bg, flexGrow: 1, paddingBottom: 48 },
   offline: { flex: 1, padding: spacing.lg, justifyContent: 'center', backgroundColor: colors.bg },
   title: { ...typography.displayMd, color: colors.textStrong, marginBottom: spacing.sm },

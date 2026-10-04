@@ -82,6 +82,14 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
       },
     ],
     [
+      'expo-speech-recognition',
+      {
+        microphonePermission: 'Ustad needs the microphone so you can speak instead of typing.',
+        speechRecognitionPermission: 'Ustad uses speech recognition so you can speak instead of typing.',
+        androidSpeechServicePackages: ['com.google.android.googlequicksearchbox'],
+      },
+    ],
+    [
       'expo-location',
       {
         locationWhenInUsePermission:

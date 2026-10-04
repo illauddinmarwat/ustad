@@ -5,6 +5,7 @@ import { Pressable, StyleSheet, Text, View } from 'react-native';
 
 import { AiHelpButton } from '../../components/ai/AiHelpButton';
 import { BilingualReview, type ReviewField } from '../../components/ai/BilingualReview';
+import { useCityAreaFields } from '../../components/CityAreaFields';
 import { PhotoAttach } from '../../components/PhotoAttach';
 import { VideoRecorder } from '../../components/VideoRecorder';
 import { VoiceRecorder } from '../../components/VoiceRecorder';
@@ -26,6 +27,7 @@ import {
   validatePostJob,
   type PostJobErrors,
 } from '../../lib/jobPosting';
+import { useProfileCity } from '../../lib/useProfileCity';
 import { useSkillCategories } from '../../lib/skillCategories';
 import { supabase } from '../../lib/supabase';
 import { useBilingual } from '../../lib/useBilingual';
@@ -55,8 +57,11 @@ export default function PostJobScreen() {
   const [category, setCategory] = useState('');
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
-  const [city, setCity] = useState('');
-  const [area, setArea] = useState('');
+  const profileCity = useProfileCity(session?.user.id);
+  const place = useCityAreaFields({ cityName: profileCity, areaName: null, addressDetails: null, location: null });
+  const city = place.cityName;
+  // Area plus the street / landmark line, as one short place text.
+  const area = [place.areaName, place.addressDetails].filter(Boolean).join(', ').slice(0, 140);
   const [photos, setPhotos] = useState<string[]>([]);
   const [voice, setVoice] = useState<VoiceNote | null>(null);
   const [video, setVideo] = useState<VideoClip | null>(null);
@@ -78,18 +83,15 @@ export default function PostJobScreen() {
     fetchAiHelpEnabled().then(setAiEnabled);
   }, []);
 
-  // A draft from "Help me write": fill the fields, keep both languages, and go straight to the review.
+  // A draft from "Help me write": one text in the author's language. They read and edit it here; the other
+  // language is made once, on the review step.
   useEffect(() => {
     if (!draft) return;
-    bi.applyDraft(
-      draft.source,
-      { title: draft.title.en, description: draft.description.en },
-      { title: draft.title.ur, description: draft.description.ur },
-    );
-    setTitle(draft.title[draft.source]);
-    setDescription(draft.description[draft.source]);
+    bi.reset();
+    setTitle(draft.title);
+    setDescription(draft.description);
     if (draft.category && categories.some((c) => c.key === draft.category)) setCategory(draft.category);
-    setStep(3);
+    setStep(2);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [draft]);
 
@@ -218,12 +220,6 @@ export default function PostJobScreen() {
     >
       {step === 1 && (
         <>
-          {aiEnabled && !isWorker ? (
-            <AiHelpButton
-              subId="ai.helpMe.job"
-              onPress={() => navigation.navigate('AiHelper', { mode: 'job', categories: categories.map((c) => c.key) })}
-            />
-          ) : null}
           <Card padding="lg">
             <BiText id="post.field.category" variant="label" tone="body" style={styles.label} />
             <View style={styles.pills}>
@@ -261,6 +257,20 @@ export default function PostJobScreen() {
       )}
 
       {step === 2 && (
+        <>
+        {aiEnabled && !isWorker ? (
+          <AiHelpButton
+            subId="ai.helpMe.job"
+            onPress={() =>
+              navigation.navigate('AiHelper', {
+                mode: 'job',
+                categories: categories.map((c) => c.key),
+                startText: description.trim() || undefined,
+                attached: { photos: photos.length, voice: !!voice, video: !!video },
+              })
+            }
+          />
+        ) : null}
         <Card padding="lg">
           <Input labelId="post.field.title" value={title} onChangeText={editOriginal('title', setTitle)} iconLeft="edit-3" error={errors.title} />
           <Input
@@ -272,10 +282,10 @@ export default function PostJobScreen() {
             style={styles.multiline}
             error={errors.description}
           />
-          <Input labelId="post.field.city" value={city} onChangeText={setCity} iconLeft="map" />
-          <Input labelId="post.field.area" value={area} onChangeText={setArea} iconLeft="map-pin" />
+          {place.fields}
           <Input labelId="post.field.time" value={preferredTime} onChangeText={setPreferredTime} iconLeft="calendar" />
         </Card>
+        </>
       )}
 
       {step === 3 && (

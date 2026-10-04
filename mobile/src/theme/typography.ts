@@ -1,5 +1,5 @@
 /**
- * Type system — Manrope (body/UI), Space Grotesk (display), Noto Nastaliq Urdu (Urdu line).
+ * Type system — Manrope (body/UI), Space Grotesk (display), Noto Naskh Arabic (Urdu line).
  * Font family names below match the keys we register with `useFonts` in `App.tsx`.
  */
 import type { TextStyle } from 'react-native';
@@ -13,9 +13,10 @@ export const fontFamilies = {
   // Display
   displaySemiBold: 'SpaceGrotesk_600SemiBold',
   displayBold: 'SpaceGrotesk_700Bold',
-  // Urdu (Noto Nastaliq Urdu — flowing nastaliq style)
-  urdu: 'NotoNastaliqUrdu_400Regular',
-  urduBold: 'NotoNastaliqUrdu_600SemiBold',
+  // Urdu — Noto Naskh Arabic: as tall as Manrope, so it is never clipped. To use Jameel Noori Nastaleeq instead,
+  // load it in App.tsx and change these two names (and raise urduTypography line heights to about 2x the size).
+  urdu: 'NotoNaskhArabic_400Regular',
+  urduBold: 'NotoNaskhArabic_700Bold',
 } as const;
 
 export type TypeVariant =
@@ -87,16 +88,16 @@ export const typography: Record<TypeVariant, TextStyle> = {
   },
 };
 
-/** Urdu variant sizing — smaller than English `fontSize` with tighter lineHeight so Nastaliq does not dominate vertically. */
+/** Urdu variant sizing: about the English size, with a line height that leaves room for the marks above and below. */
 export const urduTypography: Record<TypeVariant, TextStyle> = {
-  displayLg: { fontFamily: fontFamilies.urduBold, fontSize: 18, lineHeight: 26 },
-  displayMd: { fontFamily: fontFamilies.urduBold, fontSize: 15, lineHeight: 22 },
-  title: { fontFamily: fontFamilies.urdu, fontSize: 13, lineHeight: 20 },
-  subtitle: { fontFamily: fontFamilies.urdu, fontSize: 12, lineHeight: 18 },
-  body: { fontFamily: fontFamilies.urdu, fontSize: 12, lineHeight: 18 },
-  bodySm: { fontFamily: fontFamilies.urdu, fontSize: 11, lineHeight: 16 },
-  label: { fontFamily: fontFamilies.urdu, fontSize: 10, lineHeight: 14 },
-  button: { fontFamily: fontFamilies.urdu, fontSize: 11, lineHeight: 16 },
-  caption: { fontFamily: fontFamilies.urdu, fontSize: 10, lineHeight: 14 },
-  overline: { fontFamily: fontFamilies.urdu, fontSize: 9, lineHeight: 12 },
+  displayLg: { fontFamily: fontFamilies.urduBold, fontSize: 28, lineHeight: 44 },
+  displayMd: { fontFamily: fontFamilies.urduBold, fontSize: 22, lineHeight: 36 },
+  title: { fontFamily: fontFamilies.urduBold, fontSize: 17, lineHeight: 28 },
+  subtitle: { fontFamily: fontFamilies.urdu, fontSize: 15, lineHeight: 26 },
+  body: { fontFamily: fontFamilies.urdu, fontSize: 15, lineHeight: 26 },
+  bodySm: { fontFamily: fontFamilies.urdu, fontSize: 13, lineHeight: 22 },
+  label: { fontFamily: fontFamilies.urdu, fontSize: 13, lineHeight: 22 },
+  button: { fontFamily: fontFamilies.urdu, fontSize: 15, lineHeight: 26 },
+  caption: { fontFamily: fontFamilies.urdu, fontSize: 12, lineHeight: 20 },
+  overline: { fontFamily: fontFamilies.urdu, fontSize: 11, lineHeight: 18 },
 };

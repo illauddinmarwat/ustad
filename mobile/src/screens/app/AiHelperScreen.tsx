@@ -21,7 +21,8 @@ import {
   type QA,
 } from '../../lib/aiDraft';
 import { looksLikeContact } from '../../lib/contactCheck';
-import { chooseLang } from '../../lib/i18nText';
+import { chooseLang, type Lang } from '../../lib/i18nText';
+import { useSpeechInput } from '../../lib/useSpeechInput';
 import type { RootStackParamList } from '../../navigation/types';
 import { colors, radius, spacing } from '../../theme/tokens';
 import { typography, urduTypography } from '../../theme/typography';
@@ -38,7 +39,7 @@ type Phase = 'pick' | 'intro' | 'thinking' | 'questions' | 'drafting' | 'ready' 
 export default function AiHelperScreen() {
   const navigation = useNavigation<Nav>();
   const route = useRoute<RouteProp<RootStackParamList, 'AiHelper'>>();
-  const { mode, serviceTitle, serviceId, services, categories } = route.params;
+  const { mode, serviceTitle, serviceId, services, categories, attached, startText } = route.params;
   const { language } = useAuth();
   const { t } = useT();
   const insets = useSafeAreaInsets();
@@ -47,7 +48,7 @@ export default function AiHelperScreen() {
   const [service, setService] = useState<{ id?: string; title: string } | null>(serviceTitle ? { id: serviceId, title: serviceTitle } : null);
   const needsService = mode === 'listing' && !serviceTitle && (services?.length ?? 0) > 0;
   const [phase, setPhase] = useState<Phase>(needsService ? 'pick' : 'intro');
-  const [input, setInput] = useState('');
+  const [input, setInput] = useState(startText ?? '');
   const [said, setSaid] = useState('');
   const [questions, setQuestions] = useState<AiQuestion[]>([]);
   const [picked, setPicked] = useState<Record<string, string>>({});
@@ -55,6 +56,19 @@ export default function AiHelperScreen() {
   const [draft, setDraft] = useState<unknown>(null);
   const [stage, setStage] = useState<'questions' | 'draft'>('questions');
   const scroller = useRef<ScrollView>(null);
+
+  // Speaking: what was typed before stays, and the spoken words follow it.
+  const typedBefore = useRef('');
+  const [speakLang, setSpeakLang] = useState<Lang>(lang);
+  const speech = useSpeechInput((spoken) => setInput([typedBefore.current, spoken].filter(Boolean).join(' ')));
+  const toggleMic = () => {
+    if (speech.listening) {
+      speech.stop();
+      return;
+    }
+    typedBefore.current = input.trim();
+    void speech.start(speakLang);
+  };
 
   const baseText = (extra: string) => [mode === 'listing' && service ? `Service: ${service.title}` : '', extra].filter(Boolean).join('. ');
 
@@ -97,16 +111,17 @@ export default function AiHelperScreen() {
     setPhase('drafting');
     const res =
       mode === 'job'
-        ? await makeJobDraft({ lang: chooseLang(text, lang), text: baseText(text), categories, answers })
-        : await makeListingDraft({ lang: chooseLang(text, lang), text: baseText(text), answers });
+        ? await makeJobDraft({ lang: chooseLang(text, lang), text: baseText(text), categories, answers, attached })
+        : await makeListingDraft({ lang: chooseLang(text, lang), text: baseText(text), answers, attached });
     if (!res.ok) return fail(res.error);
     setDraft(res.data);
     setPhase('ready');
   };
 
   const useDraft = () => {
-    if (mode === 'job') navigation.navigate('PostJob', { draft: draft as never });
-    else navigation.navigate('ListingWizard', { draft: draft as never, templateId: service?.id });
+    // Back to the same wizard, so what was added in step 1 is still there.
+    if (mode === 'job') navigation.popTo('PostJob', { draft: draft as never }, { merge: true });
+    else navigation.popTo('ListingWizard', { draft: draft as never, templateId: service?.id }, { merge: true });
   };
 
   // Nothing they typed is lost: when the helper cannot help, their own words go into the form.
@@ -116,8 +131,8 @@ export default function AiHelperScreen() {
       navigation.goBack();
       return;
     }
-    if (mode === 'job') navigation.navigate('PostJob', { prefill: { description: mine } });
-    else navigation.navigate('ListingWizard', { prefill: { about: mine }, templateId: service?.id });
+    if (mode === 'job') navigation.popTo('PostJob', { prefill: { description: mine } }, { merge: true });
+    else navigation.popTo('ListingWizard', { prefill: { about: mine }, templateId: service?.id }, { merge: true });
   };
 
   const bot = (text: string, key: string, ur?: string) => (
@@ -134,6 +149,8 @@ export default function AiHelperScreen() {
 
   const introId: StringId = mode === 'job' ? 'ai.intro.job' : 'ai.intro.listing';
   const canType = phase === 'intro';
+  // With the in-app microphone the tip is about it; otherwise the phone keyboard microphone (not on the web).
+  const tipId: StringId | null = speech.available ? 'ai.tip.mic' : Platform.OS === 'web' ? null : 'ai.tip.speak';
 
   return (
     <KeyboardAvoidingView style={styles.root} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
@@ -179,12 +196,12 @@ export default function AiHelperScreen() {
             {bot(t(introId).en, 'intro', t(introId).ur)}
           </>
         )}
-        {phase === 'intro' ? (
+        {phase === 'intro' && tipId ? (
           <View style={styles.tipRow}>
             <Icon name="mic" size={14} color={colors.primary} />
             <View style={styles.tipText}>
-              <Text style={styles.tip}>{t('ai.tip.speak').en}</Text>
-              <Text style={styles.tipUr}>{t('ai.tip.speak').ur}</Text>
+              <Text style={styles.tip}>{t(tipId).en}</Text>
+              <Text style={styles.tipUr}>{t(tipId).ur}</Text>
             </View>
           </View>
         ) : null}
@@ -264,6 +281,27 @@ export default function AiHelperScreen() {
         ) : phase === 'ready' ? (
           <Button labelId="ai.reviewDraft" onPress={useDraft} iconRight="arrow-right" fullWidth />
         ) : canType ? (
+          <>
+          {speech.available ? (
+            <View style={styles.speakRow}>
+              <Text style={styles.speakLabel}>{t('ai.mic.speakIn').en}</Text>
+              {(['en', 'ur'] as Lang[]).map((l) => (
+                <Pressable
+                  key={l}
+                  onPress={() => setSpeakLang(l)}
+                  disabled={speech.listening}
+                  accessibilityRole="button"
+                  accessibilityState={{ selected: speakLang === l }}
+                  style={[styles.speakPill, speakLang === l && styles.speakPillOn]}
+                >
+                  <Text style={[styles.speakPillText, speakLang === l && styles.pillTextOn]}>{l === 'en' ? 'English' : 'اردو'}</Text>
+                </Pressable>
+              ))}
+            </View>
+          ) : null}
+          {speech.listening ? <Text style={styles.listening}>{t('ai.mic.listening').en}</Text> : null}
+          {speech.error === 'denied' ? <Text style={styles.micError}>{t('ai.mic.denied').en}</Text> : null}
+          {speech.error === 'failed' ? <Text style={styles.micError}>{t('ai.mic.failed').en}</Text> : null}
           <View style={styles.inputRow}>
             <TextInput
               value={input}
@@ -274,6 +312,17 @@ export default function AiHelperScreen() {
               multiline
               accessibilityLabel={t('ai.input.placeholder').en}
             />
+            {speech.available ? (
+              <Pressable
+                onPress={toggleMic}
+                accessibilityRole="button"
+                accessibilityLabel={speech.listening ? t('ai.mic.stop').en : t('ai.mic.speak').en}
+                accessibilityState={{ selected: speech.listening }}
+                style={[styles.mic, speech.listening && styles.micOn]}
+              >
+                <Icon name={speech.listening ? 'square' : 'mic'} size={18} color={speech.listening ? colors.primaryInk : colors.primary} />
+              </Pressable>
+            ) : null}
             <Pressable
               onPress={send}
               accessibilityRole="button"
@@ -284,6 +333,7 @@ export default function AiHelperScreen() {
               <Icon name="send" size={18} color={colors.primaryInk} />
             </Pressable>
           </View>
+          </>
         ) : null}
       </View>
     </KeyboardAvoidingView>
@@ -366,4 +416,29 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   sendOff: { opacity: 0.4 },
+  mic: {
+    width: 44,
+    height: 44,
+    borderRadius: radius.pill,
+    borderWidth: 1,
+    borderColor: colors.primary,
+    backgroundColor: colors.surface,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  micOn: { backgroundColor: colors.danger, borderColor: colors.danger },
+  speakRow: { flexDirection: 'row', alignItems: 'center', gap: spacing.sm, marginBottom: spacing.sm },
+  speakLabel: { ...typography.caption, color: colors.textMuted },
+  speakPill: {
+    paddingHorizontal: spacing.md,
+    paddingVertical: 4,
+    borderRadius: radius.pill,
+    borderWidth: 1,
+    borderColor: colors.border,
+    backgroundColor: colors.surface,
+  },
+  speakPillOn: { backgroundColor: colors.primary, borderColor: colors.primary },
+  speakPillText: { ...typography.caption, color: colors.textBody },
+  listening: { ...typography.caption, color: colors.danger, marginBottom: spacing.sm },
+  micError: { ...typography.caption, color: colors.warning, marginBottom: spacing.sm },
 });

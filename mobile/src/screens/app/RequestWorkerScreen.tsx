@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react';
 import { ScrollView, StyleSheet, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
+import { useCityAreaFields } from '../../components/CityAreaFields';
 import { PhotoAttach } from '../../components/PhotoAttach';
 import { VideoRecorder } from '../../components/VideoRecorder';
 import { VoiceRecorder } from '../../components/VoiceRecorder';
@@ -22,6 +23,7 @@ import {
 import { fetchJobMediaEnabled, uploadJobPhotos, uploadJobVideoClip, uploadJobVoice } from '../../lib/jobMedia';
 import { fetchListingRequestsEnabled } from '../../lib/listings';
 import { supabase } from '../../lib/supabase';
+import { useProfileCity } from '../../lib/useProfileCity';
 import type { VideoClip } from '../../lib/videoNote';
 import type { VoiceNote } from '../../lib/voiceNote';
 import type { RootStackParamList } from '../../navigation/types';
@@ -43,7 +45,9 @@ export default function RequestWorkerScreen() {
   const [description, setDescription] = useState('');
   const [budget, setBudget] = useState('');
   const [preferredTime, setPreferredTime] = useState('');
-  const [area, setArea] = useState('');
+  const profileCity = useProfileCity(session?.user.id);
+  const place = useCityAreaFields({ cityName: profileCity, areaName: null, addressDetails: null, location: null });
+  const area = [place.areaName, place.addressDetails, place.cityName].filter(Boolean).join(', ').slice(0, 160);
   const [errors, setErrors] = useState<RequestFormErrors>({});
   const [serverError, setServerError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
@@ -168,7 +172,7 @@ export default function RequestWorkerScreen() {
           onChangeText={setPreferredTime}
           iconLeft="calendar"
         />
-        <Input labelId="request.field.area" value={area} onChangeText={setArea} iconLeft="map-pin" />
+        {place.fields}
 
         {mediaEnabled && session?.user.id ? (
           <>

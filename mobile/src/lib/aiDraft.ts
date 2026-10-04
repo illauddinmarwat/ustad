@@ -12,10 +12,12 @@ import type { Lang } from './i18nText';
  */
 
 export type Kind = 'job' | 'listing';
-export type Bilingual = { en: string; ur: string };
 export type AiQuestion = { id: string; text: string; options: string[] };
-export type JobDraft = { source: Lang; category: string | null; title: Bilingual; description: Bilingual };
-export type ListingDraft = { source: Lang; headline: Bilingual; about: Bilingual };
+/** One draft, in the language the author wrote in. The other language is made once, on the review step. */
+export type JobDraft = { source: Lang; category: string | null; title: string; description: string };
+export type ListingDraft = { source: Lang; headline: string; about: string };
+/** What was attached in step 1. The AI cannot see it; it is only told how much there is. */
+export type Attached = { photos: number; voice: boolean; video: boolean };
 export type QA = { question: string; answer: string };
 
 export type AiErrorCode = 'bad_request' | 'contact' | 'disabled' | 'limit' | 'ai_failed' | 'blocked';
@@ -73,7 +75,7 @@ async function callAi<T>(body: Record<string, unknown>, pick: (data: Record<stri
   }
 }
 
-export type AiInput = { kind: Kind; lang: Lang; text: string; categories?: string[]; answers?: QA[] };
+export type AiInput = { kind: Kind; lang: Lang; text: string; categories?: string[]; answers?: QA[]; attached?: Attached };
 
 export function askQuestions(input: AiInput): Promise<AiResult<AiQuestion[]>> {
   return callAi({ action: 'questions', ...input }, (d) => (d.questions as AiQuestion[]) ?? []);

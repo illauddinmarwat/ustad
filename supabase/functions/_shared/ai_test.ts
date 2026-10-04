@@ -37,8 +37,8 @@ const okReq = (over: Record<string, unknown> = {}): AiRequest => {
 const GOOD_JOB_DRAFT = {
   source: 'en',
   category: 'plumber',
-  title: { en: 'Kitchen tap leaking', ur: 'کچن کے نل سے پانی ٹپک رہا ہے' },
-  description: { en: 'Water drips from the mixer even when it is closed.', ur: 'مکسر بند ہونے کے باوجود پانی ٹپکتا رہتا ہے۔' },
+  title: 'Kitchen tap leaking',
+  description: 'Water drips from the mixer even when it is closed.',
 };
 
 Deno.test('containsContact catches Latin and Urdu digits, links and handles', () => {
@@ -73,12 +73,12 @@ Deno.test('mentionsAmount only catches figures, not the word rate', () => {
 Deno.test('parseDraft allows a Ustad to say they set rates by the job, but not a figure', () => {
   const r = okReq({ kind: 'listing' });
   const ok = parseDraft(
-    { source: 'ur', headline: { en: 'Room painter', ur: 'کمرے کا پینٹر' }, about: { en: 'I set rates based on the job.', ur: 'میں کام کے حساب سے ریٹ لگاتا ہوں۔' } },
+    { headline: 'Room painter', about: 'I set rates based on the job.' },
     r,
   );
-  assertEquals((ok as { about: { en: string } }).about.en, 'I set rates based on the job.');
+  assertEquals((ok as { about: string }).about, 'I set rates based on the job.');
   assertThrows(
-    () => parseDraft({ source: 'en', headline: { en: 'Painter', ur: 'پینٹر' }, about: { en: 'Rooms from Rs 3000.', ur: 'کمرے' } }, r),
+    () => parseDraft({ headline: 'Painter', about: 'Rooms from Rs 3000.' }, r),
     Blocked,
   );
 });
@@ -177,22 +177,24 @@ Deno.test('parseDraft accepts a good job draft and checks the category against t
 
 Deno.test('parseDraft refuses drafts with a phone number, money, or a missing language', () => {
   const r = okReq();
-  assertThrows(() => parseDraft({ ...GOOD_JOB_DRAFT, description: { ...GOOD_JOB_DRAFT.description, en: 'Call 0300 1234567 now' } }, r), Blocked);
-  assertThrows(() => parseDraft({ ...GOOD_JOB_DRAFT, title: { ...GOOD_JOB_DRAFT.title, ur: 'فون ۰۳۰۰۱۲۳۴۵۶۷' } }, r), Blocked);
-  assertThrows(() => parseDraft({ ...GOOD_JOB_DRAFT, description: { ...GOOD_JOB_DRAFT.description, en: 'Fix it for Rs 500 please' } }, r), Blocked);
-  assertThrows(() => parseDraft({ ...GOOD_JOB_DRAFT, title: { en: 'Tap', ur: 'Tap' } }, r), Blocked);
-  assertThrows(() => parseDraft({ ...GOOD_JOB_DRAFT, title: { en: 'x'.repeat(81), ur: 'نل' } }, r), Blocked);
+  assertThrows(() => parseDraft({ ...GOOD_JOB_DRAFT, description: 'Call 0300 1234567 now' }, r), Blocked);
+  assertThrows(() => parseDraft({ ...GOOD_JOB_DRAFT, title: 'فون ۰۳۰۰۱۲۳۴۵۶۷' }, okReq({ lang: 'ur' })), Blocked);
+  assertThrows(() => parseDraft({ ...GOOD_JOB_DRAFT, description: 'Fix it for Rs 500 please' }, r), Blocked);
+  // Written in the wrong language for the author.
+  assertThrows(() => parseDraft({ ...GOOD_JOB_DRAFT, title: 'نل' }, r), Blocked);
+  assertThrows(() => parseDraft({ ...GOOD_JOB_DRAFT, title: 'Tap' }, okReq({ lang: 'ur' })), Blocked);
+  assertThrows(() => parseDraft({ ...GOOD_JOB_DRAFT, title: 'x'.repeat(81) }, r), Blocked);
   assertThrows(() => parseDraft({ source: 'en' }, r), Blocked);
 });
 
 Deno.test('parseDraft handles a listing draft', () => {
   const r = okReq({ kind: 'listing' });
   const d = parseDraft(
-    { source: 'ur', headline: { en: 'Leak and tap repair', ur: 'نل اور لیکیج کی مرمت' }, about: { en: 'I fix mixers and pipes.', ur: 'میں مکسر اور پائپ ٹھیک کرتا ہوں۔' } },
-    r,
+    { headline: 'نل اور لیکیج کی مرمت', about: 'میں مکسر اور پائپ ٹھیک کرتا ہوں۔' },
+    okReq({ kind: 'listing', lang: 'ur' }),
   );
   assertEquals(d.source, 'ur');
-  assertEquals((d as { headline: { en: string } }).headline.en, 'Leak and tap repair');
+  assertEquals((d as { headline: string }).headline, 'نل اور لیکیج کی مرمت');
 });
 
 Deno.test('parseTranslation checks the target language and that every field came back', () => {
@@ -285,8 +287,8 @@ Deno.test('runAi refunds and logs when the model fails', async () => {
 
 Deno.test('runAi refunds and says blocked when the answer has a price or a phone number', async () => {
   for (const bad of [
-    { ...GOOD_JOB_DRAFT, description: { ...GOOD_JOB_DRAFT.description, en: 'It costs Rs 800' } },
-    { ...GOOD_JOB_DRAFT, description: { ...GOOD_JOB_DRAFT.description, en: 'Call 0300 1234567' } },
+    { ...GOOD_JOB_DRAFT, description: 'It costs Rs 800' },
+    { ...GOOD_JOB_DRAFT, description: 'Call 0300 1234567' },
   ]) {
     const { deps, spy } = makeDeps({ callModel: () => Promise.resolve({ content: JSON.stringify(bad) }) });
     assertEquals(await runAi(jobReq(), deps), { ok: false, error: 'blocked' });
@@ -369,12 +371,8 @@ Deno.test('amountsIn and numbersIn read figures, including Urdu digits', () => {
 
 Deno.test('a price the person typed may stay in the draft, one they did not may not', () => {
   const given = okReq({ kind: 'listing', text: 'Main painter hun, din ka 800 rupay lagata hun' });
-  const withPrice = {
-    source: 'ur',
-    headline: { en: 'Painter', ur: 'پینٹر' },
-    about: { en: 'I paint homes. I charge Rs 800 per day.', ur: 'میں گھر پینٹ کرتا ہوں۔ دن کے 800 روپے لیتا ہوں۔' },
-  };
-  assertEquals((parseDraft(withPrice, given) as { about: { en: string } }).about.en, 'I paint homes. I charge Rs 800 per day.');
+  const withPrice = { headline: 'Painter', about: 'I paint homes. I charge Rs 800 per day.' };
+  assertEquals((parseDraft(withPrice, given) as { about: string }).about, 'I paint homes. I charge Rs 800 per day.');
   // The same words with a figure the person never gave are refused.
   const none = okReq({ kind: 'listing', text: 'Main painter hun' });
   assertThrows(() => parseDraft(withPrice, none), Blocked);
@@ -382,8 +380,8 @@ Deno.test('a price the person typed may stay in the draft, one they did not may 
 
 Deno.test('a price in Urdu digits matches the same price written in Latin digits', () => {
   const req = okReq({ kind: 'listing', text: 'rate ۵۰۰ rs' });
-  const d = parseDraft({ source: 'ur', headline: { en: 'Painter', ur: 'پینٹر' }, about: { en: 'I charge Rs 500.', ur: 'میں ۵۰۰ روپے لیتا ہوں۔' } }, req);
-  assert((d as { about: { en: string } }).about.en.includes('500'));
+  const d = parseDraft({ headline: 'Painter', about: 'I charge Rs 500.' }, req);
+  assert((d as { about: string }).about.includes('500'));
 });
 
 Deno.test('a translation keeps the price that was in the text', () => {
@@ -409,4 +407,24 @@ Deno.test('prompts ask for very simple words and for spelling to be fixed quietl
   assert(m.includes('fix the spelling'));
   assert(m.includes('only if the person gave it'));
   assert(!m.includes('Do not advertise prices'));
+});
+
+Deno.test('the draft is written in the language the author wrote in, and the prompt says so', () => {
+  const ur = parseRequest({ action: 'draft', kind: 'job', lang: 'ur', text: 'nal se pani tapak raha hai' });
+  assert(ur.ok);
+  const sys = buildMessages(ur.req)[0].content;
+  assert(sys.includes('in Urdu (Urdu script) only'));
+  assert(!sys.includes('both English and Urdu'));
+});
+
+Deno.test('the prompt may say how many photos, voice notes and videos are attached, nothing more', () => {
+  const p = parseRequest({ action: 'draft', kind: 'job', lang: 'en', text: 'tap leaking', attached: { photos: 3, voice: true, video: false } });
+  assert(p.ok);
+  assertEquals(p.req.attached, { photos: 3, voice: true, video: false });
+  const sys = buildMessages(p.req)[0].content;
+  assert(sys.includes('3 photos, a voice note'));
+  assert(sys.includes('You cannot see them'));
+  const none = parseRequest({ action: 'draft', kind: 'job', lang: 'en', text: 'tap leaking' });
+  assert(none.ok);
+  assert(!buildMessages(none.req)[0].content.includes('attached'));
 });

@@ -6,7 +6,7 @@ begin;
 
 create extension if not exists pgtap with schema extensions;
 
-select plan(126);
+select plan(128);
 
 -- ─── Test helpers (created inside this transaction, rolled back at the end) ───
 --   _t_id(name)      stable uuids for the seeded people
@@ -167,7 +167,11 @@ select throws_ok($$select public.mark_job_paid(current_setting('t.open')::uuid, 
 select public._t_as ('c2');
 select throws_ok($$select public.mark_job_completed(current_setting('t.open')::uuid)$$, 'not a participant', 'a stranger cannot complete the job');
 select public._t_as ('w1');
-select lives_ok($$select public.mark_job_completed(current_setting('t.open')::uuid)$$, 'the worker marks the work done');
+select throws_ok($$select public.mark_job_completed(current_setting('t.open')::uuid)$$, 'only the customer can confirm the work is done', 'the Ustad cannot complete the job alone');
+select lives_ok($$select public.worker_mark_work_done(current_setting('t.open')::uuid)$$, 'the Ustad says the work is done');
+select public._t_as ('c1');
+select lives_ok($$select public.mark_job_completed(current_setting('t.open')::uuid)$$, 'the customer confirms the work is done');
+select public._t_as ('w1');
 select throws_ok($$select public.mark_job_paid(current_setting('t.open')::uuid, 2000, 'cash')$$, 'only the customer can mark a job as paid', 'the worker cannot mark it paid');
 select public._t_as ('c1');
 select throws_ok($$select public.mark_job_paid(current_setting('t.open')::uuid, 0, 'cash')$$, 'invalid amount', 'a zero amount is rejected');

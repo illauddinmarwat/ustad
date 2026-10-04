@@ -221,3 +221,17 @@ Name, language, city, bio, rate, photo, location, availability and the uploaded 
 ## Services screen for Ustads: two tabs (2026-10-03)
 
 An Ustad's bottom bar says **Services** and the screen has two tabs: **My services** (Add a service, and your own services as cards with status and Edit) and **Other services** (everyone else's, never your own, to look at). While signed in as an Ustad, other services say View instead of Request a quote and the screen asks to **Switch to Customer** first; the same on a service's detail page, which shows Edit on your own. Customers and guests still get one list called Browse services.
+
+## Five changes after review (2026-10-04)
+
+1. **Urdu font.** Urdu now uses Noto Naskh Arabic (about as tall as the English font, so nothing is clipped) with Urdu sizes close to the English ones. Jameel Noori needs its font file and licence; to use it, load it in `App.tsx` and change `fontFamilies.urdu` / `urduBold` in `theme/typography.ts` (and raise the Urdu line heights to about twice the size, since it is nastaliq).
+2. **Help me write moved to the Describe step** (after the photos, voice and video of step 1) in both wizards. The AI writes **one** draft in the author's language, ignoring the media (it is only told how many are attached). The author edits it, and the other language is made **once**, on the Review step, with the approval tick. Server: `draft` returns single strings plus `source`; the request takes `attached`. The helper returns to the same wizard with `popTo(..., { merge: true })`, so step-1 media is kept.
+3. **Customer location.** Post a job and Request a quote use the shared city/area picker with **Use my location** (map pin as fallback), starting on the profile city. Guests get it too.
+4. **Microphone.** The helper has an in-app mic using the phone's own speech recognition (`expo-speech-recognition`, free), with a English / Urdu choice. Needs a **native rebuild** (config plugin added). The keyboard-mic tip is hidden on the web.
+5. **Photo quality note.** Every uploaded photo shows a rounded note (good, too dark, too bright, a bit blurry, small), worked out on the phone from a 128px copy (`lib/imageQuality.ts`). It never blocks a photo.
+
+Deploy order: the `ai-draft` function and the app must go together (the draft response shape changed; an older app expects both languages).
+
+## Completion handshake (2026-10-04)
+
+Finishing a job is now two steps. The Ustad taps **Work is done** (`worker_mark_work_done`, sets `jobs.worker_done_at` and tells the customer). The customer then **confirms** (`mark_job_completed`, now customer-only, status `completed`) or taps **Not finished yet** with an optional note (`customer_reject_completion`, clears the mark and tells the Ustad). The customer can also confirm at any time. If the customer does not answer for 48 hours (`app_settings.completion_auto_confirm_hours`), `auto_confirm_completions()` (cron, every 30 minutes) completes it and tells both. Payment, review and signals still start from `completed`, so they are unchanged. Migration `20261004100000_completion_handshake.sql`; pgTAP `phase29` (21 assertions); older tests that had the Ustad complete a job were changed to have the customer do it. **Not yet run against a database** (Docker was down): run the whole pgTAP suite once it is back.

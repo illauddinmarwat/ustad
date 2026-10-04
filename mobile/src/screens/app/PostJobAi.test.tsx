@@ -5,6 +5,18 @@ import { SafeAreaProvider } from 'react-native-safe-area-context';
 
 import PostJobScreen from './PostJobScreen';
 
+jest.mock('../../lib/useProfileCity', () => ({ useProfileCity: () => null }));
+jest.mock('../../lib/myLocation', () => ({ getMyLocation: jest.fn(() => Promise.resolve(null)) }));
+jest.mock('../../lib/locations', () => ({
+  useCities: () => ({ items: [{ id: 'c1', name: 'Karachi' }], loading: false, failed: false, reload: jest.fn() }),
+  useAreas: (cityId: string | null) => ({
+    items: cityId ? [{ id: 'a1', name: 'Gulshan' }] : [],
+    loading: false,
+    failed: false,
+    reload: jest.fn(),
+  }),
+}));
+
 const mockNavigate = jest.fn();
 const mockReplace = jest.fn();
 const mockRpc = jest.fn();
@@ -45,8 +57,8 @@ const UR_DESC = 'مکسر بند ہونے کے باوجود پانی ٹپکتا 
 const DRAFT = {
   source: 'en',
   category: 'plumber',
-  title: { en: 'Kitchen tap leaking', ur: UR_TITLE },
-  description: { en: 'Water drips from the mixer even when closed.', ur: UR_DESC },
+  title: 'Kitchen tap leaking',
+  description: 'Water drips from the mixer even when closed.',
 };
 
 const wrap = () =>
@@ -79,52 +91,64 @@ const fillDetails = (u: ReturnType<typeof wrap>) => {
 };
 
 describe('PostJobScreen: Help me write', () => {
-  it('offers the helper on step 1 and opens it with the trades', async () => {
+  it('is not on step 1 but on the Describe step, and opens with the trades, the typed text and the media count', async () => {
     const u = wrap();
+    await u.findByText('Plumber');
+    expect(u.queryByText('Help me write')).toBeNull();
+    await toDetails(u);
+    fireEvent.changeText(u.UNSAFE_getAllByType(TextInput)[1], 'tap leaking');
     fireEvent.press(await u.findByText('Help me write'));
     expect(mockNavigate).toHaveBeenCalledWith('AiHelper', {
       mode: 'job',
       categories: expect.arrayContaining(['plumber', 'electrician']),
+      startText: 'tap leaking',
+      attached: { photos: 0, voice: false, video: false },
     });
   });
 
   it('offers it to a guest too', async () => {
     mockAuth.current = { session: null, role: null, language: 'en' };
     const u = wrap();
+    await toDetails(u);
     expect(await u.findByText('Help me write')).toBeTruthy();
   });
 
   it('hides it while AI help is off and for an Ustad', async () => {
     mockAi.enabled = false;
     const off = wrap();
-    await off.findByText('Plumber');
+    await toDetails(off);
     expect(off.queryByText('Help me write')).toBeNull();
     off.unmount();
     mockAi.enabled = true;
     mockAuth.current = { session: { user: { id: 'w1' } }, role: 'worker', language: 'en' };
     const worker = wrap();
-    await worker.findByText('Plumber');
+    await toDetails(worker);
     expect(worker.queryByText('Help me write')).toBeNull();
   });
 
-  it('takes the draft, lands on the review with both languages and the category chosen', async () => {
+  it('puts the draft in the fields on Describe, in the one language, and translates nothing yet', async () => {
     mockParams.current = { draft: DRAFT };
     const u = wrap();
-    expect(await u.findByText('Step 3 of 3')).toBeTruthy();
+    expect(await u.findByText('Step 2 of 3')).toBeTruthy();
     expect(u.getByDisplayValue('Kitchen tap leaking')).toBeTruthy();
-    expect(u.getByDisplayValue(UR_TITLE)).toBeTruthy();
-    expect(u.getAllByText('AI draft')).toHaveLength(2);
-    expect(u.getByText('Plumber')).toBeTruthy();
+    expect(u.getByDisplayValue('Water drips from the mixer even when closed.')).toBeTruthy();
     expect(mockTranslate).not.toHaveBeenCalled();
   });
 
-  it('will not post until both versions are checked, then sends both languages', async () => {
+  it('translates once, when the author moves on to the review, and sends both languages', async () => {
+    mockTranslate.mockResolvedValue({ ok: true, data: { title: UR_TITLE, description: UR_DESC } });
     mockParams.current = { draft: DRAFT };
     const u = wrap();
+    await u.findByText('Step 2 of 3');
+    fireEvent.press(u.getByText('Next'));
     await u.findByText('I checked both versions');
+    expect(mockTranslate).toHaveBeenCalledTimes(1);
+    expect(mockTranslate).toHaveBeenCalledWith('job', 'en', {
+      title: 'Kitchen tap leaking',
+      description: 'Water drips from the mixer even when closed.',
+    });
     fireEvent.press(u.getByText('Post job'));
     expect(mockRpc).not.toHaveBeenCalled();
-
     fireEvent.press(u.getByText('I checked both versions'));
     fireEvent.press(u.getByText('Post job'));
     await waitFor(() => expect(mockRpc).toHaveBeenCalled());
@@ -134,39 +158,45 @@ describe('PostJobScreen: Help me write', () => {
         p_title: 'Kitchen tap leaking',
         p_category: 'plumber',
         p_title_i18n: { source: 'en', en: 'Kitchen tap leaking', ur: UR_TITLE, ai: true },
-        p_description_i18n: { source: 'en', en: 'Water drips from the mixer even when closed.', ur: UR_DESC, ai: true },
       }),
     );
   });
 
   it('stores the Urdu text as the original when the author wrote in Urdu', async () => {
-    mockParams.current = { draft: { ...DRAFT, source: 'ur' } };
+    mockTranslate.mockResolvedValue({ ok: true, data: { title: 'Kitchen tap leaking', description: 'Water drips.' } });
+    mockParams.current = { draft: { ...DRAFT, source: 'ur', title: UR_TITLE, description: UR_DESC } };
     const u = wrap();
+    await u.findByText('Step 2 of 3');
+    fireEvent.press(u.getByText('Next'));
     fireEvent.press(await u.findByText('I checked both versions'));
     fireEvent.press(u.getByText('Post job'));
     await waitFor(() => expect(mockRpc).toHaveBeenCalled());
     const args = mockRpc.mock.calls[0][1];
     expect(args.p_title).toBe(UR_TITLE);
     expect(args.p_title_i18n.source).toBe('ur');
+    expect(mockTranslate).toHaveBeenCalledWith('job', 'ur', expect.anything());
   });
 
-  it('sends the edited version, not the draft', async () => {
+  it('sends what the author edited after the draft, not the draft', async () => {
+    mockTranslate.mockResolvedValue({ ok: true, data: { title: UR_TITLE, description: UR_DESC } });
     mockParams.current = { draft: DRAFT };
     const u = wrap();
-    await u.findByText('I checked both versions');
+    await u.findByText('Step 2 of 3');
     fireEvent.changeText(u.getByDisplayValue('Kitchen tap leaking'), 'Kitchen mixer tap leaking');
-    expect(await u.findByText('Update translation')).toBeTruthy();
-    fireEvent.press(u.getByText('I checked both versions'));
+    fireEvent.press(u.getByText('Next'));
+    fireEvent.press(await u.findByText('I checked both versions'));
     fireEvent.press(u.getByText('Post job'));
     await waitFor(() => expect(mockRpc).toHaveBeenCalled());
-    const args = mockRpc.mock.calls[0][1];
-    expect(args.p_title).toBe('Kitchen mixer tap leaking');
-    expect(args.p_title_i18n.en).toBe('Kitchen mixer tap leaking');
+    expect(mockRpc.mock.calls[0][1].p_title).toBe('Kitchen mixer tap leaking');
+    expect(mockTranslate).toHaveBeenCalledWith('job', 'en', expect.objectContaining({ title: 'Kitchen mixer tap leaking' }));
   });
 
   it('sends the person back to step 1 when the draft had no matching category', async () => {
+    mockTranslate.mockResolvedValue({ ok: true, data: { title: UR_TITLE, description: UR_DESC } });
     mockParams.current = { draft: { ...DRAFT, category: null } };
     const u = wrap();
+    await u.findByText('Step 2 of 3');
+    fireEvent.press(u.getByText('Next'));
     fireEvent.press(await u.findByText('I checked both versions'));
     fireEvent.press(u.getByText('Post job'));
     expect(await u.findByText('Choose a category.')).toBeTruthy();
@@ -174,8 +204,11 @@ describe('PostJobScreen: Help me write', () => {
   });
 
   it('refuses a phone number typed into a translation', async () => {
+    mockTranslate.mockResolvedValue({ ok: true, data: { title: UR_TITLE, description: UR_DESC } });
     mockParams.current = { draft: DRAFT };
     const u = wrap();
+    await u.findByText('Step 2 of 3');
+    fireEvent.press(u.getByText('Next'));
     await u.findByText('I checked both versions');
     fireEvent.changeText(u.getByDisplayValue(UR_DESC), 'فون ۰۳۰۰۱۲۳۴۵۶۷');
     fireEvent.press(u.getByText('I checked both versions'));

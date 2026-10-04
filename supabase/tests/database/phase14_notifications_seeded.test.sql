@@ -117,7 +117,7 @@ select public.customer_set_job_contact (current_setting ('t.a')::uuid, '0300-111
 reset role;
 select is (public._t_notif ('w1', 'contact_shared'), 'Customer details shared | You can now see the phone number and address: Fix tap', 'the worker is told the customer shared details');
 
-select public._t_as ('w1');
+select public._t_as ('c1');
 select public.mark_job_completed (current_setting ('t.a')::uuid);
 reset role;
 select is (public._t_notif ('c1', 'job_completed'), 'Work completed | Pay in cash and mark as paid: Fix tap', 'the customer is told to pay');
@@ -152,6 +152,7 @@ select public._t_as ('c1');
 select set_config ('t.d', public.create_direct_request (public._t_id ('w1'), 'Fix pipe', 'A pipe under the sink leaks', 'plumber', 700)::text, true);
 select public._t_as ('w1');
 select public.worker_accept_direct_request (current_setting ('t.d')::uuid);
+select public._t_as ('c1');
 select public.mark_job_completed (current_setting ('t.d')::uuid);
 select public._t_as ('c1');
 select public.mark_job_paid (current_setting ('t.d')::uuid, 700, 'cash');

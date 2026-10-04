@@ -5,7 +5,7 @@ import { SafeAreaProvider } from 'react-native-safe-area-context';
 
 import AiHelperScreen from './AiHelperScreen';
 
-const mockNavigate = jest.fn();
+const mockPopTo = jest.fn();
 const mockGoBack = jest.fn();
 const mockAsk = jest.fn();
 const mockJobDraft = jest.fn();
@@ -16,7 +16,7 @@ const mockParams: { current: Record<string, unknown> } = {
 
 jest.mock('../../context/AuthContext', () => ({ useAuth: () => ({ language: 'en' }) }));
 jest.mock('@react-navigation/native', () => ({
-  useNavigation: () => ({ navigate: mockNavigate, goBack: mockGoBack }),
+  useNavigation: () => ({ popTo: mockPopTo, goBack: mockGoBack }),
   useRoute: () => ({ params: mockParams.current }),
 }));
 jest.mock('../../lib/supabase', () => ({ supabase: {} }));
@@ -44,12 +44,12 @@ const QUESTIONS = [
 const JOB_DRAFT = {
   source: 'en',
   category: 'plumber',
-  title: { en: 'Kitchen tap leaking', ur: 'کچن کے نل سے پانی ٹپک رہا ہے' },
-  description: { en: 'Water drips from the mixer.', ur: 'مکسر سے پانی ٹپکتا ہے۔' },
+  title: 'Kitchen tap leaking',
+  description: 'Water drips from the mixer.',
 };
 
 beforeEach(() => {
-  [mockNavigate, mockGoBack, mockAsk, mockJobDraft, mockListingDraft].forEach((m) => m.mockReset());
+  [mockPopTo, mockGoBack, mockAsk, mockJobDraft, mockListingDraft].forEach((m) => m.mockReset());
   mockParams.current = { mode: 'job', categories: ['plumber', 'electrician'] };
 });
 
@@ -102,9 +102,9 @@ describe('AiHelperScreen (job)', () => {
         { question: 'When should the Ustad come?', answer: 'Tomorrow evening' },
       ],
     });
-    expect(await u.findByText('Your draft is ready. Check both languages on the next screen.')).toBeTruthy();
+    expect(await u.findByText('Your draft is ready. Read it on the next screen and change anything you like.')).toBeTruthy();
     fireEvent.press(u.getByText('Review my draft'));
-    expect(mockNavigate).toHaveBeenCalledWith('PostJob', { draft: JOB_DRAFT });
+    expect(mockPopTo).toHaveBeenCalledWith('PostJob', { draft: JOB_DRAFT }, { merge: true });
   });
 
   it('lets a person change an answer by tapping it again', async () => {
@@ -147,7 +147,7 @@ describe('AiHelperScreen (job)', () => {
     expect(u.queryByText('Continue')).toBeNull();
     fireEvent.press(u.getByText('Write it myself'));
     // What they typed goes into the form, so nothing is lost.
-    expect(mockNavigate).toHaveBeenCalledWith('PostJob', { prefill: { description: 'Kitchen tap leaking' } });
+    expect(mockPopTo).toHaveBeenCalledWith('PostJob', { prefill: { description: 'Kitchen tap leaking' } }, { merge: true });
   });
 
   it('keeps the typed words for the form when the draft was refused', async () => {
@@ -157,9 +157,11 @@ describe('AiHelperScreen (job)', () => {
     say(u, 'Kitchen tap leaking, the mixer drips all day');
     expect(await u.findByText(/Your words are saved/)).toBeTruthy();
     fireEvent.press(u.getByText('Write it myself'));
-    expect(mockNavigate).toHaveBeenCalledWith('PostJob', {
-      prefill: { description: 'Kitchen tap leaking, the mixer drips all day' },
-    });
+    expect(mockPopTo).toHaveBeenCalledWith(
+      'PostJob',
+      { prefill: { description: 'Kitchen tap leaking, the mixer drips all day' } },
+      { merge: true },
+    );
   });
 
   it('tells people they can speak instead of typing, on the typing step only', async () => {
@@ -216,6 +218,19 @@ describe('AiHelperScreen (job)', () => {
   });
 });
 
+describe('AiHelperScreen: what the wizard already has', () => {
+  it('starts with the text already typed, and tells the AI how much was attached', async () => {
+    mockParams.current = { mode: 'job', categories: ['plumber'], startText: 'tap leaking', attached: { photos: 2, voice: false, video: true } };
+    mockAsk.mockResolvedValue({ ok: true, data: [] });
+    mockJobDraft.mockResolvedValue({ ok: true, data: JOB_DRAFT });
+    const u = wrap();
+    expect(u.UNSAFE_getByType(TextInput).props.value).toBe('tap leaking');
+    fireEvent.press(u.getByLabelText('Send'));
+    await waitFor(() => expect(mockJobDraft).toHaveBeenCalled());
+    expect(mockJobDraft.mock.calls[0][0].attached).toEqual({ photos: 2, voice: false, video: true });
+  });
+});
+
 describe('AiHelperScreen (listing)', () => {
   beforeEach(() => {
     mockParams.current = { mode: 'listing', serviceTitle: 'Leak inspection & minor fix' };
@@ -224,8 +239,8 @@ describe('AiHelperScreen (listing)', () => {
   it('starts from the service and sends the draft back to the listing wizard', async () => {
     const draft = {
       source: 'en',
-      headline: { en: 'Leak and tap repair', ur: 'نل اور لیکیج کی مرمت' },
-      about: { en: 'I fix mixers and pipes.', ur: 'میں مکسر اور پائپ ٹھیک کرتا ہوں۔' },
+      headline: 'Leak and tap repair',
+      about: 'I fix mixers and pipes.',
     };
     mockAsk.mockResolvedValue({ ok: true, data: [{ id: 'q1', text: 'How long have you done this work?', options: ['1–3 years', '5–10 years'] }] });
     mockListingDraft.mockResolvedValue({ ok: true, data: draft });
@@ -238,7 +253,7 @@ describe('AiHelperScreen (listing)', () => {
     fireEvent.press(u.getByText('Create my draft'));
     await waitFor(() => expect(mockListingDraft).toHaveBeenCalled());
     fireEvent.press(await u.findByText('Review my draft'));
-    expect(mockNavigate).toHaveBeenCalledWith('ListingWizard', { draft });
+    expect(mockPopTo).toHaveBeenCalledWith('ListingWizard', { draft, templateId: undefined }, { merge: true });
   });
 
   it('adds what the Ustad typed to the service', async () => {
@@ -258,8 +273,8 @@ describe('AiHelperScreen (listing, choosing the service in the chat)', () => {
   ];
   const draft = {
     source: 'ur',
-    headline: { en: 'Plumber', ur: 'پلمبر' },
-    about: { en: 'I fix leaks.', ur: 'میں لیکیج ٹھیک کرتا ہوں۔' },
+    headline: 'پلمبر',
+    about: 'میں لیکیج ٹھیک کرتا ہوں۔',
   };
 
   beforeEach(() => {
@@ -284,7 +299,7 @@ describe('AiHelperScreen (listing, choosing the service in the chat)', () => {
     await waitFor(() => expect(mockAsk).toHaveBeenCalled());
     expect(mockAsk.mock.calls[0][0].text).toBe('Service: Drain cleaning and blockage');
     fireEvent.press(await u.findByText('Review my draft'));
-    expect(mockNavigate).toHaveBeenCalledWith('ListingWizard', { draft, templateId: 't-drain' });
+    expect(mockPopTo).toHaveBeenCalledWith('ListingWizard', { draft, templateId: 't-drain' }, { merge: true });
   });
 
   it('keeps the chosen service when the helper cannot write a draft and the Ustad finishes by hand', async () => {
@@ -296,7 +311,7 @@ describe('AiHelperScreen (listing, choosing the service in the chat)', () => {
     say(u, 'main plumber hun');
     expect(await u.findByText(/Your words are saved/)).toBeTruthy();
     fireEvent.press(u.getByText('Write it myself'));
-    expect(mockNavigate).toHaveBeenCalledWith('ListingWizard', { prefill: { about: 'main plumber hun' }, templateId: 't-leak' });
+    expect(mockPopTo).toHaveBeenCalledWith('ListingWizard', { prefill: { about: 'main plumber hun' }, templateId: 't-leak' }, { merge: true });
   });
 
   it('does not ask again when the service was already chosen in the wizard', () => {

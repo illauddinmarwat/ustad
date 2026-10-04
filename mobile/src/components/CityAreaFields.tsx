@@ -3,6 +3,7 @@ import { StyleSheet, Text } from 'react-native';
 
 import { useT } from '../i18n/useT';
 import { reverseGeocode } from '../lib/geocode';
+import { getMyLocation } from '../lib/myLocation';
 import { useAreas, useCities } from '../lib/locations';
 import { colors, spacing } from '../theme/tokens';
 import { typography } from '../theme/typography';
@@ -59,16 +60,19 @@ export function useCityAreaFields(initial?: CityAreaInitial): CityAreaState {
   }, [pendingArea, areas.items, areas.loading, cityId]);
 
   // Pre-select the saved city (and, once its areas load, the saved area) when editing an existing application.
-  const [initialApplied, setInitialApplied] = useState(!initial?.cityName);
+  // The saved city may arrive after the first render (read from the profile), so it is applied whenever it
+  // changes, as long as the person has not chosen a city themselves.
+  const [appliedFor, setAppliedFor] = useState<string | null>(null);
   useEffect(() => {
-    if (initialApplied || cities.loading || !initial?.cityName) return;
-    const hit = cities.items.find((c) => c.name.toLowerCase() === initial.cityName!.toLowerCase());
-    if (hit) {
+    const wanted = initial?.cityName;
+    if (!wanted || appliedFor === wanted || cities.loading) return;
+    const hit = cities.items.find((c) => c.name.toLowerCase() === wanted.toLowerCase());
+    if (hit && !cityId) {
       setCityId(hit.id);
-      if (initial.areaName) setPendingArea(initial.areaName);
+      if (initial?.areaName) setPendingArea(initial.areaName);
     }
-    setInitialApplied(true);
-  }, [initialApplied, cities.loading, cities.items, initial]);
+    setAppliedFor(wanted);
+  }, [appliedFor, cityId, cities.loading, cities.items, initial]);
 
   const onPinned = async (loc: PinnedLocation) => {
     setPickerOpen(false);
@@ -95,6 +99,19 @@ export function useCityAreaFields(initial?: CityAreaInitial): CityAreaState {
       setOtherArea('');
       setPendingArea(found.area);
     }
+  };
+
+  // Use my location: the device position fills city and area; when it is not available the map opens instead.
+  const useMyLocation = async () => {
+    setLookupFailed(false);
+    setLooking(true);
+    const here = await getMyLocation();
+    setLooking(false);
+    if (!here) {
+      setPickerOpen(true);
+      return;
+    }
+    await onPinned({ lat: here.lat, lng: here.lng });
   };
 
   const cityName = cities.items.find((c) => c.id === cityId)?.name ?? '';
@@ -140,6 +157,14 @@ export function useCityAreaFields(initial?: CityAreaInitial): CityAreaState {
           iconLeft="map"
         />
       ) : null}
+      <Button
+        labelId="areas.useMyLocation"
+        onPress={useMyLocation}
+        variant="secondary"
+        iconLeft="crosshair"
+        fullWidth
+        style={styles.pinBtn}
+      />
       <Button
         labelId={location ? 'map.pinnedButton' : 'map.pinButton'}
         onPress={() => setPickerOpen(true)}

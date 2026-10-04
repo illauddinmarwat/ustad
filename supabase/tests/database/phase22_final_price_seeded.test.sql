@@ -162,7 +162,7 @@ reset role;
 select is (public._t_notif ('c1', 'final_price_proposed', '%230%') is not null, true, 'the customer is notified of Rs 230');
 
 -- Payment is blocked until the price is agreed
-select public._t_as ('w1');
+select public._t_as ('c1');
 select public.mark_job_completed (current_setting ('t.a')::uuid);
 reset role;
 select public._t_as ('c1');
@@ -218,6 +218,7 @@ select public.customer_accept_quote (current_setting ('t.qb')::uuid);
 reset role;
 select public._t_as ('w1');
 select throws_ok(format ($$select public.worker_set_final_price (%L, 200)$$, current_setting ('t.b')), 'this job has a fixed price', 'a fixed price has no final price');
+select public._t_as ('c1');
 select public.mark_job_completed (current_setting ('t.b')::uuid);
 reset role;
 select public._t_as ('c1');
@@ -243,7 +244,7 @@ select is ((select has_markup from public.job_final_prices where job_id = curren
 select public._t_as ('c1');
 select is (public.customer_respond_final_price (current_setting ('t.c')::uuid, true), 'confirmed', 'accepted');
 reset role;
-select public._t_as ('w1');
+select public._t_as ('c1');
 select public.mark_job_completed (current_setting ('t.c')::uuid);
 reset role;
 select public._t_as ('c1');
