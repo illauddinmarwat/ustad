@@ -46,6 +46,7 @@ import ListingDetailScreen from './src/screens/app/ListingDetailScreen';
 import NearbyUstadScreen from './src/screens/app/NearbyUstadScreen';
 import { badgeValue, notificationTarget } from './src/lib/notificationHelpers';
 import { configureForegroundNotifications, registerForPush } from './src/lib/notifications';
+import { useGuestQuoteCount } from './src/lib/guestQuotes';
 import { useUnreadNotifications } from './src/lib/useUnreadNotifications';
 import BoardJobScreen from './src/screens/app/BoardJobScreen';
 import JobBoardScreen from './src/screens/app/JobBoardScreen';
@@ -183,6 +184,8 @@ function CustomerTabs() {
   const tabScreenOptions = useTabScreenOptions();
   const { session } = useAuth();
   const { count: unread } = useUnreadNotifications(session?.user.id);
+  // A guest has no notifications, so their Requests tab counts the quotes waiting on jobs posted from this phone.
+  const { total: guestQuotes } = useGuestQuoteCount(!session);
   return (
     <Tab.Navigator screenOptions={tabScreenOptions}>
       <Tab.Screen
@@ -215,6 +218,7 @@ function CustomerTabs() {
         options={{
           tabBarLabel: ({ focused }) => <TabBarLabel id="tabs.requests" focused={focused} />,
           tabBarIcon: tabIcon('clipboard'),
+          tabBarBadge: badgeValue(guestQuotes),
         }}
       />
       <Tab.Screen

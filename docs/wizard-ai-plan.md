@@ -239,3 +239,7 @@ Finishing a job is now two steps. The Ustad taps **Work is done** (`worker_mark_
 ## Role and view are separate (2026-10-04)
 
 "Switch to Customer" used to rewrite `profiles.role`, so an Ustad looking around as a customer failed every rule that asks "is this a worker?" (no requests, no quotes, not listed). Now `role` stays `worker` and the chosen screen is stored in `profiles.active_view` (`customer` or `worker`; empty means the person's own role). Ustads whose role had been flipped are restored by the migration. Because an Ustad in the customer view must still act as a customer, every database rule that required `role = 'customer'` now accepts `customer` or `worker`. The app no longer lets a customer switch to the Ustad view, and a job's Ustad sees their controls whichever view they are in. Migration `20261004110000_profile_active_view.sql`, pgTAP `phase30` (6 assertions, not yet run: Docker was down).
+
+## Guest nudge (2026-10-04)
+
+A guest has no account, so nothing can tell them a quote arrived. Now the post screen and the "Jobs you posted" card explain this and offer **Create a free account**, the card shows "N quotes waiting" per job (read with the guest token, up to 5 jobs, refreshed every minute and when the app opens), and the Requests tab badge counts those quotes for guests. A signed-in customer sees none of it.

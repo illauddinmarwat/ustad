@@ -1029,6 +1029,14 @@ export const strings = {
     en: 'Sign in or create an account to accept a quote. Your job and quotes will be kept.',
     ur: 'قیمت قبول کرنے کے لیے لاگ ان کریں یا اکاؤنٹ بنائیں۔ آپ کا کام اور قیمتیں محفوظ رہیں گی۔',
   },
+  'posted.notify.title': { en: 'Get told when an Ustad quotes', ur: 'استاد کی قیمت آتے ہی اطلاع پائیں' },
+  'posted.notify.body': {
+    en: 'You posted without an account, so we cannot tell you when quotes arrive. Create a free account and we will send you a message, and your job is kept safe.',
+    ur: 'آپ نے بغیر اکاؤنٹ کے پوسٹ کیا ہے، اس لیے قیمت آنے پر ہم آپ کو بتا نہیں سکتے۔ مفت اکاؤنٹ بنائیں، ہم آپ کو پیغام بھیجیں گے اور آپ کا کام محفوظ رہے گا۔',
+  },
+  'posted.notify.cta': { en: 'Create a free account', ur: 'مفت اکاؤنٹ بنائیں' },
+  'posted.quotesWaiting': { en: 'quote waiting', ur: 'قیمت منتظر ہے' },
+  'posted.quotesWaitingMany': { en: 'quotes waiting', ur: 'قیمتیں منتظر ہیں' },
   'posted.guestKeep': {
     en: 'Sign in or create an account to keep this job and accept a quote.',
     ur: 'اس کام کو محفوظ رکھنے اور قیمت قبول کرنے کے لیے لاگ ان کریں یا اکاؤنٹ بنائیں۔',

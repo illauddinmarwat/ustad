@@ -147,7 +147,13 @@ export default function PostedJobScreen() {
           {job.city || job.location_text ? (
             <Text style={styles.meta}>{[job.location_text, job.city].filter(Boolean).join(', ')}</Text>
           ) : null}
-          {token ? <Banner id="posted.guestKeep" tone="info" icon="user-plus" /> : null}
+          {token ? (
+            <View style={styles.notify}>
+              <BiText id="posted.notify.title" variant="label" tone="strong" />
+              <BiText id="posted.notify.body" variant="bodySm" tone="muted" />
+              <Button labelId="posted.notify.cta" onPress={() => navigation.navigate('Auth')} iconLeft="user-plus" fullWidth />
+            </View>
+          ) : null}
         </Card>
       ) : null}
 
@@ -223,6 +229,7 @@ export default function PostedJobScreen() {
 const styles = StyleSheet.create({
   root: { padding: spacing.lg, backgroundColor: colors.bg, flexGrow: 1, gap: spacing.md },
   title: { ...typography.title, color: colors.textStrong },
+  notify: { gap: spacing.sm, backgroundColor: colors.primarySoft, borderRadius: 12, padding: spacing.md, marginTop: spacing.sm },
   body: { ...typography.body, color: colors.textBody, marginTop: spacing.sm },
   meta: { ...typography.bodySm, color: colors.textMuted, marginTop: spacing.xs },
   chips: { flexDirection: 'row', flexWrap: 'wrap', gap: 6, marginTop: spacing.sm },
