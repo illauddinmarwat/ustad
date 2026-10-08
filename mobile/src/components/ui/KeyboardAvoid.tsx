@@ -1,21 +1,57 @@
-import { HeaderHeightContext } from '@react-navigation/elements';
-import { useContext, type ReactNode } from 'react';
-import { KeyboardAvoidingView, StyleSheet, type StyleProp, type ViewStyle } from 'react-native';
+import { useCallback, useEffect, useRef, useState, type ReactNode } from 'react';
+import { Keyboard, Platform, StyleSheet, View, type StyleProp, type ViewStyle } from 'react-native';
 
 type Props = { children: ReactNode; style?: StyleProp<ViewStyle> };
 
+/** How far the bottom of a view sits below the top of the keyboard (0 when it is already clear of it). */
+export function keyboardOverlap(viewBottom: number, keyboardTop: number | null): number {
+  if (keyboardTop == null) return 0;
+  return Math.max(0, Math.round(viewBottom - keyboardTop));
+}
+
 /**
- * Keeps the screen's content above the on-screen keyboard. Android runs edge-to-edge, so the keyboard
- * overlaps the app instead of resizing it; "padding" lifts the content by exactly the part the keyboard
- * covers (and by nothing when the window already resized). Wrap a screen's root in this.
+ * Keeps the screen's content above the on-screen keyboard. Android may or may not shrink the window for the keyboard
+ * (it does with adjustResize, and edge-to-edge builds vary), and padding blindly on top of a resize leaves a big empty
+ * gap. So this measures where its own bottom edge really is against the top of the keyboard and pads by only the part
+ * that is still covered. Wrap a screen's root in this.
  */
 export function KeyboardAvoid({ children, style }: Props) {
-  // A stack header sits above this view, so the keyboard offset has to include it.
-  const headerHeight = useContext(HeaderHeightContext) ?? 0;
+  const ref = useRef<View>(null);
+  const keyboardTop = useRef<number | null>(null);
+  const [pad, setPad] = useState(0);
+
+  const update = useCallback(() => {
+    if (keyboardTop.current == null) {
+      setPad(0);
+      return;
+    }
+    ref.current?.measureInWindow((_x, y, _w, h) => {
+      if (keyboardTop.current != null) setPad(keyboardOverlap(y + h, keyboardTop.current));
+    });
+  }, []);
+
+  useEffect(() => {
+    const show = Keyboard.addListener(Platform.OS === 'ios' ? 'keyboardWillShow' : 'keyboardDidShow', (e) => {
+      keyboardTop.current = e.endCoordinates.screenY;
+      update();
+      // The window can finish resizing after the event; measure again once it has settled.
+      setTimeout(update, 200);
+    });
+    const hide = Keyboard.addListener(Platform.OS === 'ios' ? 'keyboardWillHide' : 'keyboardDidHide', () => {
+      keyboardTop.current = null;
+      setPad(0);
+    });
+    return () => {
+      show.remove();
+      hide.remove();
+    };
+  }, [update]);
+
+  // A resize of the window changes this view's layout, which is the cue to measure again.
   return (
-    <KeyboardAvoidingView style={[styles.flex, style]} behavior="padding" keyboardVerticalOffset={headerHeight}>
+    <View ref={ref} collapsable={false} onLayout={update} style={[styles.flex, style, { paddingBottom: pad }]}>
       {children}
-    </KeyboardAvoidingView>
+    </View>
   );
 }
 

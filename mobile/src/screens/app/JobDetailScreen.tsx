@@ -30,7 +30,10 @@ import { supabase } from '../../lib/supabase';
 import type { RootStackParamList } from '../../navigation/types';
 import { colors, radius, spacing } from '../../theme/tokens';
 import { typography } from '../../theme/typography';
+import { nextStep, type NextAction } from '../../lib/jobNextStep';
 import { ensureForegroundLocation } from '../../lib/locationPermission';
+import { JobMessagesSheet } from '../../components/JobMessagesSheet';
+import { FoldCard } from '../../components/ui/FoldCard';
 import { KeyboardAvoid } from '../../components/ui/KeyboardAvoid';
 
 type Job = {
@@ -98,6 +101,12 @@ export default function JobDetailScreen({ route, navigation }: Props) {
   const [phase4QualityEnabled, setPhase4QualityEnabled] = useState(false);
   const [realtimeState, setRealtimeState] = useState<JobRealtimeState | null>(null);
   const [nowTs, setNowTs] = useState(Date.now());
+  const [rtBusy, setRtBusy] = useState(false);
+  const [barBusy, setBarBusy] = useState(false);
+  const [msgOpen, setMsgOpen] = useState(false);
+  const [seenAt, setSeenAt] = useState(0);
+  const [barH, setBarH] = useState(0);
+  const [rtMsg, setRtMsg] = useState<{ id?: StringId; text?: string; tone: 'success' | 'danger' } | null>(null);
   const [photoPath, setPhotoPath] = useState('');
   const [photoNote, setPhotoNote] = useState('');
   const [surveyScore, setSurveyScore] = useState(5);
@@ -177,6 +186,27 @@ export default function JobDetailScreen({ route, navigation }: Props) {
       load().catch(() => bannerId('jobDetail.error.load', 'danger'));
     }, [load])
   );
+
+  // Messages arrive while the page is open: refresh them quietly so the floating button can show a count.
+  useEffect(() => {
+    if (!useLiveDatabase || !uid) return;
+    const timer = setInterval(async () => {
+      const { data } = await supabase
+        .from('messages')
+        .select('id,body,sender_id,created_at')
+        .eq('job_id', jobId)
+        .order('created_at', { ascending: true });
+      if (data) setMessages(data as MessageRow[]);
+    }, 10000);
+    return () => clearInterval(timer);
+  }, [jobId, uid]);
+
+  // A success note under the pinned button fades after a few seconds; errors stay until the next try.
+  useEffect(() => {
+    if (rtMsg?.tone !== 'success') return;
+    const timer = setTimeout(() => setRtMsg(null), 5000);
+    return () => clearTimeout(timer);
+  }, [rtMsg]);
 
   useEffect(() => {
     navigation.setOptions({ title: job?.title ?? t('nav.job').en });
@@ -299,17 +329,27 @@ export default function JobDetailScreen({ route, navigation }: Props) {
     }
   };
 
-  const setRealtime = async (args: { enRoute?: boolean; etaMinutes?: number; timerRunning?: boolean }) => {
-    const { error } = await supabase.rpc('worker_set_job_realtime_state', {
-      p_job_id: jobId,
-      p_is_en_route: args.enRoute ?? null,
-      p_eta_minutes: args.etaMinutes ?? null,
-      p_timer_running: args.timerRunning ?? null,
-    });
-    if (error) {
-      bannerText(error.message, 'danger');
-    } else {
-      setBanner(null);
+  // The on-the-way and timer buttons: one request at a time, with the result shown right under the buttons
+  // (the page banner is off-screen by the time someone is down here).
+  const setRealtime = async (
+    args: { enRoute?: boolean; etaMinutes?: number; timerRunning?: boolean },
+    done: StringId
+  ) => {
+    if (rtBusy) return;
+    setRtBusy(true);
+    setRtMsg(null);
+    try {
+      const { error } = await supabase.rpc('worker_set_job_realtime_state', {
+        p_job_id: jobId,
+        p_is_en_route: args.enRoute ?? null,
+        p_eta_minutes: args.etaMinutes ?? null,
+        p_timer_running: args.timerRunning ?? null,
+      });
+      if (error) {
+        setRtMsg({ text: error.message, tone: 'danger' });
+        return;
+      }
+      setRtMsg({ id: done, tone: 'success' });
       if (typeof args.enRoute === 'boolean') {
         await trackEvent(args.enRoute ? 'phase4_worker_en_route_started' : 'phase4_worker_en_route_stopped', uid ?? null, {
           job_id: jobId,
@@ -322,6 +362,36 @@ export default function JobDetailScreen({ route, navigation }: Props) {
         });
       }
       await load();
+    } catch (e) {
+      setRtMsg({ text: e instanceof Error ? e.message : String(e), tone: 'danger' });
+    } finally {
+      setRtBusy(false);
+    }
+  };
+
+  // The pinned button at the bottom: whichever step is next for this person, one request at a time.
+  const runStep = async (action: NextAction) => {
+    if (barBusy || rtBusy) return;
+    setBarBusy(true);
+    try {
+      if (action === 'confirmBooking') await confirmBooking();
+      else if (action === 'markComplete') await markComplete();
+      else if (action === 'workDone') {
+        // Finishing the work also ends a timer that is still running, so the time stops where the work did.
+        if (realtimeState?.timer_started_at) {
+          await supabase.rpc('worker_set_job_realtime_state', {
+            p_job_id: jobId,
+            p_is_en_route: null,
+            p_eta_minutes: null,
+            p_timer_running: false,
+          });
+        }
+        await workDone();
+      }
+      else if (action === 'startEnRoute') await setRealtime({ enRoute: true, etaMinutes: 30 }, 'jobDetail.live.toast.enRoute');
+      else await setRealtime({ enRoute: false }, 'jobDetail.live.toast.arrived');
+    } finally {
+      setBarBusy(false);
     }
   };
 
@@ -458,10 +528,32 @@ export default function JobDetailScreen({ route, navigation }: Props) {
   const realtimeVisible = phase4RealtimeEnabled && (isCustomer || isWorker) && !!job.worker_id;
   const timerSeconds = computeTimerSeconds(realtimeState, nowTs);
   const timerText = formatDuration(timerSeconds);
+  // Messages from the other person since the one opened the conversation (or since they last wrote).
+  const lastMineIdx = messages.reduce((acc, m, idx) => (m.sender_id === uid ? idx : acc), -1);
+  const unread = msgOpen
+    ? 0
+    : messages.slice(Math.max(lastMineIdx + 1, seenAt)).filter((m) => m.sender_id !== uid).length;
+  const step =
+    isCustomer || isWorker
+      ? nextStep({
+          viewer: isCustomer ? 'customer' : 'worker',
+          status: job.status,
+          origin: job.origin,
+          workerDone: workerSaidDone,
+          realtime: phase4RealtimeEnabled,
+          enRoute: !!realtimeState?.is_en_route,
+          startedWork: !!realtimeState?.started_work_at,
+          tracked: !!realtimeState,
+        })
+      : null;
 
   return (
     <KeyboardAvoid>
-    <ScrollView contentContainerStyle={[styles.root, { paddingTop: insets.top + spacing.md }]} keyboardShouldPersistTaps="handled">
+    <ScrollView
+      style={styles.flex}
+      contentContainerStyle={[styles.root, { paddingTop: insets.top + spacing.md }]}
+      keyboardShouldPersistTaps="handled"
+    >
       <Card padding="lg">
         <Text style={styles.title}>{job.title}</Text>
         <View style={styles.tagsRow}>
@@ -508,8 +600,7 @@ export default function JobDetailScreen({ route, navigation }: Props) {
       {showConfirm && (
         <Card padding="lg">
           <BiText id="jobDetail.confirm.title" variant="title" tone="strong" style={styles.cardTitle} />
-          <BiText id="jobDetail.confirm.subtitle" variant="body" tone="muted" style={styles.cardSubtitle} />
-          <Button labelId="jobDetail.confirm.cta" onPress={confirmBooking} iconLeft="check" fullWidth />
+          <BiText id="jobDetail.confirm.subtitle" variant="body" tone="muted" />
         </Card>
       )}
 
@@ -517,7 +608,6 @@ export default function JobDetailScreen({ route, navigation }: Props) {
         <Card padding="lg">
           <BiText id="jobDetail.confirmDone.title" variant="title" tone="strong" style={styles.cardTitle} />
           <BiText id="jobDetail.confirmDone.subtitle" variant="body" tone="muted" style={styles.cardSubtitle} />
-          <Button labelId="jobDetail.confirmDone.yes" onPress={markComplete} variant="success" iconLeft="check-circle" fullWidth size="lg" />
           {rejecting ? (
             <View style={styles.rejectBox}>
               <TextInput
@@ -540,30 +630,18 @@ export default function JobDetailScreen({ route, navigation }: Props) {
 
       {showComplete && isCustomer && !workerSaidDone && (
         <Card padding="lg">
-          <BiText id="jobDetail.complete.hint" variant="bodySm" tone="muted" style={styles.cardSubtitle} />
-          <Button labelId="jobDetail.complete.cta" onPress={markComplete} variant="success" iconLeft="check-circle" fullWidth size="lg" />
+          <BiText id="jobDetail.complete.hint" variant="bodySm" tone="muted" />
         </Card>
       )}
 
-      {showComplete && isWorker && (
-        <Card padding="lg">
-          {workerSaidDone ? (
-            <Banner id="jobDetail.workDone.waiting" tone="info" icon="clock" />
-          ) : (
-            <>
-              {job.completion_note ? (
-                <Banner text={`${t('jobDetail.workDone.rejected').en} ${job.completion_note}`} tone="warning" />
-              ) : null}
-              <Button labelId="jobDetail.workDone.cta" onPress={workDone} variant="success" iconLeft="check-circle" fullWidth size="lg" />
-            </>
-          )}
-        </Card>
-      )}
+      {showComplete && isWorker && workerSaidDone && <Banner id="jobDetail.workDone.waiting" tone="info" icon="clock" />}
+      {showComplete && isWorker && !workerSaidDone && job.completion_note ? (
+        <Banner text={`${t('jobDetail.workDone.rejected').en} ${job.completion_note}`} tone="warning" />
+      ) : null}
 
       {realtimeVisible && (
-        <Card padding="lg">
-          <BiText id="jobDetail.live.title" variant="title" tone="strong" style={styles.cardTitle} />
-          <BiText id="jobDetail.timeline.subtitle" variant="bodySm" tone="muted" style={styles.cardSubtitle} />
+        <Card padding="md">
+          <BiText id="jobDetail.live.title" variant="label" tone="strong" style={styles.cardTitle} />
           <View style={styles.statusRow}>
             <Icon name="navigation" size={14} color={colors.primary} />
             <BiText id="jobDetail.timeline.workerStatus" hideUrdu variant="caption" tone="muted" style={styles.statusLabel} />
@@ -578,10 +656,25 @@ export default function JobDetailScreen({ route, navigation }: Props) {
           </View>
           {isWorker && job.status === 'assigned' && (
             <View style={styles.realtimeCtas}>
-              <Button labelId="jobDetail.timeline.startEnRoute" onPress={() => setRealtime({ enRoute: true, etaMinutes: 30 })} iconLeft="navigation" />
-              <Button labelId="jobDetail.timeline.arrived" onPress={() => setRealtime({ enRoute: false })} variant="secondary" iconLeft="map-pin" />
-              <Button labelId="jobDetail.timeline.startTimer" onPress={() => setRealtime({ timerRunning: true })} variant="secondary" iconLeft="play" />
-              <Button labelId="jobDetail.timeline.pauseTimer" onPress={() => setRealtime({ timerRunning: false })} variant="secondary" iconLeft="pause" />
+              {realtimeState?.timer_started_at ? (
+                <Button
+                  labelId="jobDetail.timeline.pauseTimer"
+                  onPress={() => setRealtime({ timerRunning: false }, 'jobDetail.live.toast.timerOff')}
+                  variant="secondary"
+                  iconLeft="pause"
+                  size="sm"
+                  disabled={rtBusy}
+                />
+              ) : (
+                <Button
+                  labelId={timerSeconds > 0 ? 'jobDetail.timeline.resumeTimer' : 'jobDetail.timeline.startTimer'}
+                  onPress={() => setRealtime({ timerRunning: true }, 'jobDetail.live.toast.timerOn')}
+                  variant="secondary"
+                  iconLeft="play"
+                  size="sm"
+                  disabled={rtBusy}
+                />
+              )}
             </View>
           )}
           {realtimeState?.is_en_route && (isCustomer || isWorker) && (
@@ -590,6 +683,7 @@ export default function JobDetailScreen({ route, navigation }: Props) {
               onPress={() => navigation.navigate('JobTracking', { jobId })}
               iconLeft="map"
               variant="success"
+              size="sm"
               fullWidth
               style={styles.trackBtn}
             />
@@ -597,7 +691,13 @@ export default function JobDetailScreen({ route, navigation }: Props) {
         </Card>
       )}
 
-      <JobContactSection jobId={jobId} status={job.status} isCustomer={isCustomer} isWorker={isWorker} />
+      <JobContactSection
+        jobId={jobId}
+        status={job.status}
+        isCustomer={isCustomer}
+        isWorker={isWorker}
+        defaultOpen={job.status === 'assigned'}
+      />
 
       <FinalPriceSection
         jobId={jobId}
@@ -614,6 +714,7 @@ export default function JobDetailScreen({ route, navigation }: Props) {
         isCustomer={isCustomer}
         isWorker={isWorker}
         suggestedAmount={agreedFinal ?? acceptedAmount}
+        defaultOpen={afterWork}
         onChanged={load}
       />
 
@@ -632,8 +733,7 @@ export default function JobDetailScreen({ route, navigation }: Props) {
       )}
 
       {showReview && (
-        <Card padding="lg">
-          <BiText id="jobDetail.review.rate" variant="title" tone="strong" style={styles.cardTitle} />
+        <FoldCard titleId="jobDetail.review.rate" defaultOpen={true}>
           <View style={styles.stars}>
             {[1, 2, 3, 4, 5].map((n) => (
               <Pressable
@@ -658,12 +758,11 @@ export default function JobDetailScreen({ route, navigation }: Props) {
             />
           </View>
           <Button labelId="jobDetail.review.submit" onPress={submitReview} iconRight="send" fullWidth />
-        </Card>
+        </FoldCard>
       )}
 
       {showQuality && (
-        <Card padding="lg">
-          <BiText id="account.help.title" variant="title" tone="strong" style={styles.cardTitle} />
+        <FoldCard titleId="account.help.title" defaultOpen={false}>
           <Text style={styles.body}>Post-job photo prompt (stub)</Text>
           <View style={styles.field}>
             <TextInput
@@ -742,60 +841,109 @@ export default function JobDetailScreen({ route, navigation }: Props) {
             />
             <Button labelId="common.submit" onPress={submitClaimIntake} iconRight="send" fullWidth />
           </View>
-        </Card>
+        </FoldCard>
       )}
 
-      <Card padding="lg">
-        <BiText id="jobDetail.messages.title" variant="title" tone="strong" style={styles.cardTitle} />
-        {messages.length === 0 ? (
-          <View style={styles.empty}>
-            <BiText id="jobDetail.messages.empty" variant="body" tone="muted" align="center" />
-          </View>
-        ) : (
-          messages.map((m) => {
-            const isMine = m.sender_id === uid;
-            return (
-              <View key={m.id} style={[styles.bubbleRow, isMine ? styles.bubbleRowMine : styles.bubbleRowTheirs]}>
-                <View style={[styles.bubble, isMine ? styles.bubbleMine : styles.bubbleTheirs]}>
-                  <Text style={[styles.bubbleLabel, isMine ? styles.bubbleLabelMine : styles.bubbleLabelTheirs]}>
-                    {isMine ? t('jobDetail.messages.you').en : t('jobDetail.messages.participant').en}
-                  </Text>
-                  <Text style={[styles.bubbleText, isMine && styles.bubbleTextMine]}>{m.body}</Text>
-                </View>
-              </View>
-            );
-          })
-        )}
-        <View style={styles.composer}>
-          <TextInput
-            value={msgBody}
-            onChangeText={setMsgBody}
-            placeholder={t('jobDetail.messages.placeholder').en}
-            placeholderTextColor={colors.textMuted}
-            style={[styles.input, styles.composerInput]}
-          />
-          <Pressable
-            onPress={sendMessage}
-            accessibilityRole="button"
-            accessibilityLabel={t('jobDetail.messages.send').en}
-            style={styles.composerSend}
-          >
-            <Icon name="send" size={18} color={colors.primaryInk} />
-          </Pressable>
-        </View>
-        {(isCustomer || isWorker) && (
-          <Pressable onPress={reportUser} style={styles.reportRow}>
-            <Icon name="flag" size={14} color={colors.danger} />
-            <BiText id="jobDetail.messages.report" hideUrdu variant="caption" tone="muted" enStyle={{ color: colors.danger }} style={styles.reportText} />
-          </Pressable>
-        )}
-      </Card>
     </ScrollView>
+    {isCustomer || isWorker ? (
+      <Pressable
+        onPress={() => {
+          setMsgOpen(true);
+          setSeenAt(messages.length);
+        }}
+        accessibilityRole="button"
+        accessibilityLabel={t('jobDetail.messages.title').en}
+        style={[styles.fab, { bottom: barH + spacing.lg }]}
+      >
+        <Icon name="message-circle" size={24} color={colors.primaryInk} />
+        {unread > 0 ? (
+          <View style={styles.fabBadge}>
+            <Text style={styles.fabBadgeText}>{unread > 9 ? '9+' : unread}</Text>
+          </View>
+        ) : null}
+      </Pressable>
+    ) : null}
+    <JobMessagesSheet
+      visible={msgOpen}
+      onClose={() => setMsgOpen(false)}
+      messages={messages}
+      uid={uid}
+      body={msgBody}
+      onBodyChange={setMsgBody}
+      onSend={sendMessage}
+      onReport={isCustomer || isWorker ? reportUser : undefined}
+    />
+    {step || rtMsg ? (
+      <View style={[styles.bar, { paddingBottom: insets.bottom + spacing.md }]} onLayout={(e) => setBarH(e.nativeEvent.layout.height)}>
+        {rtMsg ? (
+          rtMsg.id ? <Banner id={rtMsg.id} tone={rtMsg.tone} /> : <Banner text={rtMsg.text ?? ''} tone={rtMsg.tone} />
+        ) : null}
+        {step ? (
+          <Button
+            labelId={step.labelId}
+            onPress={() => runStep(step.action)}
+            variant={step.variant}
+            iconLeft={step.icon}
+            fullWidth
+            size="lg"
+            loading={barBusy || rtBusy}
+            disabled={barBusy || rtBusy}
+          />
+        ) : null}
+        {step?.also ? (
+          <Button
+            labelId={step.also.labelId}
+            onPress={() => runStep(step.also!.action)}
+            variant="secondary"
+            iconLeft={step.also.icon}
+            fullWidth
+            disabled={barBusy || rtBusy}
+          />
+        ) : null}
+      </View>
+    ) : null}
     </KeyboardAvoid>
   );
 }
 
 const styles = StyleSheet.create({
+  fab: {
+    position: 'absolute',
+    right: spacing.lg,
+    width: 56,
+    height: 56,
+    borderRadius: 28,
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: colors.primary,
+    elevation: 6,
+    shadowColor: '#000',
+    shadowOpacity: 0.25,
+    shadowRadius: 6,
+    shadowOffset: { width: 0, height: 3 },
+  },
+  fabBadge: {
+    position: 'absolute',
+    top: -4,
+    right: -4,
+    minWidth: 20,
+    height: 20,
+    borderRadius: 10,
+    paddingHorizontal: 5,
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: colors.danger,
+  },
+  fabBadgeText: { color: '#fff', fontSize: 11, fontWeight: '700' },
+  flex: { flex: 1 },
+  bar: {
+    gap: spacing.sm,
+    paddingHorizontal: spacing.lg,
+    paddingTop: spacing.md,
+    borderTopWidth: 1,
+    borderTopColor: colors.divider,
+    backgroundColor: colors.surface,
+  },
   rejectBox: { gap: spacing.sm, marginTop: spacing.sm },
   root: { padding: spacing.lg, backgroundColor: colors.bg, flexGrow: 1, paddingBottom: 48 },
   offline: { flex: 1, padding: spacing.lg, justifyContent: 'center', backgroundColor: colors.bg },

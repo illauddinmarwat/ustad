@@ -10,7 +10,7 @@ import { typography } from '../theme/typography';
 import { Banner } from './ui/Banner';
 import { BiText } from './ui/BiText';
 import { Button } from './ui/Button';
-import { Card } from './ui/Card';
+import { FoldCard } from './ui/FoldCard';
 import { Icon } from './ui/Icon';
 import { Input } from './ui/Input';
 
@@ -21,13 +21,15 @@ type Props = {
   isWorker: boolean;
   /** Called after the customer saves contact details, so the parent can refresh. */
   onChanged?: () => void;
+  /** Whether the section starts open (it can always be folded). */
+  defaultOpen?: boolean;
 };
 
 /**
  * Phone and address appear only after a worker has accepted (server-enforced by
  * `get_job_contacts` / `customer_set_job_contact`). Before that this renders nothing.
  */
-export function JobContactSection({ jobId, status, isCustomer, isWorker, onChanged }: Props) {
+export function JobContactSection({ jobId, status, isCustomer, isWorker, onChanged, defaultOpen = true }: Props) {
   const [contacts, setContacts] = useState<JobContacts | null>(null);
   const [loaded, setLoaded] = useState(false);
   const [phone, setPhone] = useState('');
@@ -87,8 +89,7 @@ export function JobContactSection({ jobId, status, isCustomer, isWorker, onChang
   const shared = !!contacts?.contact_shared;
 
   return (
-    <Card padding="lg">
-      <BiText id="contact.title" variant="title" tone="strong" style={styles.title} />
+    <FoldCard titleId="contact.title" defaultOpen={defaultOpen}>
 
       {isCustomer && (
         <>
@@ -163,7 +164,7 @@ export function JobContactSection({ jobId, status, isCustomer, isWorker, onChang
       )}
 
       {msg ? msg.id ? <Banner id={msg.id} tone="success" /> : <Banner text={msg.text} tone="warning" /> : null}
-    </Card>
+    </FoldCard>
   );
 }
 

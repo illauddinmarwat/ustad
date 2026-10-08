@@ -19,7 +19,7 @@ import { useEffect, useRef } from 'react';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { useFonts } from 'expo-font';
 import { StatusBar } from 'expo-status-bar';
-import { ActivityIndicator, View } from 'react-native';
+import { ActivityIndicator, Platform, View } from 'react-native';
 import { SafeAreaProvider, useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { Icon } from './src/components/ui/Icon';
@@ -275,13 +275,15 @@ function PushRegistration() {
     };
     const sub = Notifications.addNotificationResponseReceivedListener(open);
     // The tap that launched the app from closed arrives before this listener exists.
-    if (uid) {
-      void Notifications.getLastNotificationResponseAsync().then((last) => {
-        if (last && !handledLaunch.current) {
-          handledLaunch.current = true;
-          open(last);
-        }
-      });
+    if (uid && Platform.OS !== 'web') {
+      Notifications.getLastNotificationResponseAsync()
+        .then((last) => {
+          if (last && !handledLaunch.current) {
+            handledLaunch.current = true;
+            open(last);
+          }
+        })
+        .catch(() => undefined);
     }
     return () => sub.remove();
   }, [navigation, role, uid]);

@@ -10,7 +10,7 @@ import { typography } from '../theme/typography';
 import { Banner } from './ui/Banner';
 import { BiText } from './ui/BiText';
 import { Button } from './ui/Button';
-import { Card } from './ui/Card';
+import { FoldCard } from './ui/FoldCard';
 import { Input } from './ui/Input';
 
 type Props = {
@@ -21,13 +21,15 @@ type Props = {
   /** Suggested amount (e.g. the accepted quote). */
   suggestedAmount?: number | null;
   onChanged?: () => void;
+  /** Whether the section starts open (it can always be folded). */
+  defaultOpen?: boolean;
 };
 
 /**
  * Cash payment: customer marks paid, worker confirms the amount received, job closes.
  * A mismatch, or a worker who never confirms, becomes a dispute handled by the helpline.
  */
-export function JobPaymentSection({ jobId, status, isCustomer, isWorker, suggestedAmount, onChanged }: Props) {
+export function JobPaymentSection({ jobId, status, isCustomer, isWorker, suggestedAmount, onChanged, defaultOpen = true }: Props) {
   const step = paymentStep(status, isCustomer, isWorker);
   const [amount, setAmount] = useState(suggestedAmount != null ? String(suggestedAmount) : '');
   const [helpline, setHelpline] = useState('');
@@ -82,8 +84,7 @@ export function JobPaymentSection({ jobId, status, isCustomer, isWorker, suggest
   const number = dialableHelpline(helpline);
 
   return (
-    <Card padding="lg">
-      <BiText id="payment.title" variant="title" tone="strong" style={styles.title} />
+    <FoldCard titleId="payment.title" defaultOpen={defaultOpen}>
 
       {step === 'customer_pay' && (
         <>
@@ -135,7 +136,7 @@ export function JobPaymentSection({ jobId, status, isCustomer, isWorker, suggest
       )}
 
       {msg ? msg.id ? <Banner id={msg.id} tone={msg.tone ?? 'info'} /> : <Banner text={msg.text} tone="warning" /> : null}
-    </Card>
+    </FoldCard>
   );
 }
 

@@ -10,7 +10,7 @@ import { QuotePricePreview } from './QuotePricePreview';
 import { Banner } from './ui/Banner';
 import { BiText } from './ui/BiText';
 import { Button } from './ui/Button';
-import { Card } from './ui/Card';
+import { FoldCard } from './ui/FoldCard';
 import { Input } from './ui/Input';
 
 type Props = {
@@ -19,6 +19,8 @@ type Props = {
   isCustomer: boolean;
   isWorker: boolean;
   onChanged?: () => void;
+  /** Whether the section starts open (it can always be folded). */
+  defaultOpen?: boolean;
   /** Tells the parent the agreed customer price once confirmed (null before), to pre-fill the payment. */
   onAgreed?: (customerPrice: number | null) => void;
 };
@@ -27,7 +29,7 @@ type Props = {
  * The final price of an estimate job: the Ustad proposes their own price after inspecting the job, the customer
  * accepts or declines, and payment waits for the agreed price. Renders nothing for fixed-price jobs.
  */
-export function FinalPriceSection({ jobId, status, isCustomer, isWorker, onChanged, onAgreed }: Props) {
+export function FinalPriceSection({ jobId, status, isCustomer, isWorker, onChanged, onAgreed, defaultOpen = true }: Props) {
   const [info, setInfo] = useState<FinalPriceInfo | null>(null);
   const [amount, setAmount] = useState('');
   const [busy, setBusy] = useState(false);
@@ -69,8 +71,7 @@ export function FinalPriceSection({ jobId, status, isCustomer, isWorker, onChang
   };
 
   return (
-    <Card padding="lg">
-      <BiText id="final.title" variant="title" tone="strong" style={styles.gap} />
+    <FoldCard titleId="final.title" defaultOpen={defaultOpen}>
 
       {info.status === 'confirmed' ? (
         <Banner text={`Agreed final price: Rs ${info.customerPrice ?? info.amount}`} tone="success" icon="check-circle" />
@@ -106,7 +107,7 @@ export function FinalPriceSection({ jobId, status, isCustomer, isWorker, onChang
       ) : null}
 
       {error ? <Banner text={error} tone="warning" /> : null}
-    </Card>
+    </FoldCard>
   );
 }
 
