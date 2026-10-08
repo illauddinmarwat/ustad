@@ -1,7 +1,7 @@
 import { useFocusEffect } from '@react-navigation/native';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import * as Location from 'expo-location';
-import { useCallback, useRef, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { Image, Linking, StyleSheet, Text, View } from 'react-native';
 import MapView, { Marker, Polyline } from 'react-native-maps';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -13,7 +13,9 @@ import { Card } from '../../components/ui/Card';
 import { Chip } from '../../components/ui/Chip';
 import { EmptyState } from '../../components/ui/EmptyState';
 import { Icon } from '../../components/ui/Icon';
+import { mapsEnabled } from '../../config/env';
 import { useT } from '../../i18n/useT';
+import { ensureForegroundLocation } from '../../lib/locationPermission';
 import { skillNameFor } from '../../lib/skillCategories';
 import { distanceKm, estimateEtaMinutes, type LatLng } from '../../lib/realtime';
 import { supabase } from '../../lib/supabase';
@@ -52,15 +54,30 @@ export default function JobTrackingScreen({ route }: Props) {
   const [myCoords, setMyCoords] = useState<LatLng | null>(null);
   const [locationDenied, setLocationDenied] = useState(false);
 
+  const mounted = useRef(true);
+  const userMovedMap = useRef(false);
+  useEffect(() => {
+    mounted.current = true;
+    return () => {
+      mounted.current = false;
+    };
+  }, []);
+
   const requestMyLocation = useCallback(async () => {
-    const permission = await Location.requestForegroundPermissionsAsync();
-    if (!permission.granted) {
-      setLocationDenied(true);
-      return;
+    try {
+      const granted = await ensureForegroundLocation();
+      if (!mounted.current) return;
+      if (!granted) {
+        setLocationDenied(true);
+        return;
+      }
+      setLocationDenied(false);
+      const position = await Location.getCurrentPositionAsync({ accuracy: Location.Accuracy.Balanced });
+      if (mounted.current) setMyCoords({ lat: position.coords.latitude, lng: position.coords.longitude });
+    } catch {
+      // Location services switched off: treat it like a denial so the prompt card offers a retry.
+      if (mounted.current) setLocationDenied(true);
     }
-    setLocationDenied(false);
-    const position = await Location.getCurrentPositionAsync({ accuracy: Location.Accuracy.Balanced });
-    setMyCoords({ lat: position.coords.latitude, lng: position.coords.longitude });
   }, []);
 
   const loadWorker = useCallback(async () => {
@@ -90,16 +107,21 @@ export default function JobTrackingScreen({ route }: Props) {
   }, [jobId]);
 
   const pollTrack = useCallback(async () => {
-    const { data } = await supabase
-      .from('job_realtime_states')
-      .select('is_en_route,lat,lng')
-      .eq('job_id', jobId)
-      .maybeSingle();
-    setTrack({
-      is_en_route: data?.is_en_route ?? false,
-      lat: data?.lat ?? null,
-      lng: data?.lng ?? null,
-    });
+    try {
+      const { data } = await supabase
+        .from('job_realtime_states')
+        .select('is_en_route,lat,lng')
+        .eq('job_id', jobId)
+        .maybeSingle();
+      if (!mounted.current) return;
+      setTrack({
+        is_en_route: data?.is_en_route ?? false,
+        lat: data?.lat ?? null,
+        lng: data?.lng ?? null,
+      });
+    } catch {
+      // A dropped connection skips this refresh; the next one tries again.
+    }
   }, [jobId]);
 
   useFocusEffect(
@@ -137,15 +159,35 @@ export default function JobTrackingScreen({ route }: Props) {
 
   const skillLabel = skillNameFor(worker?.categories?.[0])?.en ?? null;
 
-  const region = myCoords
+  // Frame both people once when the worker's position first arrives and as it moves, until the person pans the map
+  // themselves. (A controlled `region` prop would snap the map back on every 8 s refresh.)
+  const workerLat = workerCoords?.lat;
+  const workerLng = workerCoords?.lng;
+  const myLat = myCoords?.lat;
+  const myLng = myCoords?.lng;
+  useEffect(() => {
+    if (!mapsEnabled || userMovedMap.current || myLat == null || myLng == null) return;
+    const points = [{ latitude: myLat, longitude: myLng }];
+    if (workerLat != null && workerLng != null) points.push({ latitude: workerLat, longitude: workerLng });
+    if (points.length < 2) return;
+    mapRef.current?.fitToCoordinates(points, {
+      edgePadding: { top: 80, right: 60, bottom: 80, left: 60 },
+      animated: true,
+    });
+  }, [myLat, myLng, workerLat, workerLng]);
+
+  const initialRegion = myCoords
     ? { latitude: myCoords.lat, longitude: myCoords.lng, latitudeDelta: 0.05, longitudeDelta: 0.05 }
-    : workerCoords
-      ? { latitude: workerCoords.lat, longitude: workerCoords.lng, latitudeDelta: 0.05, longitudeDelta: 0.05 }
-      : undefined;
+    : undefined;
 
   return (
     <View style={[styles.root, { paddingBottom: insets.bottom }]}>
-      {locationDenied || !myCoords ? (
+      {!mapsEnabled ? (
+        // No Google Maps key in this build: mounting the map would crash the app, so show the facts instead.
+        <Card padding="lg" style={styles.permissionCard}>
+          <EmptyState icon="map" titleId="tracking.noMap.title" subtitleId="tracking.noMap.subtitle" />
+        </Card>
+      ) : locationDenied || !myCoords ? (
         <Card padding="lg" style={styles.permissionCard}>
           <EmptyState
             icon="map-pin"
@@ -156,7 +198,14 @@ export default function JobTrackingScreen({ route }: Props) {
           />
         </Card>
       ) : (
-        <MapView ref={mapRef} style={styles.map} initialRegion={region} region={region}>
+        <MapView
+          ref={mapRef}
+          style={styles.map}
+          initialRegion={initialRegion}
+          onPanDrag={() => {
+            userMovedMap.current = true;
+          }}
+        >
           <Marker coordinate={{ latitude: myCoords.lat, longitude: myCoords.lng }} title={t('tracking.you').en} pinColor={colors.info} />
           {workerCoords && (
             <Marker

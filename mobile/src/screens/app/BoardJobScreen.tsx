@@ -1,4 +1,5 @@
-import { useRoute, type RouteProp } from '@react-navigation/native';
+import { useNavigation, useRoute, type RouteProp } from '@react-navigation/native';
+import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { useCallback, useEffect, useState } from 'react';
 import { ScrollView, StyleSheet, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -7,7 +8,6 @@ import { JobMediaGallery } from '../../components/JobMediaGallery';
 import { QuoteFields } from '../../components/QuoteFields';
 import { TypicalPriceHint } from '../../components/TypicalPriceHint';
 import { VoiceRecorder } from '../../components/VoiceRecorder';
-import { JobThread } from '../../components/JobThread';
 import { QuotePricePreview } from '../../components/QuotePricePreview';
 import { Banner } from '../../components/ui/Banner';
 import { BiText } from '../../components/ui/BiText';
@@ -36,10 +36,12 @@ import { colors, spacing } from '../../theme/tokens';
 import { typography } from '../../theme/typography';
 
 import type { BoardJob } from './JobBoardScreen';
+import { KeyboardAvoid } from '../../components/ui/KeyboardAvoid';
 
 type BoardJobDetail = BoardJob & { status: string; my_customer_price_pkr?: number | null };
 
 export default function BoardJobScreen() {
+  const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList, 'BoardJob'>>();
   const route = useRoute<RouteProp<RootStackParamList, 'BoardJob'>>();
   const { jobId } = route.params;
   const { session } = useAuth();
@@ -132,6 +134,7 @@ export default function BoardJobScreen() {
   const left = expiresIn(job.expires_at);
 
   return (
+    <KeyboardAvoid>
     <ScrollView contentContainerStyle={[styles.root, { paddingBottom: insets.bottom + spacing.xl }]} keyboardShouldPersistTaps="handled">
       <Card padding="lg">
         <LocalizedText original={job.title} i18n={translation?.title_i18n} style={styles.title} />
@@ -181,12 +184,16 @@ export default function BoardJobScreen() {
       </Card>
 
       {uid ? (
-        <Card padding="lg">
-          <BiText id="board.askTitle" variant="title" tone="strong" style={styles.gap} />
-          <JobThread jobId={job.id} workerId={uid} viewer="worker" />
-        </Card>
+        <Button
+          labelId="chat.messageCustomer"
+          onPress={() => navigation.navigate('JobChat', { jobId: job.id })}
+          iconLeft="message-circle"
+          variant="secondary"
+          fullWidth
+        />
       ) : null}
     </ScrollView>
+    </KeyboardAvoid>
   );
 }
 

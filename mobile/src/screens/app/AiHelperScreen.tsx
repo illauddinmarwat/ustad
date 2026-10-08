@@ -1,10 +1,11 @@
 import { useNavigation, useRoute, type RouteProp } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { useRef, useState } from 'react';
-import { KeyboardAvoidingView, Platform, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
+import { Platform, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { Banner } from '../../components/ui/Banner';
+import { KeyboardAvoid } from '../../components/ui/KeyboardAvoid';
 import { Button } from '../../components/ui/Button';
 import { Chip } from '../../components/ui/Chip';
 import { Icon } from '../../components/ui/Icon';
@@ -163,7 +164,7 @@ export default function AiHelperScreen() {
   const tipId: StringId | null = speech.available ? 'ai.tip.mic' : Platform.OS === 'web' ? null : 'ai.tip.speak';
 
   return (
-    <KeyboardAvoidingView style={styles.root} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
+    <KeyboardAvoid style={styles.root}>
       <ScrollView
         ref={scroller}
         contentContainerStyle={styles.body}
@@ -364,7 +365,7 @@ export default function AiHelperScreen() {
           </>
         ) : null}
       </View>
-    </KeyboardAvoidingView>
+    </KeyboardAvoid>
   );
 }
 

@@ -30,6 +30,8 @@ import { supabase } from '../../lib/supabase';
 import type { RootStackParamList } from '../../navigation/types';
 import { colors, radius, spacing } from '../../theme/tokens';
 import { typography } from '../../theme/typography';
+import { ensureForegroundLocation } from '../../lib/locationPermission';
+import { KeyboardAvoid } from '../../components/ui/KeyboardAvoid';
 
 type Job = {
   id: string;
@@ -199,18 +201,24 @@ export default function JobDetailScreen({ route, navigation }: Props) {
     }
     let cancelled = false;
     (async () => {
-      const permission = await Location.requestForegroundPermissionsAsync();
-      if (!permission.granted || cancelled) return;
-      watchSubRef.current = await Location.watchPositionAsync(
-        { accuracy: Location.Accuracy.Balanced, timeInterval: 10000, distanceInterval: 30 },
-        (position) => {
-          void supabase.rpc('worker_update_job_location', {
-            p_job_id: jobId,
-            p_lat: position.coords.latitude,
-            p_lng: position.coords.longitude,
-          });
-        }
-      );
+      try {
+        if (!(await ensureForegroundLocation()) || cancelled) return;
+        const sub = await Location.watchPositionAsync(
+          { accuracy: Location.Accuracy.Balanced, timeInterval: 10000, distanceInterval: 30 },
+          (position) => {
+            void supabase.rpc('worker_update_job_location', {
+              p_job_id: jobId,
+              p_lat: position.coords.latitude,
+              p_lng: position.coords.longitude,
+            });
+          }
+        );
+        // Stopped while the subscription was starting: drop it now, the cleanup already ran.
+        if (cancelled) sub.remove();
+        else watchSubRef.current = sub;
+      } catch {
+        // Location services off or permission revoked: sharing just does not start.
+      }
     })();
     return () => {
       cancelled = true;
@@ -452,6 +460,7 @@ export default function JobDetailScreen({ route, navigation }: Props) {
   const timerText = formatDuration(timerSeconds);
 
   return (
+    <KeyboardAvoid>
     <ScrollView contentContainerStyle={[styles.root, { paddingTop: insets.top + spacing.md }]} keyboardShouldPersistTaps="handled">
       <Card padding="lg">
         <Text style={styles.title}>{job.title}</Text>
@@ -782,6 +791,7 @@ export default function JobDetailScreen({ route, navigation }: Props) {
         )}
       </Card>
     </ScrollView>
+    </KeyboardAvoid>
   );
 }
 

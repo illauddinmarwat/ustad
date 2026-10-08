@@ -18,6 +18,7 @@ import { supabase } from '../../lib/supabase';
 import type { RootStackParamList } from '../../navigation/types';
 import { colors, radius, spacing } from '../../theme/tokens';
 import { typography, urduTypography } from '../../theme/typography';
+import { KeyboardAvoid } from '../../components/ui/KeyboardAvoid';
 
 type FaqRow = {
   id: string;
@@ -104,6 +105,7 @@ export default function FaqScreen() {
   };
 
   return (
+    <KeyboardAvoid>
     <ScrollView contentContainerStyle={[styles.root, { paddingTop: insets.top + spacing.md }]}>
       <ScreenHeader titleId="faq.title" subtitleId="faq.subtitle" />
 
@@ -199,6 +201,7 @@ export default function FaqScreen() {
         </Card>
       )}
     </ScrollView>
+    </KeyboardAvoid>
   );
 }
 

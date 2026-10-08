@@ -11,13 +11,17 @@ export type NotificationRow = {
 };
 
 export type NotificationTarget =
-  | { screen: 'JobDetail'; params: { jobId: string } }
+  | { screen: 'JobDetail' | 'JobChat' | 'BoardJob'; params: { jobId: string } }
   | { screen: 'Applications' }
   | { screen: 'Account' };
 
 /** Where tapping a notification (in-app or push) should go. */
 export function notificationTarget(kind: string, jobId: string | null | undefined): NotificationTarget {
   if (kind.startsWith('commission_') || kind.startsWith('account_')) return { screen: 'Account' };
+  // A message before the job is assigned lives in the chat screen (which hands over to the job once assigned).
+  if (jobId && kind === 'thread_message') return { screen: 'JobChat', params: { jobId } };
+  // A direct request is answered with a quote, which is done on the board page.
+  if (jobId && kind === 'request_received') return { screen: 'BoardJob', params: { jobId } };
   if (jobId) return { screen: 'JobDetail', params: { jobId } };
   // Listing applications have no job yet; the inbox for them is Applications.
   return { screen: 'Applications' };

@@ -52,8 +52,9 @@ export default function NotificationsScreen() {
       setRows((prev) => prev.map((r) => (r.id === n.id ? { ...r, read_at: new Date().toISOString() } : r)));
     }
     const target = notificationTarget(n.kind, n.job_id);
-    if (target.screen === 'JobDetail') navigation.navigate('JobDetail', target.params);
-    else if (target.screen === 'Account') navigation.navigate('Tabs', { screen: 'Account' });
+    if (target.screen === 'JobDetail' || target.screen === 'JobChat' || target.screen === 'BoardJob') {
+      navigation.navigate(target.screen, target.params);
+    } else if (target.screen === 'Account') navigation.navigate('Tabs', { screen: 'Account' });
     else navigation.navigate('Tabs', { screen: 'Applications' });
   };
 

@@ -31,6 +31,7 @@ import type { VoiceNote } from '../../lib/voiceNote';
 import type { RootStackParamList } from '../../navigation/types';
 import { colors, spacing } from '../../theme/tokens';
 import { typography } from '../../theme/typography';
+import { KeyboardAvoid } from '../../components/ui/KeyboardAvoid';
 
 type Nav = NativeStackNavigationProp<RootStackParamList, 'RequestWorker'>;
 
@@ -126,6 +127,7 @@ export default function RequestWorkerScreen() {
   };
 
   return (
+    <KeyboardAvoid>
     <ScrollView
       contentContainerStyle={[styles.root, { paddingBottom: insets.bottom + spacing.xl }]}
       keyboardShouldPersistTaps="handled"
@@ -191,6 +193,7 @@ export default function RequestWorkerScreen() {
         </View>
       </Card>
     </ScrollView>
+    </KeyboardAvoid>
   );
 }
 

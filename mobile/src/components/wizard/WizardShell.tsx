@@ -7,6 +7,7 @@ import { colors, radius, spacing } from '../../theme/tokens';
 import { typography, urduTypography } from '../../theme/typography';
 import { BiText } from '../ui/BiText';
 import { Button } from '../ui/Button';
+import { KeyboardAvoid } from '../ui/KeyboardAvoid';
 
 export type WizardShellProps = {
   /** 1-based current step. */
@@ -51,7 +52,7 @@ export function WizardShell({
   const insets = useSafeAreaInsets();
   const { t } = useT();
   return (
-    <View style={styles.root}>
+    <KeyboardAvoid style={styles.root}>
       <View style={styles.head}>
         <View style={styles.headRow}>
           <Text style={styles.stepEn}>{`Step ${step} of ${total}`}</Text>
@@ -92,7 +93,7 @@ export function WizardShell({
           style={styles.next}
         />
       </View>
-    </View>
+    </KeyboardAvoid>
   );
 }
 

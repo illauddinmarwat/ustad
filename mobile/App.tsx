@@ -15,7 +15,7 @@ import {
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { DefaultTheme, NavigationContainer, useNavigation, type Theme } from '@react-navigation/native';
 import * as Notifications from 'expo-notifications';
-import { useEffect } from 'react';
+import { useEffect, useRef } from 'react';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { useFonts } from 'expo-font';
 import { StatusBar } from 'expo-status-bar';
@@ -49,6 +49,7 @@ import { configureForegroundNotifications, registerForPush } from './src/lib/not
 import { useGuestQuoteCount } from './src/lib/guestQuotes';
 import { useUnreadNotifications } from './src/lib/useUnreadNotifications';
 import BoardJobScreen from './src/screens/app/BoardJobScreen';
+import JobChatScreen from './src/screens/app/JobChatScreen';
 import JobBoardScreen from './src/screens/app/JobBoardScreen';
 import NotificationsScreen from './src/screens/app/NotificationsScreen';
 import PostedJobScreen from './src/screens/app/PostedJobScreen';
@@ -257,21 +258,33 @@ function PushRegistration() {
   const { session, role } = useAuth();
   const navigation = useNavigation<any>();
   const uid = session?.user.id;
+  const handledLaunch = useRef(false);
 
   useEffect(() => {
     if (uid) void registerForPush();
   }, [uid]);
 
   useEffect(() => {
-    const sub = Notifications.addNotificationResponseReceivedListener((response) => {
+    const open = (response: Notifications.NotificationResponse) => {
       const data = response.notification.request.content.data as { kind?: string; job_id?: string | null } | undefined;
       const target = notificationTarget(data?.kind ?? '', data?.job_id);
-      if (target.screen === 'JobDetail') navigation.navigate('JobDetail', target.params);
-      else if (target.screen === 'Account') navigation.navigate('Tabs', { screen: 'Account' });
+      if (target.screen === 'JobDetail' || target.screen === 'JobChat' || target.screen === 'BoardJob') {
+        navigation.navigate(target.screen, target.params);
+      } else if (target.screen === 'Account') navigation.navigate('Tabs', { screen: 'Account' });
       else navigation.navigate('Tabs', { screen: role === 'worker' ? 'Applications' : 'Requests' });
-    });
+    };
+    const sub = Notifications.addNotificationResponseReceivedListener(open);
+    // The tap that launched the app from closed arrives before this listener exists.
+    if (uid) {
+      void Notifications.getLastNotificationResponseAsync().then((last) => {
+        if (last && !handledLaunch.current) {
+          handledLaunch.current = true;
+          open(last);
+        }
+      });
+    }
     return () => sub.remove();
-  }, [navigation, role]);
+  }, [navigation, role, uid]);
 
   return null;
 }
@@ -320,6 +333,7 @@ function RootNavigator() {
       <Stack.Screen name="PostedJob" component={PostedJobScreen} options={{ title: en('nav.postedJob') }} />
       <Stack.Screen name="JobBoard" component={JobBoardScreen} options={{ title: en('nav.jobBoard') }} />
       <Stack.Screen name="BoardJob" component={BoardJobScreen} options={{ title: en('nav.boardJob') }} />
+      <Stack.Screen name="JobChat" component={JobChatScreen} options={{ title: en('nav.jobChat') }} />
       <Stack.Screen name="Notifications" component={NotificationsScreen} options={{ title: en('nav.notifications') }} />
       <Stack.Screen name="RequestWorker" component={RequestWorkerScreen} options={{ title: en('nav.requestWorker') }} />
       <Stack.Screen name="Faq" component={FaqScreen} options={{ title: en('nav.faq') }} />

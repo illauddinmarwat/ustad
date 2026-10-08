@@ -5,7 +5,6 @@ import { ScrollView, StyleSheet, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { JobMediaGallery } from '../../components/JobMediaGallery';
-import { JobThread } from '../../components/JobThread';
 import { QuoteSortBar } from '../../components/QuoteSortBar';
 import { SignedVoicePlayer } from '../../components/SignedVoicePlayer';
 import { TypicalPriceHint } from '../../components/TypicalPriceHint';
@@ -29,6 +28,7 @@ import { supabase } from '../../lib/supabase';
 import type { RootStackParamList } from '../../navigation/types';
 import { colors, spacing } from '../../theme/tokens';
 import { typography } from '../../theme/typography';
+import { KeyboardAvoid } from '../../components/ui/KeyboardAvoid';
 
 type Nav = NativeStackNavigationProp<RootStackParamList, 'PostedJob'>;
 
@@ -50,7 +50,6 @@ export default function PostedJobScreen() {
   const [token, setToken] = useState<string | null>(route.params.token ?? null);
   const [job, setJob] = useState<PostedJob | null>(null);
   const [quotes, setQuotes] = useState<JobQuote[]>([]);
-  const [openThread, setOpenThread] = useState<string | null>(null);
   const [sort, setSort] = useState<QuoteSort>('price');
   const [msg, setMsg] = useState<{ id?: StringId; text?: string } | null>(null);
   const [loaded, setLoaded] = useState(false);
@@ -130,6 +129,7 @@ export default function PostedJobScreen() {
   const left = job ? expiresIn(job.expires_at) : null;
 
   return (
+    <KeyboardAvoid>
     <ScrollView contentContainerStyle={[styles.root, { paddingBottom: insets.bottom + spacing.xl }]} keyboardShouldPersistTaps="handled">
       {mediaMsg ? <Banner id="media.uploadFailed" tone="warning" /> : null}
       {msg ? msg.id ? <Banner id={msg.id} tone="info" /> : <Banner text={msg.text} tone="warning" /> : null}
@@ -193,16 +193,13 @@ export default function PostedJobScreen() {
                   <Button labelId="posted.accept" onPress={() => accept(q.quote_id)} variant="success" iconLeft="check" size="sm" hideUrdu />
                   <Button
                     labelId="posted.ask"
-                    onPress={() => setOpenThread(openThread === q.worker_id ? null : q.worker_id)}
+                    onPress={() => navigation.navigate('JobChat', { jobId: job.id, workerId: q.worker_id, token: token ?? undefined })}
                     variant="secondary"
                     iconLeft="message-circle"
                     size="sm"
                     hideUrdu
                   />
                 </View>
-                {openThread === q.worker_id && job ? (
-                  <JobThread jobId={job.id} workerId={q.worker_id} token={token} viewer="customer" />
-                ) : null}
               </View>
               ))}
             </>
@@ -223,6 +220,7 @@ export default function PostedJobScreen() {
         fullWidth
       />
     </ScrollView>
+    </KeyboardAvoid>
   );
 }
 

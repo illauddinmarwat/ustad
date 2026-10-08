@@ -6,6 +6,7 @@ import { useAuth } from '../../context/AuthContext';
 import { normalizeCityCode, normalizeRolloutStage, ROLLOUT_STAGE_OPTIONS } from '../../lib/phase5AdminRollout';
 import { supabase } from '../../lib/supabase';
 import { colors, radius, spacing } from '../../theme/tokens';
+import { KeyboardAvoid } from '../../components/ui/KeyboardAvoid';
 
 type ProfileRow = { id: string; display_name: string | null; role: string; status: string };
 type ReportRow = { id: string; reason: string; status: string; reported_user_id: string | null; created_at: string };
@@ -311,6 +312,7 @@ export default function AdminOpsScreen() {
   });
 
   return (
+    <KeyboardAvoid>
     <ScrollView contentContainerStyle={styles.root}>
       <AppCard>
         <SectionHeader title="Admin Ops" subtitle="User status controls and report queue." />
@@ -701,6 +703,7 @@ export default function AdminOpsScreen() {
 
       <PrimaryButton label="Refresh" onPress={() => load().catch(() => setMsg('Failed to refresh'))} />
     </ScrollView>
+    </KeyboardAvoid>
   );
 }
 

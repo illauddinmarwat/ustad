@@ -1,4 +1,4 @@
-import { groupNotifications, timeAgo, type NotificationRow } from './notificationHelpers';
+import { groupNotifications, notificationTarget, timeAgo, type NotificationRow } from './notificationHelpers';
 
 const row = (id: string, job: string | null, at: string): NotificationRow => ({
   id, kind: 'x', job_id: job, title: id, body: id, read_at: null, created_at: at,
@@ -31,5 +31,17 @@ describe('timeAgo', () => {
     expect(timeAgo('2026-10-04T09:00:00Z', 'en', now)).toBe('3 h ago');
     expect(timeAgo('2026-10-02T12:00:00Z', 'en', now)).toBe('2 days ago');
     expect(timeAgo('2026-10-04T11:55:00Z', 'ur', now)).toBe('5 منٹ پہلے');
+  });
+});
+
+describe('notificationTarget', () => {
+  it('opens the chat for a message, the board page for a direct request, and the job otherwise', () => {
+    expect(notificationTarget('thread_message', 'j1')).toEqual({ screen: 'JobChat', params: { jobId: 'j1' } });
+    expect(notificationTarget('request_received', 'j1')).toEqual({ screen: 'BoardJob', params: { jobId: 'j1' } });
+    expect(notificationTarget('job_assigned', 'j1')).toEqual({ screen: 'JobDetail', params: { jobId: 'j1' } });
+  });
+  it('sends account notices to Account and job-less ones to Applications', () => {
+    expect(notificationTarget('commission_overdue', null)).toEqual({ screen: 'Account' });
+    expect(notificationTarget('application_received', null)).toEqual({ screen: 'Applications' });
   });
 });

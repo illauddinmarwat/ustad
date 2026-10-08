@@ -27,6 +27,7 @@ import { buildCheckoutUrl } from '../../lib/webCheckout';
 import type { RootStackParamList } from '../../navigation/types';
 import { colors, radius, spacing } from '../../theme/tokens';
 import { typography, urduTypography } from '../../theme/typography';
+import { KeyboardAvoid } from '../../components/ui/KeyboardAvoid';
 
 type ListingRow = {
   id: string;
@@ -239,6 +240,7 @@ export default function ListingDetailScreen({ route, navigation }: Props) {
   }
 
   return (
+    <KeyboardAvoid>
     <ScrollView contentContainerStyle={[styles.root, { paddingTop: insets.top + spacing.md }]}>
       {photoUrls.length > 0 ? (
         <View style={styles.gallery}>
@@ -410,6 +412,7 @@ export default function ListingDetailScreen({ route, navigation }: Props) {
         </View>
       </Modal>
     </ScrollView>
+    </KeyboardAvoid>
   );
 }
 

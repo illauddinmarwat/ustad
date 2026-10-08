@@ -40,6 +40,8 @@ export type RootStackParamList = {
   PostedJob: { jobId?: string; token?: string; mediaFailed?: boolean };
   JobBoard: undefined;
   BoardJob: { jobId: string };
+  /** Pre-assignment conversation. With no workerId the screen works out who the conversation is with. */
+  JobChat: { jobId: string; workerId?: string; token?: string };
   RequestWorker: { workerId: string; workerName?: string | null; category?: string | null; listingId?: string };
   Faq: undefined;
   FaqChat: undefined;

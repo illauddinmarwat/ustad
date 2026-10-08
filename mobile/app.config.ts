@@ -39,10 +39,9 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
     edgeToEdgeEnabled: true,
     permissions: ['ACCESS_COARSE_LOCATION', 'ACCESS_FINE_LOCATION'],
     config: {
-      // Required by react-native-maps on Android. Live tracking (Phase C)
-      // degrades to no map tiles until this is set; unset is fine for
-      // local/simulator work that doesn't touch the tracking screen.
-      googleMaps: { apiKey: process.env.GOOGLE_MAPS_API_KEY ?? '' },
+      // Required by react-native-maps on Android: creating a MapView without it crashes the app. Without a key the
+      // tracking screen shows a no-map fallback (see extra.mapsEnabled) instead of mounting the map.
+      ...(process.env.GOOGLE_MAPS_API_KEY ? { googleMaps: { apiKey: process.env.GOOGLE_MAPS_API_KEY } } : {}),
     },
   },
   extra: {
@@ -50,6 +49,8 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
     supabaseAnonKey: process.env.EXPO_PUBLIC_SUPABASE_ANON_KEY ?? '',
     /** mirrors EXPO_PUBLIC_USE_FIXTURES for bare workflow */
     useFixtures: process.env.EXPO_PUBLIC_USE_FIXTURES ?? '',
+    /** '1' only when a Google Maps key was baked into this build; the tracking map is off otherwise. */
+    mapsEnabled: process.env.GOOGLE_MAPS_API_KEY ? '1' : '',
     // No AI or vision keys here: everything in `extra` is compiled into the app and readable by anyone.
     // AI calls go through a Supabase Edge Function that holds the keys (docs/wizard-ai-plan.md, Phase 0).
     eas: {

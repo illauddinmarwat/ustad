@@ -28,6 +28,7 @@ import { supabase } from '../../lib/supabase';
 import type { RootStackParamList, TabParamList } from '../../navigation/types';
 import { colors, radius, spacing } from '../../theme/tokens';
 import { typography } from '../../theme/typography';
+import { KeyboardAvoid } from '../../components/ui/KeyboardAvoid';
 
 type NearbyWorker = {
   user_id: string;
@@ -167,7 +168,7 @@ export default function NearbyUstadScreen() {
   };
 
   return (
-    <View style={styles.screen}>
+    <KeyboardAvoid style={styles.screen}>
       <View style={[styles.headerBar, { paddingTop: insets.top + spacing.md }]}>
         <ScreenHeader titleId="nearby.title" inverse />
         <Input
@@ -285,7 +286,7 @@ export default function NearbyUstadScreen() {
         ))}
       </ScrollView>
       <LocationPickerModal visible={mapOpen} initial={null} onConfirm={choosePin} onClose={() => setMapOpen(false)} />
-    </View>
+    </KeyboardAvoid>
   );
 }
 

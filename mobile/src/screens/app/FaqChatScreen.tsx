@@ -1,9 +1,7 @@
 import { useCallback, useRef, useState } from 'react';
 import {
   FlatList,
-  KeyboardAvoidingView,
   Linking,
- 
   Pressable,
   StyleSheet,
   Text,
@@ -14,6 +12,7 @@ import {
 import { BiText } from '../../components/ui/BiText';
 import { Card } from '../../components/ui/Card';
 import { Icon } from '../../components/ui/Icon';
+import { KeyboardAvoid } from '../../components/ui/KeyboardAvoid';
 import { useAuth } from '../../context/AuthContext';
 import { useT } from '../../i18n/useT';
 import { trackEvent } from '../../lib/analytics';
@@ -99,11 +98,7 @@ export default function FaqChatScreen() {
   };
 
   return (
-    <KeyboardAvoidingView
-      style={styles.flex}
-      behavior="padding"
-      keyboardVerticalOffset={80}
-    >
+    <KeyboardAvoid style={styles.flex}>
       <FlatList
         ref={listRef}
         data={messages}
@@ -181,7 +176,7 @@ export default function FaqChatScreen() {
           <Text style={styles.supportLinkUr}>{t('faqChat.emailSupport').ur}</Text>
         </Pressable>
       </View>
-    </KeyboardAvoidingView>
+    </KeyboardAvoid>
   );
 }
 

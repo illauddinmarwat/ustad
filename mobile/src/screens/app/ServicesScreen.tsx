@@ -44,6 +44,7 @@ import { supabase } from '../../lib/supabase';
 import type { RootStackParamList, TabParamList } from '../../navigation/types';
 import { colors, radius, spacing } from '../../theme/tokens';
 import { typography } from '../../theme/typography';
+import { KeyboardAvoid } from '../../components/ui/KeyboardAvoid';
 
 type Listing = {
   id: string;
@@ -378,6 +379,7 @@ export default function ServicesScreen() {
   const discoverySubtitle = buildDiscoverySubtitle(rankingEnabled, boostsEnabled, cityCode, cityAwareDiscovery);
 
   return (
+    <KeyboardAvoid>
     <ScrollView
       contentContainerStyle={[
         styles.root,
@@ -563,6 +565,7 @@ export default function ServicesScreen() {
         </View>
       )}
     </ScrollView>
+    </KeyboardAvoid>
   );
 }
 

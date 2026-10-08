@@ -1,4 +1,5 @@
 import Constants from 'expo-constants';
+import { Platform } from 'react-native';
 
 /**
  * Fixture mode: no Supabase process required — fake session + sample data for UI work.
@@ -21,3 +22,6 @@ export const isSupabaseConfigured = Boolean(
 
 /** Safe to call PostgREST / RPC */
 export const useLiveDatabase = !useFixtureMode && isSupabaseConfigured;
+
+/** The tracking map needs a Google Maps key compiled into the Android build; without one the map must not mount (it crashes the app). iOS uses Apple Maps. */
+export const mapsEnabled = Platform.OS !== 'android' || Constants.expoConfig?.extra?.mapsEnabled === '1';
