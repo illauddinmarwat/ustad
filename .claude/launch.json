@@ -31,6 +31,15 @@
         "set EXPO_PUBLIC_USE_FIXTURES=1&& npm run web --prefix mobile -- --port 8082"
       ],
       "port": 8082
+    },
+    {
+      "name": "ustad-job-demo",
+      "runtimeExecutable": "cmd",
+      "runtimeArgs": [
+        "/c",
+        "set JOB_DEMO=1&& npm run web --prefix mobile -- --port 8083 --clear"
+      ],
+      "port": 8083
     }
   ]
 }

@@ -207,38 +207,33 @@ export default function NearbyUstadScreen() {
           </Pressable>
         ) : null}
 
-        {locState !== 'granted' && (
-          <>
-            <Card padding="lg">
-              <EmptyState
-                icon="map-pin"
-                titleId="nearby.locate.title"
-                subtitleId={locState === 'denied' ? 'nearby.locate.denied' : 'nearby.locate.subtitle'}
-                ctaLabelId="nearby.locate.cta"
-                onCta={requestLocation}
-              />
-            </Card>
-            {locState === 'denied' ? (
-              <Card padding="lg">
-                <BiText id="nearby.pick.title" variant="title" tone="strong" style={styles.pickTitle} />
-                <BiText id="nearby.pick.hint" variant="bodySm" tone="muted" style={styles.pickHint} />
-                <View style={styles.cityRow}>
-                  {cities.items.map((c) => (
-                    <CategoryPill key={c.id} label={c.name} active={false} onPress={() => chooseCity(c.name)} />
-                  ))}
-                </View>
-                <Button
-                  labelId="nearby.pick.map"
-                  onPress={() => setMapOpen(true)}
-                  variant="secondary"
-                  iconLeft="map"
-                  fullWidth
-                  style={styles.emptyCta}
-                />
-                {pickFailed ? <Banner id="nearby.pick.failed" tone="warning" /> : null}
-              </Card>
-            ) : null}
-          </>
+        {locState === 'requesting' && (
+          <View style={styles.loadingRow}>
+            <ActivityIndicator color={colors.primary} />
+          </View>
+        )}
+
+        {locState === 'denied' && (
+          <Card padding="lg">
+            <BiText id="nearby.locate.denied" variant="bodySm" tone="muted" style={styles.pickHint} />
+            <BiText id="nearby.pick.title" variant="title" tone="strong" style={styles.pickTitle} />
+            <BiText id="nearby.pick.hint" variant="bodySm" tone="muted" style={styles.pickHint} />
+            <View style={styles.cityRow}>
+              {cities.items.map((c) => (
+                <CategoryPill key={c.id} label={c.name} active={false} onPress={() => chooseCity(c.name)} />
+              ))}
+            </View>
+            <Button
+              labelId="nearby.pick.map"
+              onPress={() => setMapOpen(true)}
+              variant="secondary"
+              iconLeft="map"
+              fullWidth
+              style={styles.emptyCta}
+            />
+            <Button labelId="nearby.locate.cta" onPress={requestLocation} variant="ghost" iconLeft="map-pin" fullWidth />
+            {pickFailed ? <Banner id="nearby.pick.failed" tone="warning" /> : null}
+          </Card>
         )}
 
         {locState === 'granted' && manualLabel !== null ? (

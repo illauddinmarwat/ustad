@@ -40,5 +40,6 @@ module.exports = {
   useAudioRecorder: () => recorder,
   useAudioRecorderState: () => ({ canRecord: true, isRecording: false, durationMillis: state.recorderMillis, url: null }),
   useAudioPlayer: () => player,
+  createAudioPlayer: () => player,
   useAudioPlayerStatus: () => state.playerStatus,
 };

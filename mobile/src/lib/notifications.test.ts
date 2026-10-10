@@ -41,7 +41,7 @@ describe('badgeValue', () => {
 
 describe('notificationTarget', () => {
   it('opens the job when there is one, otherwise the applications inbox', () => {
-    expect(notificationTarget('job_closed', 'j1')).toEqual({ screen: 'JobDetail', params: { jobId: 'j1' } });
+    expect(notificationTarget('job_closed', 'j1')).toEqual({ screen: 'JobDetail', params: { jobId: 'j1', focus: 'review' } });
     expect(notificationTarget('application_received', null)).toEqual({ screen: 'Applications' });
   });
 });

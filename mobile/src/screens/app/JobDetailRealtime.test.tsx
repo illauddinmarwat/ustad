@@ -32,7 +32,7 @@ jest.mock('../../lib/supabase', () => {
         return () => chain(table);
       },
     });
-  return { supabase: { from: (t: string) => chain(t), rpc: (...a: unknown[]) => mockRpc(...a) } };
+  return { supabase: { from: (t: string) => chain(t), channel: () => ({ on() { return this; }, subscribe() { return this; } }), removeChannel: () => undefined, rpc: (...a: unknown[]) => mockRpc(...a) } };
 });
 
 const baseJob = {
@@ -49,11 +49,11 @@ const baseJob = {
   completion_note: null,
 };
 
-const wrap = () =>
+const wrap = (focus?: string) =>
   render(
     <SafeAreaProvider initialMetrics={{ frame: { x: 0, y: 0, width: 320, height: 640 }, insets: { top: 0, left: 0, right: 0, bottom: 0 } }}>
       {/* eslint-disable-next-line @typescript-eslint/no-explicit-any */}
-      <JobDetailScreen {...({ route: { params: { jobId: 'j1' } }, navigation: { setOptions: jest.fn(), navigate: jest.fn() } } as any)} />
+      <JobDetailScreen {...({ route: { params: { jobId: 'j1', focus } }, navigation: { setOptions: jest.fn(), navigate: jest.fn() } } as any)} />
     </SafeAreaProvider>,
   );
 
@@ -65,8 +65,8 @@ beforeEach(() => {
   mockRt.current = null;
 });
 
-describe('JobDetailScreen: on the way and timer', () => {
-  it('offers start en-route and start timer, and says so under the buttons after a tap', async () => {
+describe('JobDetailScreen: on the way', () => {
+  it('offers start en-route, and says so under the buttons after a tap', async () => {
     const u = wrap();
     fireEvent.press(await u.findByText('Start en-route (ETA ~30m)'));
     await waitFor(() =>
@@ -77,11 +77,11 @@ describe('JobDetailScreen: on the way and timer', () => {
     expect(await u.findByText(/You are on the way/)).toBeTruthy();
   });
 
-  it('shows only the buttons that make sense: arrived while en route, pause while the timer runs', async () => {
+  it('shows only the buttons that make sense: arrived while en route, and no timer', async () => {
     mockRt.current = { is_en_route: true, eta_bucket: '30m', timer_started_at: '2026-10-08T10:00:00Z', timer_accum_seconds: 0 };
     const u = wrap();
     expect(await u.findByText('Arrived / stop en-route')).toBeTruthy();
-    expect(u.getByText('Stop job timer')).toBeTruthy();
+    expect(u.queryByText('Stop job timer')).toBeNull();
     expect(u.queryByText('Start en-route (ETA ~30m)')).toBeNull();
     expect(u.queryByText('Start job timer')).toBeNull();
   });
@@ -89,7 +89,7 @@ describe('JobDetailScreen: on the way and timer', () => {
   it('shows the server error right under the buttons instead of out of sight', async () => {
     mockRpc.mockResolvedValue({ error: { message: 'job must be assigned or completed' } });
     const u = wrap();
-    fireEvent.press(await u.findByText('Start job timer'));
+    fireEvent.press(await u.findByText('Start en-route (ETA ~30m)'));
     expect(await u.findByText('job must be assigned or completed')).toBeTruthy();
   });
 
@@ -100,13 +100,18 @@ describe('JobDetailScreen: on the way and timer', () => {
     expect(u.queryByText('Start en-route (ETA ~30m)')).toBeNull();
   });
 
-  it('keeps Work is done reachable before leaving, and stops a running timer when the work is done', async () => {
+  it('keeps Work is done reachable before leaving, without touching any timer', async () => {
     mockRt.current = { is_en_route: true, eta_bucket: '30m', timer_started_at: '2026-10-08T10:00:00Z', timer_accum_seconds: 0 };
     const u = wrap();
     fireEvent.press(await u.findByText('Work is done'));
     await waitFor(() => expect(mockRpc).toHaveBeenCalledWith('worker_mark_work_done', { p_job_id: 'j1' }));
-    expect(mockRpc).toHaveBeenCalledWith('worker_set_job_realtime_state', {
-      p_job_id: 'j1', p_is_en_route: null, p_eta_minutes: null, p_timer_running: false,
-    });
+    expect(mockRpc).not.toHaveBeenCalledWith('worker_set_job_realtime_state', expect.anything());
+  });
+});
+
+describe('JobDetailScreen: opened from a notification', () => {
+  it('opens the conversation straight away for a message notification', async () => {
+    const u = wrap('messages');
+    expect(await u.findByText('No messages yet.')).toBeTruthy();
   });
 });

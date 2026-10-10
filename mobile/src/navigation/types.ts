@@ -1,3 +1,4 @@
+import type { JobFocus } from '../lib/notificationHelpers';
 import type { NavigatorScreenParams } from '@react-navigation/native';
 
 export type TabParamList = {
@@ -17,7 +18,7 @@ export type RootStackParamList = {
   RegisterCustomer: undefined;
   RegisterProfessional: undefined;
   Tabs: NavigatorScreenParams<TabParamList>;
-  JobDetail: { jobId: string };
+  JobDetail: { jobId: string; focus?: JobFocus };
   JobTracking: { jobId: string };
   ListingDetail: { listingId: string };
   ListingWizard:

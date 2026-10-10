@@ -58,6 +58,6 @@ describe('notificationTarget for Hisab events', () => {
 
   it('still opens the job for job notifications', () => {
     expect(notificationTarget('commission_created', 'j1')).toEqual({ screen: 'Account' });
-    expect(notificationTarget('job_closed', 'j1')).toEqual({ screen: 'JobDetail', params: { jobId: 'j1' } });
+    expect(notificationTarget('job_closed', 'j1')).toEqual({ screen: 'JobDetail', params: { jobId: 'j1', focus: 'review' } });
   });
 });

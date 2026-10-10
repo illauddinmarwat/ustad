@@ -25,7 +25,7 @@ import { JobPaymentSection } from '../../components/JobPaymentSection';
 import { ensureAuthenticated } from '../../lib/authGuards';
 import { fetchPhase4Flags } from '../../lib/phase4Flags';
 import { clampSatisfaction, satisfactionLabel } from '../../lib/quality';
-import { computeTimerSeconds, etaBucketLabel, formatDuration, type JobRealtimeState } from '../../lib/realtime';
+import { etaBucketLabel, type JobRealtimeState } from '../../lib/realtime';
 import { supabase } from '../../lib/supabase';
 import type { RootStackParamList } from '../../navigation/types';
 import { colors, radius, spacing } from '../../theme/tokens';
@@ -35,6 +35,9 @@ import { ensureForegroundLocation } from '../../lib/locationPermission';
 import { JobMessagesSheet } from '../../components/JobMessagesSheet';
 import { FoldCard } from '../../components/ui/FoldCard';
 import { KeyboardAvoid } from '../../components/ui/KeyboardAvoid';
+import { playAlert } from '../../lib/alertSound';
+import { useJobLive, type LiveEvent } from '../../lib/useJobLive';
+import type { JobFocus } from '../../lib/notificationHelpers';
 
 type Job = {
   id: string;
@@ -84,7 +87,7 @@ const STATUS_TONE: Record<string, 'primary' | 'accent' | 'warning' | 'danger' | 
 };
 
 export default function JobDetailScreen({ route, navigation }: Props) {
-  const { jobId } = route.params;
+  const { jobId, focus } = route.params;
   const { role, session, language } = useAuth();
   const { t } = useT();
   const insets = useSafeAreaInsets();
@@ -100,7 +103,6 @@ export default function JobDetailScreen({ route, navigation }: Props) {
   const [phase4RealtimeEnabled, setPhase4RealtimeEnabled] = useState(false);
   const [phase4QualityEnabled, setPhase4QualityEnabled] = useState(false);
   const [realtimeState, setRealtimeState] = useState<JobRealtimeState | null>(null);
-  const [nowTs, setNowTs] = useState(Date.now());
   const [rtBusy, setRtBusy] = useState(false);
   const [barBusy, setBarBusy] = useState(false);
   const [msgOpen, setMsgOpen] = useState(false);
@@ -187,19 +189,67 @@ export default function JobDetailScreen({ route, navigation }: Props) {
     }, [load])
   );
 
-  // Messages arrive while the page is open: refresh them quietly so the floating button can show a count.
+  // Everything the other person does shows up here the moment they do it, with a beep and a short note.
+  // Our own taps are skipped (selfActAt) because the button already answered them.
+  const selfActAt = useRef(0);
+  const markSelf = () => {
+    selfActAt.current = Date.now();
+  };
+  const [liveNote, setLiveNote] = useState<StringId | null>(null);
+  const onLiveEvent = useCallback(
+    (e: LiveEvent) => {
+      if (e.table === 'messages') {
+        if (e.type !== 'INSERT' || e.row.sender_id === uid) return;
+        setLiveNote('jobDetail.live.note.message');
+      } else {
+        if (Date.now() - selfActAt.current < 4000) return;
+        if (e.table === 'job_realtime_states' && !('is_en_route' in e.row)) return;
+        setLiveNote('jobDetail.live.note.updated');
+      }
+      playAlert();
+    },
+    [uid]
+  );
+  const loadQuiet = useCallback(() => {
+    load().catch(() => undefined);
+  }, [load]);
+  useJobLive(jobId, useLiveDatabase && !!uid, loadQuiet, onLiveEvent);
+
   useEffect(() => {
-    if (!useLiveDatabase || !uid) return;
-    const timer = setInterval(async () => {
-      const { data } = await supabase
-        .from('messages')
-        .select('id,body,sender_id,created_at')
-        .eq('job_id', jobId)
-        .order('created_at', { ascending: true });
-      if (data) setMessages(data as MessageRow[]);
-    }, 10000);
-    return () => clearInterval(timer);
-  }, [jobId, uid]);
+    if (!liveNote) return;
+    const timer = setTimeout(() => setLiveNote(null), 6000);
+    return () => clearTimeout(timer);
+  }, [liveNote]);
+
+  // A notification tap names the part of the page it is about: open it, scroll to it, and flash it briefly.
+  const scrollRef = useRef<ScrollView>(null);
+  const sectionY = useRef<Partial<Record<JobFocus, number>>>({});
+  const handledFocus = useRef<string | null>(null);
+  const [flash, setFlash] = useState<JobFocus | null>(null);
+  const sec = (key: JobFocus) => ({
+    onLayout: (e: { nativeEvent: { layout: { y: number } } }) => {
+      sectionY.current[key] = e.nativeEvent.layout.y;
+    },
+    style: flash === key ? styles.flash : undefined,
+  });
+  const jobReady = !!job;
+  useEffect(() => {
+    if (!focus || !jobReady || handledFocus.current === focus) return;
+    handledFocus.current = focus;
+    if (focus === 'messages') {
+      setMsgOpen(true);
+      return;
+    }
+    setFlash(focus);
+    const go = setTimeout(() => {
+      scrollRef.current?.scrollTo({ y: Math.max(0, (sectionY.current[focus] ?? 0) - spacing.md), animated: true });
+    }, 350);
+    const off = setTimeout(() => setFlash(null), 3500);
+    return () => {
+      clearTimeout(go);
+      clearTimeout(off);
+    };
+  }, [focus, jobReady]);
 
   // A success note under the pinned button fades after a few seconds; errors stay until the next try.
   useEffect(() => {
@@ -211,12 +261,6 @@ export default function JobDetailScreen({ route, navigation }: Props) {
   useEffect(() => {
     navigation.setOptions({ title: job?.title ?? t('nav.job').en });
   }, [navigation, job?.title, t]);
-
-  useEffect(() => {
-    if (!phase4RealtimeEnabled || !realtimeState?.timer_started_at) return;
-    const id = setInterval(() => setNowTs(Date.now()), 1000);
-    return () => clearInterval(id);
-  }, [phase4RealtimeEnabled, realtimeState?.timer_started_at]);
 
   // Being the job's Ustad does not depend on which screen they are looking at.
   const isWorkerOwner = !!uid && job?.worker_id === uid;
@@ -284,6 +328,7 @@ export default function JobDetailScreen({ route, navigation }: Props) {
   };
 
   const confirmBooking = async () => {
+    markSelf();
     const { error } = await supabase.rpc('customer_confirm_booking', { job_id: jobId });
     if (error) bannerText(error.message, 'danger');
     else {
@@ -298,6 +343,7 @@ export default function JobDetailScreen({ route, navigation }: Props) {
 
   // The Ustad says the work is done; the customer then confirms (or says it is not finished).
   const workDone = async () => {
+    markSelf();
     const { error } = await supabase.rpc('worker_mark_work_done', { p_job_id: jobId });
     if (error) bannerText(error.message, 'danger');
     else {
@@ -308,6 +354,7 @@ export default function JobDetailScreen({ route, navigation }: Props) {
   };
 
   const notFinished = async () => {
+    markSelf();
     const { error } = await supabase.rpc('customer_reject_completion', { p_job_id: jobId, p_note: rejectNote.trim() || null });
     if (error) bannerText(error.message, 'danger');
     else {
@@ -319,6 +366,7 @@ export default function JobDetailScreen({ route, navigation }: Props) {
   };
 
   const markComplete = async () => {
+    markSelf();
     const { error } = await supabase.rpc('mark_job_completed', { job_id: jobId });
     if (error) bannerText(error.message, 'danger');
     else {
@@ -329,13 +377,14 @@ export default function JobDetailScreen({ route, navigation }: Props) {
     }
   };
 
-  // The on-the-way and timer buttons: one request at a time, with the result shown right under the buttons
+  // The on-the-way buttons: one request at a time, with the result shown right under the buttons
   // (the page banner is off-screen by the time someone is down here).
   const setRealtime = async (
-    args: { enRoute?: boolean; etaMinutes?: number; timerRunning?: boolean },
+    args: { enRoute?: boolean; etaMinutes?: number },
     done: StringId
   ) => {
     if (rtBusy) return;
+    markSelf();
     setRtBusy(true);
     setRtMsg(null);
     try {
@@ -343,7 +392,7 @@ export default function JobDetailScreen({ route, navigation }: Props) {
         p_job_id: jobId,
         p_is_en_route: args.enRoute ?? null,
         p_eta_minutes: args.etaMinutes ?? null,
-        p_timer_running: args.timerRunning ?? null,
+        p_timer_running: null,
       });
       if (error) {
         setRtMsg({ text: error.message, tone: 'danger' });
@@ -354,11 +403,6 @@ export default function JobDetailScreen({ route, navigation }: Props) {
         await trackEvent(args.enRoute ? 'phase4_worker_en_route_started' : 'phase4_worker_en_route_stopped', uid ?? null, {
           job_id: jobId,
           eta_minutes: args.etaMinutes ?? null,
-        });
-      }
-      if (typeof args.timerRunning === 'boolean') {
-        await trackEvent(args.timerRunning ? 'phase4_job_timer_started' : 'phase4_job_timer_stopped', uid ?? null, {
-          job_id: jobId,
         });
       }
       await load();
@@ -377,15 +421,6 @@ export default function JobDetailScreen({ route, navigation }: Props) {
       if (action === 'confirmBooking') await confirmBooking();
       else if (action === 'markComplete') await markComplete();
       else if (action === 'workDone') {
-        // Finishing the work also ends a timer that is still running, so the time stops where the work did.
-        if (realtimeState?.timer_started_at) {
-          await supabase.rpc('worker_set_job_realtime_state', {
-            p_job_id: jobId,
-            p_is_en_route: null,
-            p_eta_minutes: null,
-            p_timer_running: false,
-          });
-        }
         await workDone();
       }
       else if (action === 'startEnRoute') await setRealtime({ enRoute: true, etaMinutes: 30 }, 'jobDetail.live.toast.enRoute');
@@ -526,8 +561,6 @@ export default function JobDetailScreen({ route, navigation }: Props) {
   const showReview = isCustomer && afterWork && job.worker_id && !existingReview;
   const showQuality = phase4QualityEnabled && afterWork && (isCustomer || isWorker);
   const realtimeVisible = phase4RealtimeEnabled && (isCustomer || isWorker) && !!job.worker_id;
-  const timerSeconds = computeTimerSeconds(realtimeState, nowTs);
-  const timerText = formatDuration(timerSeconds);
   // Messages from the other person since the one opened the conversation (or since they last wrote).
   const lastMineIdx = messages.reduce((acc, m, idx) => (m.sender_id === uid ? idx : acc), -1);
   const unread = msgOpen
@@ -550,11 +583,18 @@ export default function JobDetailScreen({ route, navigation }: Props) {
   return (
     <KeyboardAvoid>
     <ScrollView
+      ref={scrollRef}
       style={styles.flex}
       contentContainerStyle={[styles.root, { paddingTop: insets.top + spacing.md }]}
       keyboardShouldPersistTaps="handled"
     >
+      {liveNote ? <Banner id={liveNote} tone="info" icon="bell" /> : null}
+
       <Card padding="lg">
+        <View style={styles.liveRow}>
+          <View style={styles.liveDot} />
+          <BiText id="jobDetail.live.badge" hideUrdu variant="caption" tone="muted" />
+        </View>
         <Text style={styles.title}>{job.title}</Text>
         <View style={styles.tagsRow}>
           <Chip label={job.category} tone="neutral" icon="tag" />
@@ -577,6 +617,7 @@ export default function JobDetailScreen({ route, navigation }: Props) {
         {job.description ? <Text style={styles.body}>{job.description}</Text> : null}
       </Card>
 
+      <View {...sec('action')}>
       {isCustomer || isWorker ? (
         <JobStatusTimeline
           viewer={isCustomer ? 'customer' : 'worker'}
@@ -628,18 +669,14 @@ export default function JobDetailScreen({ route, navigation }: Props) {
         </Card>
       )}
 
-      {showComplete && isCustomer && !workerSaidDone && (
-        <Card padding="lg">
-          <BiText id="jobDetail.complete.hint" variant="bodySm" tone="muted" />
-        </Card>
-      )}
-
       {showComplete && isWorker && workerSaidDone && <Banner id="jobDetail.workDone.waiting" tone="info" icon="clock" />}
       {showComplete && isWorker && !workerSaidDone && job.completion_note ? (
         <Banner text={`${t('jobDetail.workDone.rejected').en} ${job.completion_note}`} tone="warning" />
       ) : null}
+      </View>
 
       {realtimeVisible && (
+        <View {...sec('tracking')}>
         <Card padding="md">
           <BiText id="jobDetail.live.title" variant="label" tone="strong" style={styles.cardTitle} />
           <View style={styles.statusRow}>
@@ -649,34 +686,6 @@ export default function JobDetailScreen({ route, navigation }: Props) {
               {realtimeState?.is_en_route ? etaBucketLabel(realtimeState.eta_bucket) : t('jobDetail.timeline.notEnRoute').en}
             </Text>
           </View>
-          <View style={styles.statusRow}>
-            <Icon name="clock" size={14} color={colors.primary} />
-            <BiText id="jobDetail.timeline.jobTimer" hideUrdu variant="caption" tone="muted" style={styles.statusLabel} />
-            <Text style={styles.statusValue}>{timerText}</Text>
-          </View>
-          {isWorker && job.status === 'assigned' && (
-            <View style={styles.realtimeCtas}>
-              {realtimeState?.timer_started_at ? (
-                <Button
-                  labelId="jobDetail.timeline.pauseTimer"
-                  onPress={() => setRealtime({ timerRunning: false }, 'jobDetail.live.toast.timerOff')}
-                  variant="secondary"
-                  iconLeft="pause"
-                  size="sm"
-                  disabled={rtBusy}
-                />
-              ) : (
-                <Button
-                  labelId={timerSeconds > 0 ? 'jobDetail.timeline.resumeTimer' : 'jobDetail.timeline.startTimer'}
-                  onPress={() => setRealtime({ timerRunning: true }, 'jobDetail.live.toast.timerOn')}
-                  variant="secondary"
-                  iconLeft="play"
-                  size="sm"
-                  disabled={rtBusy}
-                />
-              )}
-            </View>
-          )}
           {realtimeState?.is_en_route && (isCustomer || isWorker) && (
             <Button
               labelId="tracking.cta"
@@ -689,35 +698,49 @@ export default function JobDetailScreen({ route, navigation }: Props) {
             />
           )}
         </Card>
+        </View>
       )}
 
-      <JobContactSection
-        jobId={jobId}
-        status={job.status}
-        isCustomer={isCustomer}
-        isWorker={isWorker}
-        defaultOpen={job.status === 'assigned'}
-      />
+      <View {...sec('contact')}>
+        <JobContactSection
+          jobId={jobId}
+          status={job.status}
+          isCustomer={isCustomer}
+          isWorker={isWorker}
+          defaultOpen={job.status === 'assigned' || focus === 'contact'}
+        />
+      </View>
 
-      <FinalPriceSection
-        jobId={jobId}
-        status={job.status}
-        isCustomer={isCustomer}
-        isWorker={isWorker}
-        onChanged={load}
-        onAgreed={setAgreedFinal}
-      />
+      <View {...sec('price')}>
+        <FinalPriceSection
+          jobId={jobId}
+          status={job.status}
+          isCustomer={isCustomer}
+          isWorker={isWorker}
+          onChanged={() => {
+            markSelf();
+            return load();
+          }}
+          onAgreed={setAgreedFinal}
+        />
+      </View>
 
-      <JobPaymentSection
-        jobId={jobId}
-        status={job.status}
-        isCustomer={isCustomer}
-        isWorker={isWorker}
-        suggestedAmount={agreedFinal ?? acceptedAmount}
-        defaultOpen={afterWork}
-        onChanged={load}
-      />
+      <View {...sec('payment')}>
+        <JobPaymentSection
+          jobId={jobId}
+          status={job.status}
+          isCustomer={isCustomer}
+          isWorker={isWorker}
+          suggestedAmount={agreedFinal ?? acceptedAmount}
+          defaultOpen={afterWork || focus === 'payment'}
+          onChanged={() => {
+            markSelf();
+            return load();
+          }}
+        />
+      </View>
 
+      <View {...sec('review')}>
       {existingReview && isCustomer && (
         <Card padding="lg">
           <BiText id="jobDetail.review.title" variant="title" tone="strong" style={styles.cardTitle} />
@@ -760,6 +783,7 @@ export default function JobDetailScreen({ route, navigation }: Props) {
           <Button labelId="jobDetail.review.submit" onPress={submitReview} iconRight="send" fullWidth />
         </FoldCard>
       )}
+      </View>
 
       {showQuality && (
         <FoldCard titleId="account.help.title" defaultOpen={false}>
@@ -874,7 +898,7 @@ export default function JobDetailScreen({ route, navigation }: Props) {
       onReport={isCustomer || isWorker ? reportUser : undefined}
     />
     {step || rtMsg ? (
-      <View style={[styles.bar, { paddingBottom: insets.bottom + spacing.md }]} onLayout={(e) => setBarH(e.nativeEvent.layout.height)}>
+      <View style={[styles.bar, flash === 'action' && styles.barFlash, { paddingBottom: insets.bottom + spacing.md }]} onLayout={(e) => setBarH(e.nativeEvent.layout.height)}>
         {rtMsg ? (
           rtMsg.id ? <Banner id={rtMsg.id} tone={rtMsg.tone} /> : <Banner text={rtMsg.text ?? ''} tone={rtMsg.tone} />
         ) : null}
@@ -936,6 +960,10 @@ const styles = StyleSheet.create({
   },
   fabBadgeText: { color: '#fff', fontSize: 11, fontWeight: '700' },
   flex: { flex: 1 },
+  flash: { borderRadius: radius.lg, borderWidth: 2, borderColor: colors.primary, backgroundColor: colors.primarySoft },
+  barFlash: { borderTopWidth: 3, borderTopColor: colors.primary },
+  liveRow: { flexDirection: 'row', alignItems: 'center', gap: 6, marginBottom: spacing.xs },
+  liveDot: { width: 8, height: 8, borderRadius: 4, backgroundColor: colors.primary },
   bar: {
     gap: spacing.sm,
     paddingHorizontal: spacing.lg,
@@ -975,7 +1003,6 @@ const styles = StyleSheet.create({
   statusRow: { flexDirection: 'row', alignItems: 'center', marginTop: spacing.sm, gap: 6 },
   statusLabel: { marginRight: 4 },
   statusValue: { ...typography.bodySm, color: colors.textStrong },
-  realtimeCtas: { gap: spacing.sm, marginTop: spacing.md },
   trackBtn: { marginTop: spacing.md },
   meta: { ...typography.caption, color: colors.textMuted, marginTop: 4 },
   rowBetween: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingVertical: 4 },

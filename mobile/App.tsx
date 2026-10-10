@@ -47,6 +47,7 @@ import NearbyUstadScreen from './src/screens/app/NearbyUstadScreen';
 import { badgeValue, notificationTarget } from './src/lib/notificationHelpers';
 import { configureForegroundNotifications, registerForPush } from './src/lib/notifications';
 import { useGuestQuoteCount } from './src/lib/guestQuotes';
+import { useAutoShareLocation } from './src/lib/useAutoShareLocation';
 import { useUnreadNotifications } from './src/lib/useUnreadNotifications';
 import BoardJobScreen from './src/screens/app/BoardJobScreen';
 import JobChatScreen from './src/screens/app/JobChatScreen';
@@ -259,6 +260,7 @@ function PushRegistration() {
   const navigation = useNavigation<any>();
   const uid = session?.user.id;
   const handledLaunch = useRef(false);
+  useAutoShareLocation(uid, role);
 
   useEffect(() => {
     if (uid) void registerForPush();
@@ -318,7 +320,7 @@ function RootNavigator() {
         component={RegisterProfessionalScreen}
         options={{ title: en('nav.registerProfessional') }}
       />
-      <Stack.Screen name="JobDetail" component={JobDetailScreen} options={{ title: en('nav.job') }} />
+      <Stack.Screen name="JobDetail" component={JobDetailScreen} getId={({ params }) => params.jobId} options={{ title: en('nav.job') }} />
       <Stack.Screen
         name="JobTracking"
         component={JobTrackingScreen}

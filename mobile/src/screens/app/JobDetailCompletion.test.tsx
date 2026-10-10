@@ -31,7 +31,7 @@ jest.mock('../../lib/supabase', () => {
         return () => chain(table);
       },
     });
-  return { supabase: { from: (t: string) => chain(t), rpc: (...a: unknown[]) => mockRpc(...a) } };
+  return { supabase: { from: (t: string) => chain(t), channel: () => ({ on() { return this; }, subscribe() { return this; } }), removeChannel: () => undefined, rpc: (...a: unknown[]) => mockRpc(...a) } };
 });
 
 const baseJob = {

@@ -83,7 +83,7 @@ export function buildTimeline(i: TimelineInput, viewer: Viewer): Timeline {
     ['quoted', rank >= 1 || i.hasQuote],
     ['accepted', rank >= 2],
   ];
-  if (i.showEnRoute) all.push(['enRoute', rank >= 3 || i.enRoute]);
+  if (i.showEnRoute) all.push(['enRoute', rank >= 3 || i.enRoute || i.workerDone]);
   all.push(['done', rank >= 3 || i.workerDone], ['confirmed', rank >= 3], ['paid', rank >= 4], ['closed', i.status === 'closed']);
 
   // A cancelled job shows only what really happened: it was posted.

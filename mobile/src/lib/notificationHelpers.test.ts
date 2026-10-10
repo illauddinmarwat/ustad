@@ -38,7 +38,13 @@ describe('notificationTarget', () => {
   it('opens the chat for a message, the board page for a direct request, and the job otherwise', () => {
     expect(notificationTarget('thread_message', 'j1')).toEqual({ screen: 'JobChat', params: { jobId: 'j1' } });
     expect(notificationTarget('request_received', 'j1')).toEqual({ screen: 'BoardJob', params: { jobId: 'j1' } });
-    expect(notificationTarget('job_assigned', 'j1')).toEqual({ screen: 'JobDetail', params: { jobId: 'j1' } });
+    expect(notificationTarget('some_new_kind', 'j1')).toEqual({ screen: 'JobDetail', params: { jobId: 'j1' } });
+  });
+  it('points a job notification at the part of the job page it is about', () => {
+    expect(notificationTarget('job_message', 'j1')).toEqual({ screen: 'JobDetail', params: { jobId: 'j1', focus: 'messages' } });
+    expect(notificationTarget('work_done', 'j1')).toEqual({ screen: 'JobDetail', params: { jobId: 'j1', focus: 'action' } });
+    expect(notificationTarget('payment_marked', 'j1')).toEqual({ screen: 'JobDetail', params: { jobId: 'j1', focus: 'payment' } });
+    expect(notificationTarget('worker_en_route', 'j1')).toEqual({ screen: 'JobDetail', params: { jobId: 'j1', focus: 'tracking' } });
   });
   it('sends account notices to Account and job-less ones to Applications', () => {
     expect(notificationTarget('commission_overdue', null)).toEqual({ screen: 'Account' });

@@ -43,13 +43,6 @@ export async function registerForPush(): Promise<string | null> {
   try {
     if (Platform.OS === 'web' || !Device.isDevice) return null;
 
-    if (Platform.OS === 'android') {
-      await Notifications.setNotificationChannelAsync('default', {
-        name: 'default',
-        importance: Notifications.AndroidImportance.DEFAULT,
-      });
-    }
-
     const existing = await Notifications.getPermissionsAsync();
     let status = existing.status;
     if (status !== 'granted') {
@@ -84,12 +77,24 @@ export async function unregisterPush(): Promise<void> {
   }
 }
 
+/** The Android channel the server's pushes target (see _push_to_user): loud, vibrating, shown on the lock screen. */
+export const ALERT_CHANNEL = 'ustad-alerts';
+
 export function configureForegroundNotifications(): void {
+  if (Platform.OS === 'android') {
+    void Notifications.setNotificationChannelAsync(ALERT_CHANNEL, {
+      name: 'Job updates and messages',
+      importance: Notifications.AndroidImportance.HIGH,
+      sound: 'default',
+      vibrationPattern: [0, 250, 150, 250],
+      lockscreenVisibility: Notifications.AndroidNotificationVisibility.PUBLIC,
+    }).catch(() => undefined);
+  }
   Notifications.setNotificationHandler({
     handleNotification: async () => ({
       shouldShowBanner: true,
       shouldShowList: true,
-      shouldPlaySound: false,
+      shouldPlaySound: true,
       shouldSetBadge: false,
     }),
   });

@@ -10,10 +10,34 @@ export type NotificationRow = {
   created_at: string;
 };
 
+/** The part of the job page a notification is about: the page scrolls there and opens it. */
+export type JobFocus = 'messages' | 'action' | 'tracking' | 'contact' | 'price' | 'payment' | 'review';
+
 export type NotificationTarget =
-  | { screen: 'JobDetail' | 'JobChat' | 'BoardJob'; params: { jobId: string } }
+  | { screen: 'JobDetail'; params: { jobId: string; focus?: JobFocus } }
+  | { screen: 'JobChat' | 'BoardJob'; params: { jobId: string } }
   | { screen: 'Applications' }
   | { screen: 'Account' };
+
+const FOCUS_BY_KIND: Record<string, JobFocus> = {
+  job_message: 'messages',
+  work_done: 'action',
+  work_confirmed: 'action',
+  completion_rejected: 'action',
+  auto_completed: 'payment',
+  worker_en_route: 'tracking',
+  worker_arrived: 'action',
+  job_assigned: 'contact',
+  job_assigned_worker: 'contact',
+  contact_shared: 'contact',
+  final_price_proposed: 'price',
+  final_price_confirmed: 'price',
+  final_price_declined: 'price',
+  job_completed: 'payment',
+  payment_marked: 'payment',
+  job_closed: 'review',
+  job_disputed: 'payment',
+};
 
 /** Where tapping a notification (in-app or push) should go. */
 export function notificationTarget(kind: string, jobId: string | null | undefined): NotificationTarget {
@@ -22,7 +46,10 @@ export function notificationTarget(kind: string, jobId: string | null | undefine
   if (jobId && kind === 'thread_message') return { screen: 'JobChat', params: { jobId } };
   // A direct request is answered with a quote, which is done on the board page.
   if (jobId && kind === 'request_received') return { screen: 'BoardJob', params: { jobId } };
-  if (jobId) return { screen: 'JobDetail', params: { jobId } };
+  if (jobId) {
+    const focus = FOCUS_BY_KIND[kind];
+    return { screen: 'JobDetail', params: focus ? { jobId, focus } : { jobId } };
+  }
   // Listing applications have no job yet; the inbox for them is Applications.
   return { screen: 'Applications' };
 }

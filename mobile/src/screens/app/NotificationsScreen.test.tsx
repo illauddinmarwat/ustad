@@ -53,7 +53,7 @@ describe('NotificationsScreen', () => {
     const { findByText } = wrap();
     fireEvent.press(await findByText('Job closed'));
     await waitFor(() => expect(mockMarkRead).toHaveBeenCalledWith(['n1']));
-    expect(mockNavigate).toHaveBeenCalledWith('JobDetail', { jobId: 'j1' });
+    expect(mockNavigate).toHaveBeenCalledWith('JobDetail', { jobId: 'j1', focus: 'review' });
   });
 
   it('sends job-less notifications to the Applications tab and can mark all read', async () => {
