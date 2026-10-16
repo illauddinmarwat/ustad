@@ -39,6 +39,8 @@ type AuthCtx = {
   signIn: (email: string, password: string) => Promise<void>;
   signUp: (email: string, password: string) => Promise<SignUpResult>;
   signOut: () => Promise<void>;
+  /** Permanently deletes the signed-in account (server wipes personal data), then signs out. */
+  deleteAccount: () => Promise<void>;
   /** Re-reads the approval status; resolves to the latest value (null when it could not be read). */
   refreshApproval: () => Promise<WorkerApprovalStatus | null>;
   /** True while an Ustad registration is being submitted, so the approval lock does not flash over the form. */
@@ -207,6 +209,15 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     if (signOutError) throw signOutError;
   };
 
+  const deleteAccount = async () => {
+    if (!useFixtureMode) {
+      const { error } = await supabase.rpc('delete_my_account');
+      if (error) throw new Error(error.message);
+    }
+    // The server already removed the sessions; this clears the local state and storage.
+    await signOut().catch(() => undefined);
+  };
+
   const setRole = async (r: 'customer' | 'worker') => {
     if (useFixtureMode) {
       setPreviewRole(r);
@@ -242,6 +253,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       signIn,
       signUp,
       signOut,
+      deleteAccount,
       refreshApproval,
       registering,
       setRegistering,

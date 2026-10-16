@@ -6,7 +6,7 @@ begin;
 
 create extension if not exists pgtap with schema extensions;
 
-select plan(153);
+select plan(151);
 
 -- ─── Test helpers (created inside this transaction, rolled back at the end) ───
 --   _t_id(name)      stable uuids for the seeded people
@@ -154,7 +154,7 @@ select is ((select customer_id from public.jobs where id = current_setting ('t.c
 select is ((select posted_by_anon from public.jobs where id = current_setting ('t.cj')::uuid), false, 'and is not a guest post');
 
 select public._t_as ('w1');
-select throws_ok($$select * from public.post_job('Fix tap', 'The kitchen tap is leaking badly', 'plumber')$$, 'only active customers can post jobs', 'a worker cannot post a job');
+-- A worker can post a job in the customer view since the dual-flow work (see phase30_active_view_seeded).
 select public._t_as ('adm');
 select throws_ok($$select * from public.post_job('Fix tap', 'The kitchen tap is leaking badly', 'plumber')$$, 'only active customers can post jobs', 'an admin cannot post a job');
 reset role;
@@ -315,7 +315,7 @@ select throws_ok($$select public.customer_accept_quote(current_setting('t.q3')::
 select throws_ok($$select public.claim_guest_job(current_setting('t.gt')::uuid)$$, '42501', null, 'a guest cannot claim a job');
 reset role;
 select public._t_as ('w1');
-select throws_ok($$select public.claim_guest_job(current_setting('t.gt')::uuid)$$, 'only customers can claim a job', 'a worker cannot claim a guest job');
+-- Likewise a worker can claim a guest job; the claim itself is covered below by a customer.
 select public._t_as ('c1');
 select throws_ok($$select public.customer_accept_quote(current_setting('t.q3')::uuid)$$, 'not job owner', 'a customer cannot accept quotes on a job that is still the guest''s');
 select public._t_as ('c2');

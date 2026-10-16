@@ -4,7 +4,7 @@ name: Deploy admin panel
 # Runs on a push to master that changes web-admin, or by hand from the Actions tab.
 # Needs these repository secrets (Settings -> Secrets and variables -> Actions):
 #   FTP_SERVER, FTP_USERNAME, FTP_PASSWORD, FTP_DIR,
-#   NEXT_PUBLIC_SUPABASE_URL, NEXT_PUBLIC_SUPABASE_ANON_KEY
+#   NEXT_PUBLIC_SUPABASE_URL, NEXT_PUBLIC_SUPABASE_ANON_KEY, NEXT_PUBLIC_SUPPORT_EMAIL (optional, shown on /privacy)
 
 on:
   workflow_dispatch:
@@ -42,6 +42,7 @@ jobs:
         env:
           NEXT_PUBLIC_SUPABASE_URL: ${{ secrets.NEXT_PUBLIC_SUPABASE_URL }}
           NEXT_PUBLIC_SUPABASE_ANON_KEY: ${{ secrets.NEXT_PUBLIC_SUPABASE_ANON_KEY }}
+          NEXT_PUBLIC_SUPPORT_EMAIL: ${{ secrets.NEXT_PUBLIC_SUPPORT_EMAIL }}
 
       # Uploads only what changed since the last deploy and removes files it uploaded earlier
       # that are no longer in the build. It does not touch other files in the folder, but it will

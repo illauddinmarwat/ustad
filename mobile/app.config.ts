@@ -14,14 +14,19 @@ if (existsSync(envPath)) {
   }
 }
 
+// FCM: Android push needs Firebase's google-services.json. EAS builds get it from the GOOGLE_SERVICES_JSON file
+// secret (`eas secret:create --type file`); locally, drop the file next to this config. Without it the build
+// still works but push notifications do not arrive on Android.
+const googleServicesFile = process.env.GOOGLE_SERVICES_JSON ?? (existsSync(join(__dirname, 'google-services.json')) ? './google-services.json' : undefined);
+
 export default ({ config }: ConfigContext): ExpoConfig => ({
   ...config,
-  name: 'ustad',
+  name: 'Ustad',
   slug: 'ustad',
   version: '1.0.0',
   orientation: 'portrait',
   icon: './assets/icon.png',
-  userInterfaceStyle: 'automatic',
+  userInterfaceStyle: 'light',
   newArchEnabled: true,
   splash: {
     image: './assets/splash-icon.png',
@@ -36,6 +41,15 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
       backgroundColor: '#F4FBF6',
     },
     package: 'com.ustad.mobile',
+    versionCode: 1,
+    allowBackup: false,
+    ...(googleServicesFile ? { googleServicesFile } : {}),
+    // Pulled in by library defaults but never used: Play flags them and users distrust them.
+    blockedPermissions: [
+      'android.permission.SYSTEM_ALERT_WINDOW',
+      'android.permission.READ_EXTERNAL_STORAGE',
+      'android.permission.WRITE_EXTERNAL_STORAGE',
+    ],
     edgeToEdgeEnabled: true,
     permissions: ['ACCESS_COARSE_LOCATION', 'ACCESS_FINE_LOCATION'],
     config: {

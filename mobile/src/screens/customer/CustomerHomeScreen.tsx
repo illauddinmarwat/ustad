@@ -172,7 +172,7 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     paddingHorizontal: 3,
   },
-  badgeText: { color: '#fff', fontSize: 10, fontWeight: '700' },
+  badgeText: { color: colors.textInverse, fontSize: 10, fontWeight: '700' },
   body: { padding: spacing.lg },
   guestRow: { flexDirection: 'row', gap: spacing.sm, marginBottom: spacing.lg },
   gap: { marginBottom: spacing.lg },

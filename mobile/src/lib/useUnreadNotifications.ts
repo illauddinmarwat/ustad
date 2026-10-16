@@ -2,6 +2,7 @@ import { useCallback, useEffect, useState } from 'react';
 import { AppState } from 'react-native';
 
 import { fetchUnreadCount } from './notifications';
+import { activeOnly } from './activeOnly';
 
 const POLL_MS = 30_000;
 
@@ -22,7 +23,7 @@ export function useUnreadNotifications(userId: string | null | undefined): { cou
   useEffect(() => {
     refresh();
     if (!userId) return;
-    const timer = setInterval(refresh, POLL_MS);
+    const timer = setInterval(activeOnly(refresh), POLL_MS);
     const sub = AppState.addEventListener('change', (s) => {
       if (s === 'active') refresh();
     });

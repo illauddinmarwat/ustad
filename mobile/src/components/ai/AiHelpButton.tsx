@@ -49,6 +49,6 @@ const styles = StyleSheet.create({
   },
   body: { flex: 1 },
   title: { ...typography.button, color: colors.primaryInk },
-  sub: { ...typography.caption, color: '#D1FAE5' },
-  subUr: { ...urduTypography.caption, color: '#D1FAE5', textAlign: 'right' },
+  sub: { ...typography.caption, color: colors.primaryTint },
+  subUr: { ...urduTypography.caption, color: colors.primaryTint, textAlign: 'right' },
 });

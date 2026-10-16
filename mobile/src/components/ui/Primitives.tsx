@@ -71,9 +71,9 @@ export function StatusPill({ label }: { label: string }) {
     ? colors.dangerSoft
     : colors.primarySoft;
   const ink = lower.includes('complete')
-    ? '#065F46'
+    ? colors.accentDeep
     : lower.includes('cancel')
-    ? '#991B1B'
+    ? colors.dangerDeep
     : colors.primaryDeep;
   return (
     <View style={[styles.pill, { backgroundColor: bg }]}>

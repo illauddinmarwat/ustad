@@ -22,9 +22,9 @@ export type BannerProps = {
 
 const TONE: Record<Tone, { bg: string; border: string; ink: string; icon: IconProps['name'] }> = {
   info: { bg: colors.primarySoft, border: colors.primarySoft, ink: colors.primaryDeep, icon: 'info' },
-  success: { bg: colors.accentSoft, border: colors.accentSoft, ink: '#065F46', icon: 'check-circle' },
-  warning: { bg: colors.warningSoft, border: colors.warningSoft, ink: '#92400E', icon: 'alert-triangle' },
-  danger: { bg: colors.dangerSoft, border: colors.dangerSoft, ink: '#991B1B', icon: 'alert-octagon' },
+  success: { bg: colors.accentSoft, border: colors.accentSoft, ink: colors.accentDeep, icon: 'check-circle' },
+  warning: { bg: colors.warningSoft, border: colors.warningSoft, ink: colors.warningDeep, icon: 'alert-triangle' },
+  danger: { bg: colors.dangerSoft, border: colors.dangerSoft, ink: colors.dangerDeep, icon: 'alert-octagon' },
 };
 
 export function Banner({ id, text, tone = 'info', icon }: BannerProps) {

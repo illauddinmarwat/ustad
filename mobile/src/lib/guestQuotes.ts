@@ -3,6 +3,7 @@ import { AppState } from 'react-native';
 
 import { listGuestJobs } from './jobPosting';
 import { supabase } from './supabase';
+import { activeOnly } from './activeOnly';
 
 const POLL_MS = 60_000;
 const MAX_JOBS = 5;
@@ -47,7 +48,7 @@ export function useGuestQuoteCount(enabled: boolean): { total: number; byToken: 
   useEffect(() => {
     refresh();
     if (!enabled) return;
-    const timer = setInterval(refresh, POLL_MS);
+    const timer = setInterval(activeOnly(refresh), POLL_MS);
     const sub = AppState.addEventListener('change', (s) => {
       if (s === 'active') refresh();
     });

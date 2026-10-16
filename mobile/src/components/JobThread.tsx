@@ -16,6 +16,7 @@ import { Banner } from './ui/Banner';
 import { BiText } from './ui/BiText';
 import { Button } from './ui/Button';
 import { Input } from './ui/Input';
+import { activeOnly } from '../lib/activeOnly';
 
 type Props = {
   jobId: string;
@@ -59,7 +60,7 @@ export function JobThread({ jobId, workerId, token, viewer }: Props) {
 
   useEffect(() => {
     void load();
-    const timer = setInterval(() => void load(), POLL_MS);
+    const timer = setInterval(activeOnly(() => void load()), POLL_MS);
     return () => clearInterval(timer);
   }, [load]);
 

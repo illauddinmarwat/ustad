@@ -1,4 +1,4 @@
-import { NavigationContainer } from '@react-navigation/native';
+import { NavigationContainer, NavigationIndependentTree } from '@react-navigation/native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { useState } from 'react';
 import { Pressable, ScrollView, Text, View } from 'react-native';
@@ -22,13 +22,15 @@ function Phone({ who, label, focus }: { who: 'customer' | 'worker'; label: strin
       <View style={{ width: 390, height: 780, borderWidth: 6, borderColor: '#222', borderRadius: 28, overflow: 'hidden', backgroundColor: '#fff' }}>
         <SafeAreaProvider initialMetrics={{ frame: { x: 0, y: 0, width: 378, height: 768 }, insets: { top: 0, left: 0, right: 0, bottom: 0 } }}>
           <DemoWho who={who}>
-            <NavigationContainer independent>
+            <NavigationIndependentTree>
+            <NavigationContainer>
               <Stack.Navigator>
                 <Stack.Screen name="JobDetail" component={JobDetailScreen as never} initialParams={{ jobId: 'demo', focus }} options={{ title: 'Job' }} />
                 <Stack.Screen name="JobTracking" component={Stub} />
                 <Stack.Screen name="Auth" component={Stub} />
               </Stack.Navigator>
             </NavigationContainer>
+            </NavigationIndependentTree>
           </DemoWho>
         </SafeAreaProvider>
       </View>

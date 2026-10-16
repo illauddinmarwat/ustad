@@ -22,6 +22,9 @@ import { StatusBar } from 'expo-status-bar';
 import { ActivityIndicator, Platform, View } from 'react-native';
 import { SafeAreaProvider, useSafeAreaInsets } from 'react-native-safe-area-context';
 
+import { ErrorBoundary } from './src/components/ErrorBoundary';
+import { installCrashReporting } from './src/lib/crashReporter';
+import { OfflineBanner } from './src/components/OfflineBanner';
 import { Icon } from './src/components/ui/Icon';
 import { PendingApprovalGate } from './src/components/PendingApprovalGate';
 import { TabBarLabel } from './src/components/ui/TabBarLabel';
@@ -65,6 +68,8 @@ import RegisterCustomerScreen from './src/screens/auth/RegisterCustomerScreen';
 import RegisterProfessionalScreen from './src/screens/auth/RegisterProfessionalScreen';
 import { colors } from './src/theme/tokens';
 import { fontFamilies } from './src/theme/typography';
+
+installCrashReporting();
 
 const Stack = createNativeStackNavigator<RootStackParamList>();
 const Tab = createBottomTabNavigator<TabParamList>();
@@ -370,12 +375,15 @@ export default function App() {
 
   return (
     <SafeAreaProvider>
-      <AuthProvider>
-        <NavigationContainer theme={navTheme}>
-          <StatusBar style="dark" />
-          <RootNavigator />
-        </NavigationContainer>
-      </AuthProvider>
+      <ErrorBoundary>
+        <AuthProvider>
+          <NavigationContainer theme={navTheme}>
+            <StatusBar style="dark" />
+            <RootNavigator />
+            <OfflineBanner />
+          </NavigationContainer>
+        </AuthProvider>
+      </ErrorBoundary>
     </SafeAreaProvider>
   );
 }

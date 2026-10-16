@@ -210,7 +210,7 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     paddingHorizontal: 3,
   },
-  bellBadgeText: { color: '#fff', fontSize: 10, fontWeight: '700' },
+  bellBadgeText: { color: colors.textInverse, fontSize: 10, fontWeight: '700' },
   brandMark: {
     width: 64,
     height: 64,

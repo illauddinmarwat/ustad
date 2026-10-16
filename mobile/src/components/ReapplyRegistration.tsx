@@ -5,7 +5,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { ProfessionalRegistrationForm, type ReapplyData } from '../screens/auth/RegisterProfessionalScreen';
 import { useT } from '../i18n/useT';
 import { supabase } from '../lib/supabase';
-import { colors, spacing } from '../theme/tokens';
+import { colors, radius, spacing } from '../theme/tokens';
 import { typography } from '../theme/typography';
 
 import { Banner } from './ui/Banner';
@@ -102,7 +102,7 @@ const styles = StyleSheet.create({
     backgroundColor: colors.surface,
     paddingHorizontal: spacing.md,
     paddingVertical: 6,
-    borderRadius: 999,
+    borderRadius: radius.pill,
   },
   backText: { color: colors.textStrong },
 });

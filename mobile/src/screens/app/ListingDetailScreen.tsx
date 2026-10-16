@@ -7,6 +7,7 @@ import { LocalizedText } from '../../components/LocalizedText';
 import { Avatar } from '../../components/ui/Avatar';
 import { Banner } from '../../components/ui/Banner';
 import { BiText } from '../../components/ui/BiText';
+import { ReportSheet } from '../../components/ReportSheet';
 import { Button } from '../../components/ui/Button';
 import { Card } from '../../components/ui/Card';
 import { Chip } from '../../components/ui/Chip';
@@ -54,6 +55,7 @@ export default function ListingDetailScreen({ route, navigation }: Props) {
   const { t } = useT();
   const insets = useSafeAreaInsets();
   const [listing, setListing] = useState<ListingRow | null>(null);
+  const [reportOpen, setReportOpen] = useState(false);
   const [tpl, setTpl] = useState<TemplateRow | null>(null);
   const [workerName, setWorkerName] = useState<string | null>(null);
   const [applyOpen, setApplyOpen] = useState(false);
@@ -411,6 +413,16 @@ export default function ListingDetailScreen({ route, navigation }: Props) {
           </View>
         </View>
       </Modal>
+      {session?.user.id && listing.worker_id !== session.user.id ? (
+        <>
+          <Button labelId="report.row" onPress={() => setReportOpen(true)} variant="ghost" size="sm" iconLeft="flag" hideUrdu />
+          <ReportSheet
+            visible={reportOpen}
+            target={{ reporterId: session.user.id, reportedUserId: listing.worker_id, jobId: null }}
+            onClose={() => setReportOpen(false)}
+          />
+        </>
+      ) : null}
     </ScrollView>
     </KeyboardAvoid>
   );

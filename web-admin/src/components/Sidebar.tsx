@@ -13,6 +13,8 @@ const NAV = [
   { href: '/payments', label: 'Payments', icon: '💳' },
   { href: '/hisab', label: 'Hisab (dues)', icon: '📒' },
   { href: '/moderation', label: 'Posted jobs', icon: '🛡️' },
+  { href: '/abuse-reports', label: 'User reports', icon: '🚩' },
+  { href: '/app-errors', label: 'App errors', icon: '🐞' },
   { href: '/commissions', label: 'Commissions', icon: '📊' },
   { href: '/ai-usage', label: 'AI Usage', icon: '✨' },
   { href: '/reports', label: 'Reports', icon: '📈' },

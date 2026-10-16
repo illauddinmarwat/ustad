@@ -6,12 +6,14 @@ import { KeyboardAvoidingView, ScrollView, StyleSheet, Text, View } from 'react-
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { BiText } from '../../components/ui/BiText';
+import { Banner } from '../../components/ui/Banner';
 import { Button } from '../../components/ui/Button';
 import { Card } from '../../components/ui/Card';
 import { Icon } from '../../components/ui/Icon';
 import { Input } from '../../components/ui/Input';
 import { useAuth } from '../../context/AuthContext';
 import { en } from '../../i18n/useT';
+import { requestPasswordReset, resetPasswordWithCode } from '../../lib/passwordReset';
 import type { RootStackParamList } from '../../navigation/types';
 import { colors, radius, spacing } from '../../theme/tokens';
 import { fontFamilies, typography, urduTypography } from '../../theme/typography';
@@ -24,6 +26,45 @@ export default function AuthScreen() {
   const [password, setPassword] = useState('');
   const [busy, setBusy] = useState<'signin' | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [forgot, setForgot] = useState<'off' | 'email' | 'code'>('off');
+  const [code, setCode] = useState('');
+  const [newPassword, setNewPassword] = useState('');
+  const [resetBusy, setResetBusy] = useState(false);
+
+  const sendCode = async () => {
+    if (!email.trim()) {
+      setError(en('auth.forgot.needEmail'));
+      return;
+    }
+    setResetBusy(true);
+    setError(null);
+    try {
+      await requestPasswordReset(email);
+      setForgot('code');
+    } catch (e) {
+      setError(e instanceof Error ? e.message : en('auth.error.failed'));
+    } finally {
+      setResetBusy(false);
+    }
+  };
+
+  const saveNewPassword = async () => {
+    if (!code.trim() || newPassword.length < 6) {
+      setError(en('auth.forgot.needFields'));
+      return;
+    }
+    setResetBusy(true);
+    setError(null);
+    try {
+      // Verifying the code signs the user in, so the auth state takes over from here.
+      await resetPasswordWithCode(email, code, newPassword);
+      popIfPossible();
+    } catch (e) {
+      setError(e instanceof Error ? e.message : en('auth.error.failed'));
+    } finally {
+      setResetBusy(false);
+    }
+  };
 
   const popIfPossible = () => {
     if (navigation.canGoBack()) navigation.goBack();
@@ -72,7 +113,7 @@ export default function AuthScreen() {
         </LinearGradient>
 
         <Card padding="lg">
-          <BiText id="auth.welcome" variant="title" tone="strong" style={styles.formTitle} />
+          <BiText id={forgot === 'off' ? 'auth.welcome' : 'auth.forgot.title'} variant="title" tone="strong" style={styles.formTitle} />
           <Input
             value={email}
             onChangeText={setEmail}
@@ -83,6 +124,8 @@ export default function AuthScreen() {
             iconLeft="mail"
             textContentType="emailAddress"
           />
+          {forgot === 'off' && (
+            <>
           <Input
             value={password}
             onChangeText={setPassword}
@@ -92,12 +135,39 @@ export default function AuthScreen() {
             iconLeft="lock"
             textContentType="password"
           />
+            </>
+          )}
+          {forgot === 'code' && (
+            <>
+              <Banner id="auth.forgot.codeSent" tone="info" />
+              <Input
+                value={code}
+                onChangeText={setCode}
+                autoCapitalize="none"
+                keyboardType="number-pad"
+                placeholderId="auth.forgot.code"
+                labelId="auth.forgot.code"
+                iconLeft="key"
+              />
+              <Input
+                value={newPassword}
+                onChangeText={setNewPassword}
+                secureTextEntry
+                placeholderId="auth.forgot.newPassword"
+                labelId="auth.forgot.newPassword"
+                iconLeft="lock"
+                textContentType="newPassword"
+              />
+            </>
+          )}
           {!!error && (
             <View style={styles.errorBox}>
               <Icon name="alert-triangle" size={16} color={colors.danger} />
               <Text style={styles.errorText}>{error}</Text>
             </View>
           )}
+          {forgot === 'off' ? (
+            <>
           <Button
             labelId="common.signIn"
             onPress={() => run('signin')}
@@ -117,6 +187,40 @@ export default function AuthScreen() {
             fullWidth
             style={styles.secondaryBtn}
           />
+              <Button
+                labelId="auth.forgot.link"
+                onPress={() => {
+                  setError(null);
+                  setForgot('email');
+                }}
+                disabled={busy !== null}
+                variant="ghost"
+                fullWidth
+                style={styles.secondaryBtn}
+              />
+            </>
+          ) : (
+            <>
+              <Button
+                labelId={forgot === 'email' ? 'auth.forgot.sendCode' : 'auth.forgot.save'}
+                onPress={forgot === 'email' ? sendCode : saveNewPassword}
+                loading={resetBusy}
+                size="lg"
+                fullWidth
+                style={styles.primaryBtn}
+              />
+              <Button
+                labelId="auth.forgot.back"
+                onPress={() => {
+                  setError(null);
+                  setForgot('off');
+                }}
+                variant="ghost"
+                fullWidth
+                style={styles.secondaryBtn}
+              />
+            </>
+          )}
         </Card>
       </ScrollView>
     </KeyboardAvoidingView>

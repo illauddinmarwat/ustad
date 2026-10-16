@@ -11,6 +11,7 @@ import { Banner } from './ui/Banner';
 import { Button } from './ui/Button';
 import { ReapplyRegistration } from './ReapplyRegistration';
 import { Icon } from './ui/Icon';
+import { activeOnly } from '../lib/activeOnly';
 
 const POLL_MS = 30_000;
 
@@ -28,7 +29,7 @@ export function PendingApprovalGate() {
 
   useEffect(() => {
     if (!locked) return;
-    const timer = setInterval(() => void refreshApproval(), POLL_MS);
+    const timer = setInterval(activeOnly(() => void refreshApproval()), POLL_MS);
     const sub = AppState.addEventListener('change', (state) => {
       if (state === 'active') void refreshApproval();
     });

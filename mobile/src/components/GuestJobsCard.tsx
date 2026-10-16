@@ -8,7 +8,7 @@ import { useT } from '../i18n/useT';
 import { useGuestQuoteCount } from '../lib/guestQuotes';
 import { listGuestJobs, type GuestJobRef } from '../lib/jobPosting';
 import type { RootStackParamList } from '../navigation/types';
-import { colors, spacing } from '../theme/tokens';
+import { colors, radius, spacing } from '../theme/tokens';
 import { typography } from '../theme/typography';
 
 import { BiText } from './ui/BiText';
@@ -77,6 +77,6 @@ const styles = StyleSheet.create({
   },
   text: { ...typography.body, color: colors.textStrong, flex: 1, marginRight: spacing.sm },
   nudge: { gap: spacing.sm, backgroundColor: colors.primarySoft, borderRadius: 12, padding: spacing.md, marginBottom: spacing.sm },
-  waiting: { backgroundColor: colors.accent, borderRadius: 999, paddingHorizontal: spacing.sm, paddingVertical: 2, marginRight: spacing.sm },
-  waitingText: { ...typography.caption, color: '#fff', fontWeight: '700' },
+  waiting: { backgroundColor: colors.accent, borderRadius: radius.pill, paddingHorizontal: spacing.sm, paddingVertical: 2, marginRight: spacing.sm },
+  waitingText: { ...typography.caption, color: colors.textInverse, fontWeight: '700' },
 });

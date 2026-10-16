@@ -41,7 +41,7 @@ export function JobStatusTimeline({ viewer, ...input }: Props) {
             <View style={styles.rail}>
               <View style={[styles.dot, step.done && styles.dotDone, step.current && styles.dotCurrent]}>
                 {step.current ? <Pulse /> : null}
-                {step.done ? <Icon name="check" size={12} color="#fff" /> : null}
+                {step.done ? <Icon name="check" size={12} color={colors.textInverse} /> : null}
               </View>
               {i < timeline.steps.length - 1 || timeline.terminal ? (
                 <View style={[styles.line, step.done && styles.lineDone]} />
@@ -59,7 +59,7 @@ export function JobStatusTimeline({ viewer, ...input }: Props) {
           <View style={styles.row}>
             <View style={styles.rail}>
               <View style={[styles.dot, styles.dotBad]}>
-                <Icon name="x" size={12} color="#fff" />
+                <Icon name="x" size={12} color={colors.textInverse} />
               </View>
             </View>
             <BiText

@@ -48,7 +48,7 @@ export default function WorkerHomeScreen() {
             accessibilityLabel="Notifications"
             hitSlop={10}
           >
-            <Icon name="bell" size={22} color="#fff" />
+            <Icon name="bell" size={22} color={colors.textInverse} />
             {unread > 0 ? (
               <View style={styles.badge}>
                 <Text style={styles.badgeText}>{Math.min(unread, 99)}</Text>
@@ -131,7 +131,7 @@ const styles = StyleSheet.create({
   scroll: { backgroundColor: colors.bg },
   root: { flexGrow: 1 },
   flex: { flex: 1 },
-  inverse: { color: '#fff' },
+  inverse: { color: colors.textInverse },
   band: {
     backgroundColor: colors.primaryDeep,
     paddingHorizontal: spacing.lg,
@@ -159,7 +159,7 @@ const styles = StyleSheet.create({
     padding: spacing.md,
     alignItems: 'center',
   },
-  kpiValue: { color: '#fff', fontSize: 22, fontWeight: '700' },
+  kpiValue: { color: colors.textInverse, fontSize: 22, fontWeight: '700' },
   kpiLabel: { color: 'rgba(255,255,255,0.8)', textAlign: 'center', marginTop: 2 },
   badge: {
     position: 'absolute',
@@ -173,7 +173,7 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     paddingHorizontal: 3,
   },
-  badgeText: { color: '#fff', fontSize: 10, fontWeight: '700' },
+  badgeText: { color: colors.textInverse, fontSize: 10, fontWeight: '700' },
   body: { padding: spacing.lg },
   gap: { marginBottom: spacing.md },
   item: { flexDirection: 'row', alignItems: 'center', gap: spacing.md },
@@ -186,5 +186,5 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   pill: { backgroundColor: colors.primary, borderRadius: radius.pill, paddingHorizontal: 8, paddingVertical: 2 },
-  pillText: { color: '#fff', fontSize: 12, fontWeight: '700' },
+  pillText: { color: colors.textInverse, fontSize: 12, fontWeight: '700' },
 });

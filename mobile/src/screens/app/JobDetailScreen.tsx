@@ -33,6 +33,7 @@ import { typography } from '../../theme/typography';
 import { nextStep, type NextAction } from '../../lib/jobNextStep';
 import { ensureForegroundLocation } from '../../lib/locationPermission';
 import { JobMessagesSheet } from '../../components/JobMessagesSheet';
+import { ReportSheet } from '../../components/ReportSheet';
 import { FoldCard } from '../../components/ui/FoldCard';
 import { KeyboardAvoid } from '../../components/ui/KeyboardAvoid';
 import { playAlert } from '../../lib/alertSound';
@@ -509,19 +510,12 @@ export default function JobDetailScreen({ route, navigation }: Props) {
     }
   };
 
-  const reportUser = async () => {
-    if (!job) return;
-    const target = job.customer_id === uid ? job.worker_id : job.customer_id;
-    if (!uid || !target) return;
-    const { error } = await supabase.from('abuse_reports').insert({
-      reporter_id: uid,
-      reported_user_id: target,
-      job_id: jobId,
-      reason: 'Inappropriate behavior report from job thread',
-    });
-    if (error) bannerText(error.message, 'danger');
-    else bannerId('jobDetail.messages.reportToast', 'success');
-  };
+  const [reportOpen, setReportOpen] = useState(false);
+  const reportTarget = (() => {
+    if (!job || !uid) return null;
+    const other = job.customer_id === uid ? job.worker_id : job.customer_id;
+    return { reporterId: uid, reportedUserId: other ?? null, jobId };
+  })();
 
   if (!useLiveDatabase) {
     return (
@@ -895,8 +889,16 @@ export default function JobDetailScreen({ route, navigation }: Props) {
       body={msgBody}
       onBodyChange={setMsgBody}
       onSend={sendMessage}
-      onReport={isCustomer || isWorker ? reportUser : undefined}
+      onReport={
+        isCustomer || isWorker
+          ? () => {
+              setMsgOpen(false);
+              setReportOpen(true);
+            }
+          : undefined
+      }
     />
+    <ReportSheet visible={reportOpen} target={reportTarget} onClose={() => setReportOpen(false)} />
     {step || rtMsg ? (
       <View style={[styles.bar, flash === 'action' && styles.barFlash, { paddingBottom: insets.bottom + spacing.md }]} onLayout={(e) => setBarH(e.nativeEvent.layout.height)}>
         {rtMsg ? (
@@ -936,7 +938,7 @@ const styles = StyleSheet.create({
     right: spacing.lg,
     width: 56,
     height: 56,
-    borderRadius: 28,
+    borderRadius: radius.xl,
     alignItems: 'center',
     justifyContent: 'center',
     backgroundColor: colors.primary,
@@ -952,13 +954,13 @@ const styles = StyleSheet.create({
     right: -4,
     minWidth: 20,
     height: 20,
-    borderRadius: 10,
+    borderRadius: radius.sm,
     paddingHorizontal: 5,
     alignItems: 'center',
     justifyContent: 'center',
     backgroundColor: colors.danger,
   },
-  fabBadgeText: { color: '#fff', fontSize: 11, fontWeight: '700' },
+  fabBadgeText: { color: colors.textInverse, fontSize: 11, fontWeight: '700' },
   flex: { flex: 1 },
   flash: { borderRadius: radius.lg, borderWidth: 2, borderColor: colors.primary, backgroundColor: colors.primarySoft },
   barFlash: { borderTopWidth: 3, borderTopColor: colors.primary },

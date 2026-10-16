@@ -198,15 +198,15 @@ export function ImageEditorModal({ visible, uri, aspect = null, onDone, onCancel
       <View style={[styles.root, { paddingTop: insets.top + spacing.sm, paddingBottom: insets.bottom + spacing.md }]}>
         <View style={styles.header}>
           <Pressable onPress={onCancel} hitSlop={10} accessibilityRole="button" accessibilityLabel={t('editor.cancel').en}>
-            <Icon name="x" size={24} color="#fff" />
+            <Icon name="x" size={24} color={colors.textInverse} />
           </Pressable>
           <Text style={[typography.title, styles.title]}>{t('editor.title').en}</Text>
           <View style={styles.rotateRow}>
             <Pressable onPress={() => rotate(-90)} hitSlop={10} accessibilityRole="button" accessibilityLabel={t('editor.rotateLeft').en}>
-              <Icon name="rotate-ccw" size={22} color="#fff" />
+              <Icon name="rotate-ccw" size={22} color={colors.textInverse} />
             </Pressable>
             <Pressable onPress={() => rotate(90)} hitSlop={10} accessibilityRole="button" accessibilityLabel={t('editor.rotateRight').en}>
-              <Icon name="rotate-cw" size={22} color="#fff" />
+              <Icon name="rotate-cw" size={22} color={colors.textInverse} />
             </Pressable>
           </View>
         </View>
@@ -226,11 +226,11 @@ export function ImageEditorModal({ visible, uri, aspect = null, onDone, onCancel
               <View {...handles.br.panHandlers} style={[styles.handle, { left: rect.x + rect.w - HANDLE / 2, top: rect.y + rect.h - HANDLE / 2 }]} />
             </>
           ) : (
-            <ActivityIndicator color="#fff" />
+            <ActivityIndicator color={colors.textInverse} />
           )}
           {busy ? (
             <View style={styles.busy}>
-              <ActivityIndicator color="#fff" />
+              <ActivityIndicator color={colors.textInverse} />
             </View>
           ) : null}
         </View>
@@ -245,11 +245,11 @@ export function ImageEditorModal({ visible, uri, aspect = null, onDone, onCancel
 const styles = StyleSheet.create({
   root: { flex: 1, backgroundColor: '#111', paddingHorizontal: spacing.lg },
   header: { flexDirection: 'row', alignItems: 'center', gap: spacing.md, marginBottom: spacing.md },
-  title: { color: '#fff', flex: 1 },
+  title: { color: colors.textInverse, flex: 1 },
   rotateRow: { flexDirection: 'row', gap: spacing.lg },
   stage: { flex: 1, marginBottom: spacing.sm },
   shade: { position: 'absolute', backgroundColor: 'rgba(0,0,0,0.55)' },
-  box: { position: 'absolute', borderWidth: 2, borderColor: '#fff' },
+  box: { position: 'absolute', borderWidth: 2, borderColor: colors.textInverse },
   handle: {
     position: 'absolute',
     width: HANDLE,
@@ -257,7 +257,7 @@ const styles = StyleSheet.create({
     borderRadius: radius.pill,
     backgroundColor: colors.primary,
     borderWidth: 2,
-    borderColor: '#fff',
+    borderColor: colors.textInverse,
   },
   busy: { ...StyleSheet.absoluteFillObject, alignItems: 'center', justifyContent: 'center', backgroundColor: 'rgba(0,0,0,0.3)' },
   hint: { color: 'rgba(255,255,255,0.7)', textAlign: 'center', marginBottom: spacing.md },

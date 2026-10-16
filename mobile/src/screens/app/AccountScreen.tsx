@@ -31,7 +31,7 @@ import { TradesSetting } from '../../components/TradesSetting';
 type Msg = { kind: 'id'; id: StringId } | { kind: 'text'; text: string } | null;
 
 export default function AccountScreen() {
-  const { session, role, setRole, signOut, isWorkerAccount } = useAuth();
+  const { session, role, setRole, signOut, deleteAccount, isWorkerAccount } = useAuth();
   const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
   const insets = useSafeAreaInsets();
   const { t } = useT();
@@ -40,6 +40,9 @@ export default function AccountScreen() {
   const [subPlanCode, setSubPlanCode] = useState<PlanCode | null>(null);
   const [subEndsAt, setSubEndsAt] = useState<string | null>(null);
   const [subMsg, setSubMsg] = useState<Msg>(null);
+  const [confirmDelete, setConfirmDelete] = useState(false);
+  const [deleting, setDeleting] = useState(false);
+  const [deleteError, setDeleteError] = useState<string | null>(null);
   const [communityEnabled, setCommunityEnabled] = useState(false);
 
   const loadSubscription = async () => {
@@ -231,6 +234,48 @@ export default function AccountScreen() {
           style={styles.signOut}
         />
       )}
+
+      {!isGuest && !confirmDelete && (
+        <Button
+          labelId="account.delete.row"
+          onPress={() => setConfirmDelete(true)}
+          variant="ghost"
+          iconLeft="trash-2"
+          fullWidth
+          style={styles.signOut}
+        />
+      )}
+      {!isGuest && confirmDelete && (
+        <Card padding="lg" style={styles.signOut}>
+          <BiText id="account.delete.title" variant="title" tone="strong" style={styles.cardTitle} />
+          <Banner id="account.delete.warning" tone="danger" />
+          {deleteError ? <Banner text={deleteError} tone="danger" /> : null}
+          <Button
+            labelId="account.delete.confirm"
+            onPress={() => {
+              setDeleting(true);
+              setDeleteError(null);
+              deleteAccount().catch((e) => {
+                setDeleting(false);
+                setDeleteError(e instanceof Error ? e.message : 'Could not delete the account');
+              });
+            }}
+            variant="danger"
+            loading={deleting}
+            disabled={deleting}
+            fullWidth
+            style={styles.actionBtn}
+          />
+          <Button
+            labelId="account.delete.cancel"
+            onPress={() => setConfirmDelete(false)}
+            variant="secondary"
+            disabled={deleting}
+            fullWidth
+            style={styles.actionBtn}
+          />
+        </Card>
+      )}
     </ScrollView>
   );
 }
@@ -262,7 +307,7 @@ const styles = StyleSheet.create({
   header: { borderRadius: radius.lg, padding: spacing.lg },
   headerWorker: { backgroundColor: colors.primaryDeep },
   headerCustomer: { backgroundColor: colors.primarySoft },
-  onDark: { color: '#fff' },
+  onDark: { color: colors.textInverse },
   profileRow: { flexDirection: 'row', alignItems: 'center' },
   profileBody: { flex: 1, marginLeft: spacing.md },
   profileName: { ...typography.title, color: colors.textStrong },

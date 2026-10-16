@@ -17,7 +17,7 @@ function initials(name?: string | null) {
 
 const TONE = {
   primary: { bg: colors.primarySoft, ink: colors.primaryDeep },
-  accent: { bg: colors.accentSoft, ink: '#065F46' },
+  accent: { bg: colors.accentSoft, ink: colors.accentDeep },
   neutral: { bg: colors.surfaceAlt, ink: colors.textStrong },
 };
 

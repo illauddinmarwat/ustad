@@ -2,6 +2,7 @@ import { useEffect, useRef } from 'react';
 import { AppState } from 'react-native';
 
 import { supabase } from './supabase';
+import { activeOnly } from './activeOnly';
 
 export type LiveEvent = { table: 'jobs' | 'messages' | 'job_realtime_states' | 'quotes'; type: string; row: Record<string, unknown> };
 
@@ -44,7 +45,7 @@ export function useJobLive(
     listen('quotes', `job_id=eq.${jobId}`);
     channel.subscribe();
 
-    const poll = setInterval(() => change.current(), FALLBACK_MS);
+    const poll = setInterval(activeOnly(() => change.current()), FALLBACK_MS);
     const app = AppState.addEventListener('change', (s) => {
       if (s === 'active') change.current();
     });

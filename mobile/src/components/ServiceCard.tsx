@@ -85,15 +85,15 @@ export function ServiceCard({
         <View style={styles.badges}>
           {featured ? (
             <View style={[styles.badge, styles.badgeWarn]}>
-              <Icon name="star" size={11} color="#92400E" />
-              <Text style={[styles.badgeText, { color: '#92400E' }]}>Featured</Text>
+              <Icon name="star" size={11} color={colors.warningDeep} />
+              <Text style={[styles.badgeText, { color: colors.warningDeep }]}>{t('services.list.featured').en}</Text>
             </View>
           ) : (
             <View />
           )}
           {photos.length > 1 ? (
             <View style={styles.badge}>
-              <Icon name="image" size={11} color="#fff" />
+              <Icon name="image" size={11} color={colors.textInverse} />
               <Text style={styles.badgeText}>{photos.length}</Text>
             </View>
           ) : null}
@@ -205,7 +205,7 @@ const styles = StyleSheet.create({
     paddingVertical: 3,
   },
   badgeWarn: { backgroundColor: colors.warningSoft },
-  badgeText: { ...typography.caption, color: '#fff', fontWeight: '700' },
+  badgeText: { ...typography.caption, color: colors.textInverse, fontWeight: '700' },
   body: { padding: spacing.md, gap: spacing.sm },
   headline: { ...typography.subtitle, color: colors.textStrong },
   whoRow: { flexDirection: 'row', alignItems: 'center', gap: spacing.sm },
@@ -249,6 +249,6 @@ const styles = StyleSheet.create({
   statusOn: { backgroundColor: colors.accentSoft },
   statusOff: { backgroundColor: colors.warningSoft },
   statusText: { ...typography.caption, fontWeight: '700' },
-  statusTextOn: { color: '#065F46' },
-  statusTextOff: { color: '#92400E' },
+  statusTextOn: { color: colors.accentDeep },
+  statusTextOff: { color: colors.warningDeep },
 });

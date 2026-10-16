@@ -30,7 +30,7 @@ const variantStyles = {
   primary: { bg: colors.primary, border: colors.primary, ink: colors.primaryInk },
   secondary: { bg: colors.surface, border: colors.border, ink: colors.textStrong },
   ghost: { bg: 'transparent', border: 'transparent', ink: colors.primary },
-  danger: { bg: colors.danger, border: colors.danger, ink: '#fff' },
+  danger: { bg: colors.danger, border: colors.danger, ink: colors.textInverse },
   success: { bg: colors.accent, border: colors.accent, ink: colors.accentInk },
 } as const;
 

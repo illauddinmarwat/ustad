@@ -5,6 +5,7 @@ import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { JobThread } from '../../components/JobThread';
+import { ReportSheet } from '../../components/ReportSheet';
 import { Banner } from '../../components/ui/Banner';
 import { Button } from '../../components/ui/Button';
 import { Chip } from '../../components/ui/Chip';
@@ -49,6 +50,7 @@ export default function JobChatScreen() {
   const [chat, setChat] = useState<Chat | null>(null);
   const [workerId, setWorkerId] = useState<string | undefined>(route.params.workerId);
   const [closed, setClosed] = useState(false);
+  const [reportOpen, setReportOpen] = useState(false);
 
   const resolve = useCallback(async () => {
     // Customer: signed in, or a guest holding the job's token.
@@ -189,7 +191,15 @@ export default function JobChatScreen() {
           size="sm"
           hideUrdu
         />
+        {uid ? (
+          <Button labelId="report.row" onPress={() => setReportOpen(true)} variant="ghost" size="sm" iconLeft="flag" hideUrdu />
+        ) : null}
       </View>
+      <ReportSheet
+        visible={reportOpen}
+        target={uid ? { reporterId: uid, reportedUserId: chat.viewer === 'customer' ? chat.workerId : null, jobId } : null}
+        onClose={() => setReportOpen(false)}
+      />
       <JobThread key={chat.workerId} jobId={jobId} workerId={chat.workerId} token={token} viewer={chat.viewer} />
       <View style={{ height: insets.bottom }} />
     </KeyboardAvoid>

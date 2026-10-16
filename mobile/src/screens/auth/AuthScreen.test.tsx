@@ -17,6 +17,13 @@ jest.mock('@react-navigation/native', () => ({
   useNavigation: () => ({ goBack: mockGoBack, canGoBack: mockCanGoBack, navigate: mockNavigate }),
 }));
 
+const mockRequestReset = jest.fn();
+const mockResetWithCode = jest.fn();
+jest.mock('../../lib/passwordReset', () => ({
+  requestPasswordReset: (...a: unknown[]) => mockRequestReset(...a),
+  resetPasswordWithCode: (...a: unknown[]) => mockResetWithCode(...a),
+}));
+
 const wrap = (node: React.ReactElement) =>
   render(
     <SafeAreaProvider
@@ -76,5 +83,41 @@ describe('AuthScreen', () => {
     });
     await waitFor(() => expect(getByText('Invalid credentials')).toBeTruthy());
     expect(mockGoBack).not.toHaveBeenCalled();
+  });
+});
+
+describe('AuthScreen forgot password', () => {
+  beforeEach(() => {
+    mockRequestReset.mockReset().mockResolvedValue(undefined);
+    mockResetWithCode.mockReset().mockResolvedValue(undefined);
+    mockGoBack.mockClear();
+  });
+
+  it('emails a code, then sets the new password and returns', async () => {
+    const { getByText, getAllByPlaceholderText, queryByText } = wrap(<AuthScreen />);
+    fireEvent.changeText(getAllByPlaceholderText('Email')[0], 'a@b.co');
+    fireEvent.press(getByText('Forgot password?'));
+    await act(async () => {
+      fireEvent.press(getByText('Email me a code'));
+    });
+    expect(mockRequestReset).toHaveBeenCalledWith('a@b.co');
+    fireEvent.changeText(getAllByPlaceholderText('Code from the email')[0], '123456');
+    fireEvent.changeText(getAllByPlaceholderText('New password (6+ characters)')[0], 'newpass1');
+    await act(async () => {
+      fireEvent.press(getByText('Set new password'));
+    });
+    expect(mockResetWithCode).toHaveBeenCalledWith('a@b.co', '123456', 'newpass1');
+    expect(mockGoBack).toHaveBeenCalled();
+    expect(queryByText('Sign in')).toBeNull();
+  });
+
+  it('asks for an email before sending a code', async () => {
+    const { getByText } = wrap(<AuthScreen />);
+    fireEvent.press(getByText('Forgot password?'));
+    await act(async () => {
+      fireEvent.press(getByText('Email me a code'));
+    });
+    expect(mockRequestReset).not.toHaveBeenCalled();
+    expect(getByText('Enter your email first.')).toBeTruthy();
   });
 });

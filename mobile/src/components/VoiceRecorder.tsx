@@ -49,7 +49,7 @@ function RoundButton({
   tone?: 'primary' | 'danger' | 'muted';
 }) {
   const bg = tone === 'danger' ? colors.danger : tone === 'muted' ? colors.surface : colors.primary;
-  const ink = tone === 'muted' ? colors.textStrong : '#fff';
+  const ink = tone === 'muted' ? colors.textStrong : colors.textInverse;
   return (
     <Pressable
       onPress={onPress}
@@ -236,7 +236,7 @@ const styles = StyleSheet.create({
   round: {
     width: 40,
     height: 40,
-    borderRadius: 20,
+    borderRadius: radius.lg,
     borderWidth: 1,
     alignItems: 'center',
     justifyContent: 'center',

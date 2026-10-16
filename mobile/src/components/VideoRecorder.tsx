@@ -53,7 +53,7 @@ function RoundButton({
       accessibilityLabel={label}
       style={[styles.round, { width: size, height: size, borderRadius: size / 2, backgroundColor: bg }]}
     >
-      <Icon name={icon} size={size / 2.4} color="#fff" />
+      <Icon name={icon} size={size / 2.4} color={colors.textInverse} />
     </Pressable>
   );
 }
@@ -330,16 +330,16 @@ const styles = StyleSheet.create({
     paddingVertical: spacing.xs,
     borderRadius: radius.pill,
   },
-  clockText: { ...typography.label, color: '#fff' },
+  clockText: { ...typography.label, color: colors.textInverse },
   dot: { width: 10, height: 10, borderRadius: 5, backgroundColor: '#9ca3af' },
   dotLive: { backgroundColor: colors.danger },
   controls: { position: 'absolute', bottom: 0, left: 0, right: 0, alignItems: 'center', gap: spacing.sm },
   row: { flexDirection: 'row', alignItems: 'center', gap: spacing.xl },
   round: { alignItems: 'center', justifyContent: 'center' },
-  savingText: { ...typography.label, color: '#fff' },
+  savingText: { ...typography.label, color: colors.textInverse },
   noPause: { ...typography.caption, color: 'rgba(255,255,255,0.8)', textAlign: 'center', paddingHorizontal: spacing.lg },
   center: { flex: 1, justifyContent: 'center', padding: spacing.lg, gap: spacing.md },
   closeLink: { alignSelf: 'center', padding: spacing.md },
-  closeText: { color: '#fff' },
+  closeText: { color: colors.textInverse },
   errorBox: { position: 'absolute', left: spacing.lg, right: spacing.lg, top: 110 },
 });

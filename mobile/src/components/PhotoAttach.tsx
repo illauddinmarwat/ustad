@@ -79,7 +79,7 @@ export function PhotoAttach({ uris, onChange, alreadyAttached = 0, hideHint }: P
               style={styles.remove}
               hitSlop={8}
             >
-              <Icon name="x" size={14} color="#fff" />
+              <Icon name="x" size={14} color={colors.textInverse} />
             </Pressable>
           </View>
         ))}
@@ -121,8 +121,8 @@ const styles = StyleSheet.create({
   noteWarn: { backgroundColor: 'rgba(254,243,199,0.95)' },
   noteText: { ...typography.caption, fontSize: 10, lineHeight: 13, fontWeight: '700', textAlign: 'center' },
   noteUr: { ...urduTypography.caption, fontSize: 10, lineHeight: 16, textAlign: 'center' },
-  noteTextGood: { color: '#065F46' },
-  noteTextWarn: { color: '#92400E' },
+  noteTextGood: { color: colors.accentDeep },
+  noteTextWarn: { color: colors.warningDeep },
   remove: {
     position: 'absolute',
     top: -6,

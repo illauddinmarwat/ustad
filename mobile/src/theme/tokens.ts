@@ -33,6 +33,13 @@ export const colors = {
   info: '#0EA5E9',
   infoSoft: '#E0F2FE',
 
+  // Deep inks for text on the soft status tints, and a pale tint for text on solid green
+  accentDeep: '#065F46',
+  warningDeep: '#92400E',
+  dangerDeep: '#991B1B',
+  infoDeep: '#075985',
+  primaryTint: '#D1FAE5',
+
   // Text
   textStrong: '#0B0F19',
   textBody: '#384151',

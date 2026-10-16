@@ -405,7 +405,7 @@ export default function ListingWizardScreen() {
                         style={styles.remove}
                         hitSlop={8}
                       >
-                        <Icon name="x" size={14} color="#fff" />
+                        <Icon name="x" size={14} color={colors.textInverse} />
                       </Pressable>
                     </View>
                   ))}

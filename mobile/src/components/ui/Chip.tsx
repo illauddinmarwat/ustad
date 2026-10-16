@@ -18,10 +18,10 @@ export type ChipProps = {
 const TONE: Record<ChipTone, { bg: string; ink: string; border?: string }> = {
   neutral: { bg: colors.surfaceAlt, ink: colors.textStrong, border: colors.border },
   primary: { bg: colors.primarySoft, ink: colors.primaryDeep },
-  accent: { bg: colors.accentSoft, ink: '#065F46' },
-  warning: { bg: colors.warningSoft, ink: '#92400E' },
-  danger: { bg: colors.dangerSoft, ink: '#991B1B' },
-  info: { bg: colors.infoSoft, ink: '#075985' },
+  accent: { bg: colors.accentSoft, ink: colors.accentDeep },
+  warning: { bg: colors.warningSoft, ink: colors.warningDeep },
+  danger: { bg: colors.dangerSoft, ink: colors.dangerDeep },
+  info: { bg: colors.infoSoft, ink: colors.infoDeep },
 };
 
 export function Chip({ label, tone = 'neutral', icon, iconSet, style }: ChipProps) {
